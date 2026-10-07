@@ -196,6 +196,66 @@
       return d!==null && d>=0 && d<=Number(c.alertDays||0);
     }).sort((a,b)=>daysUntil(a.expiryDate)-daysUntil(b.expiryDate));
   }
+  // ---- 윈도우(브라우저) 알림: 만료일 30일 이내 계약 ----
+  const NOTIFY_DAYS = 30;
+  function notifySupported(){ return typeof window.Notification!=='undefined'; }
+  function notifyPermission(){ return notifySupported() ? Notification.permission : 'unsupported'; }
+  function notifiedKey(id){ return 'ctr-notified-'+id+'-'+todayStr(); }
+  function wasNotifiedToday(id){ try{ return !!localStorage.getItem(notifiedKey(id)); }catch(e){ return false; } }
+  function markNotified(id){ try{ localStorage.setItem(notifiedKey(id),'1'); }catch(e){} }
+  function contractsDueForNotify(){
+    return state.contracts.filter(c=>{
+      if(c.alertDismissed || !c.expiryDate) return false;
+      const d = daysUntil(c.expiryDate);
+      return d!==null && d>=0 && d<=NOTIFY_DAYS;
+    }).sort((a,b)=>daysUntil(a.expiryDate)-daysUntil(b.expiryDate));
+  }
+  function openContractFromNotice(id){
+    window.focus();
+    state.tab='contracts'; state.ctrStage='전체'; state.filterText='';
+    state.ctrFilterBiz='전체'; state.ctrFilterRep='전체'; state.ctrFilterRequest='전체';
+    state.alertCollapsed.ctr=false;
+    if(id) state.ctrExpandedId=id;
+    render();
+  }
+  function checkExpiryNotifications(force){
+    if(notifyPermission()!=='granted') return 0;
+    const due = contractsDueForNotify();
+    const targets = force ? due : due.filter(c=>!wasNotifiedToday(c.id));
+    if(targets.length===0){
+      if(force) new Notification('계약 만료 알림', {body:'만료일 30일 이내인 계약이 없습니다.', tag:'ctr-expiry-none'});
+      return 0;
+    }
+    if(targets.length>3){
+      const first = targets[0];
+      const n = new Notification(`만료 임박 계약 ${targets.length}건`, {
+        body: targets.slice(0,3).map(c=>`· ${c.name} (D-${daysUntil(c.expiryDate)})`).join('\n')+`\n외 ${targets.length-3}건`,
+        tag:'ctr-expiry-summary', requireInteraction:true,
+      });
+      n.onclick=()=>{ n.close(); openContractFromNotice(null); };
+    } else {
+      targets.forEach(c=>{
+        const d = daysUntil(c.expiryDate);
+        const n = new Notification(`계약 만료 ${d===0?'오늘':'D-'+d}`, {
+          body: `${c.name} · ${custName(c.customerId)}\n만료일 ${c.expiryDate}`,
+          tag:'ctr-expiry-'+c.id, requireInteraction:true,
+        });
+        n.onclick=()=>{ n.close(); openContractFromNotice(c.id); };
+      });
+    }
+    targets.forEach(c=>markNotified(c.id));
+    return targets.length;
+  }
+  function notifyButtonHTML(){
+    const p = notifyPermission();
+    if(p==='unsupported') return '';
+    const label = p==='granted' ? '🔔 만료 알림 켜짐' : p==='denied' ? '🔕 알림 차단됨' : '🔔 만료 알림 켜기';
+    const title = p==='granted' ? '누르면 지금 바로 만료 임박 계약 알림을 다시 보여줍니다'
+      : p==='denied' ? '브라우저 주소창 왼쪽 자물쇠 → 사이트 권한 → 알림을 "허용"으로 바꿔주세요'
+      : '만료일 30일 이내 계약을 윈도우 알림으로 받습니다';
+    return `<div id="notifyToggleBtn" title="${title}" style="margin:10px 18px 0; padding:7px 10px; border:1px solid #2e3c4a; border-radius:var(--radius); font-size:12px; cursor:pointer; color:${p==='granted'?'#7fe0d9':'#cfd6dd'};">${label}</div>`;
+  }
+
   function expiringMaintenance(){
     return state.maintenance.filter(m=>{
       if(m.alertDismissed || !m.endDate) return false;
@@ -397,6 +457,7 @@
     state.isAdmin = !!(myRep && myRep.is_admin);
     if(myRep && myRep.name) state.user = myRep.name;
     state.loading=false; render();
+    checkExpiryNotifications();
   }
 
   function render(){
@@ -499,6 +560,7 @@
       <div class="sidebar">
         <div class="brand"><h2>UNION-CRM</h2><div class="who">${esc(state.user)} 님</div></div>
         ${NAV.map(([k,l])=>`<div class="nav-item ${state.tab===k?'active':''}" data-tab="${k}">${l}</div>`).join('')}
+        ${notifyButtonHTML()}
         <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span></div>
       </div>
       <div class="main">
@@ -1060,6 +1122,13 @@
         showToast('첨부파일이 삭제되었습니다.');
       });
     };
+    const notifyBtn=document.getElementById('notifyToggleBtn');
+    if(notifyBtn) notifyBtn.onclick=async ()=>{
+      const p = notifyPermission();
+      if(p==='denied'){ alert('알림이 차단되어 있어요.\n브라우저 주소창 왼쪽 자물쇠 아이콘 → 사이트 권한 → 알림을 "허용"으로 바꾼 뒤 새로고침해주세요.'); return; }
+      if(p==='default'){ await Notification.requestPermission(); render(); if(notifyPermission()==='granted'){ showToast('만료 알림이 켜졌습니다.'); checkExpiryNotifications(true); } return; }
+      checkExpiryNotifications(true);
+    };
     const logout=document.getElementById('logoutBtn'); if(logout) logout.onclick=async ()=>{ await sb.auth.signOut(); state.view='login'; state.user=null; render(); };
     const excelBtn=document.getElementById('excelExportBtn');
     if(excelBtn) excelBtn.onclick=(e)=>{ e.stopPropagation(); state.excelMenuOpen = !state.excelMenuOpen; render(); };
@@ -1098,6 +1167,8 @@
     }
   }
   init();
+  // 페이지를 열어둔 동안 1시간마다 다시 확인 (같은 계약은 하루 한 번만 알림)
+  setInterval(()=>{ if(state.view==='main' && !state.loading) checkExpiryNotifications(); }, 60*60*1000);
 })();
 </script>
 </body>
