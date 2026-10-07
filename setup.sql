@@ -205,3 +205,6 @@ update maintenance_contracts m set customer_id = c.customer_id
 from contracts c where m.customer_id is null and m.contract_id = c.id;
 update maintenance_contracts set purchase_amount = coalesce(amount, 0) - coalesce(profit_amount, 0)
 where purchase_amount is null;
+
+-- 7) 사이트가 새 표를 바로 인식하도록 새로고침
+notify pgrst, 'reload schema';
