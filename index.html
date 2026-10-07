@@ -214,8 +214,8 @@
 
 <script>
 (function(){
-  const SUPABASE_URL = 'https://wqqwpqurxfomyolvresd.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable_10_lrFOl0rxxagkvY7q8bA_9Ht86O-o';
+  const SUPABASE_URL = 'https://syxgwzwvqqdunxuucgnx.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_eYyVEiNBMTU8077zdOt1Lw_jNkykdJi';
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   const root = document.getElementById('app');
 
@@ -349,7 +349,13 @@
       if(r.error){ state[key]=[]; state.setupMissing.push(t+': '+r.error.message); }
       else state[key]=r.data||[];
     });
-    const me = state.reps.find(r=>r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase());
+    let me = state.reps.find(r=>r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase());
+    if(!me && state.userEmail && !state.setupMissing.some(s=>s.startsWith('reps'))){
+      // 처음 로그인한 사람을 담당자로 자동 등록 (담당자가 한 명도 없으면 관리자로)
+      const r = {id:uid('rp'), name:state.user || state.userEmail, phone:'', email:state.userEmail, dept:'', is_admin: state.reps.length===0};
+      const { error } = await sb.from('reps').insert(repRow(r));
+      if(!error){ state.reps.unshift(r); me = r; }
+    }
     if(me && me.name) state.user = me.name;
     state.isAdmin = !!(me && me.is_admin) || !state.reps.some(r=>r.is_admin);
     state.loading=false; render();
