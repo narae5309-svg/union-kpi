@@ -1,13 +1,108 @@
 -- =====================================================================
--- UNION 계약·기술지원 관리 시스템 : Supabase 설정 SQL
+-- UNION 사업관리 시스템 : Supabase 설정 SQL
 -- Supabase → SQL Editor → New query 에 전체를 붙여넣고 Run 하세요.
--- 기존 데이터는 지우지 않습니다. 여러 번 실행해도 안전합니다.
+-- 빈 프로젝트든, 기존 CRM 데이터가 있는 프로젝트든 그대로 실행하면 됩니다.
+-- 기존 데이터는 지우지 않으며, 여러 번 실행해도 안전합니다.
 -- =====================================================================
 
--- 1) 고객사: 세금계산서 메일
+-- ---------------------------------------------------------------
+-- 1) 기본 표 만들기 (이미 있으면 건너뜀)
+-- ---------------------------------------------------------------
+create table if not exists reps (
+  id text primary key,
+  name text default '',
+  phone text default '',
+  email text default '',
+  dept text default '',
+  is_admin boolean default false,
+  created_at timestamptz default now()
+);
+
+create table if not exists customers (
+  id text primary key,
+  code text,
+  name text default '',
+  biz_reg_no text default '',
+  ceo text default '',
+  contact_email text default '',
+  contact_phone text default '',
+  industry text,
+  type text,
+  source text,
+  sales_rep text default '',
+  reg_date date,
+  created_at timestamptz default now()
+);
+
+create table if not exists contracts (
+  id text primary key,
+  code text,
+  name text default '',
+  customer_id text,
+  end_user_name text default '',
+  biz_type text default '',
+  stage text default '계약',
+  request text default '없음',
+  contract_date date,
+  amount numeric default 0,
+  profit_amount numeric default 0,
+  expiry_date date,
+  alert_days int default 30,
+  alert_dismissed boolean default false,
+  buyer_contact text default '',
+  buyer_email text default '',
+  invoice_date date,
+  remarks text default '',
+  sales_rep text default '',
+  opportunity_id text,
+  attachment_url text,
+  attachment_name text,
+  attachment_path text,
+  reg_date date,
+  created_at timestamptz default now()
+);
+
+create table if not exists maintenance_contracts (
+  id text primary key,
+  name text default '',
+  contract_id text,
+  start_date date,
+  end_date date,
+  billing_cycle text default '연납',
+  amount numeric default 0,
+  profit_amount numeric default 0,
+  renewal_type text default '수동갱신',
+  sales_rep text default '',
+  alert_days int default 30,
+  alert_dismissed boolean default false,
+  remarks text default '',
+  attachment_url text,
+  attachment_name text,
+  attachment_path text,
+  reg_date date,
+  created_at timestamptz default now()
+);
+
+-- ---------------------------------------------------------------
+-- 2) 새 시스템에 필요한 컬럼 추가
+-- ---------------------------------------------------------------
 alter table customers add column if not exists tax_email text default '';
 
--- 2) 고객 담당자 (고객사 1곳에 여러 명)
+alter table contracts add column if not exists deal_type text default '신규';
+alter table contracts add column if not exists start_date date;
+alter table contracts add column if not exists contact_id text;
+alter table contracts add column if not exists renewed boolean default false;
+
+alter table maintenance_contracts add column if not exists customer_id text;
+alter table maintenance_contracts add column if not exists provider text default '벤더 유지보수';
+alter table maintenance_contracts add column if not exists deal_type text default '신규';
+alter table maintenance_contracts add column if not exists supplier text default '';
+alter table maintenance_contracts add column if not exists purchase_amount numeric;
+alter table maintenance_contracts add column if not exists renewed boolean default false;
+
+-- ---------------------------------------------------------------
+-- 3) 새 표: 고객 담당자, 계약 품목, 기술지원
+-- ---------------------------------------------------------------
 create table if not exists customer_contacts (
   id text primary key,
   customer_id text,
@@ -18,13 +113,6 @@ create table if not exists customer_contacts (
   created_at timestamptz default now()
 );
 
--- 3) 계약: 신규/갱신 구분, 시작일, 고객 담당자, 갱신완료 표시
-alter table contracts add column if not exists deal_type text default '신규';
-alter table contracts add column if not exists start_date date;
-alter table contracts add column if not exists contact_id text;
-alter table contracts add column if not exists renewed boolean default false;
-
--- 4) 계약 품목 (계약 1건에 여러 품목, 품목마다 매출/매입)
 create table if not exists contract_items (
   id text primary key,
   contract_id text,
@@ -38,15 +126,6 @@ create table if not exists contract_items (
   created_at timestamptz default now()
 );
 
--- 5) 유지보수: 고객사 직접 연결, 매입처/매입금액, 구분, 갱신완료 표시
-alter table maintenance_contracts add column if not exists customer_id text;
-alter table maintenance_contracts add column if not exists provider text default '벤더 유지보수';
-alter table maintenance_contracts add column if not exists deal_type text default '신규';
-alter table maintenance_contracts add column if not exists supplier text default '';
-alter table maintenance_contracts add column if not exists purchase_amount numeric;
-alter table maintenance_contracts add column if not exists renewed boolean default false;
-
--- 6) 기술지원 요청
 create table if not exists support_tickets (
   id text primary key,
   code text,
@@ -65,29 +144,41 @@ create table if not exists support_tickets (
   created_at timestamptz default now()
 );
 
--- 7) 새 표 접근 권한 (로그인한 사용자만)
-alter table customer_contacts enable row level security;
-alter table contract_items   enable row level security;
-alter table support_tickets  enable row level security;
-drop policy if exists "logged in users" on customer_contacts;
-drop policy if exists "logged in users" on contract_items;
-drop policy if exists "logged in users" on support_tickets;
-create policy "logged in users" on customer_contacts for all to authenticated using (true) with check (true);
-create policy "logged in users" on contract_items   for all to authenticated using (true) with check (true);
-create policy "logged in users" on support_tickets  for all to authenticated using (true) with check (true);
+-- ---------------------------------------------------------------
+-- 4) 접근 권한: 로그인한 사용자만 읽고 쓸 수 있게
+-- ---------------------------------------------------------------
+do $$
+declare t text;
+begin
+  foreach t in array array['reps','customers','contracts','maintenance_contracts','customer_contacts','contract_items','support_tickets']
+  loop
+    execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists "logged in users" on %I', t);
+    execute format('create policy "logged in users" on %I for all to authenticated using (true) with check (true)', t);
+  end loop;
+end $$;
+
+-- ---------------------------------------------------------------
+-- 5) 첨부파일 저장소
+-- ---------------------------------------------------------------
+insert into storage.buckets (id, name, public)
+values ('attachments', 'attachments', true)
+on conflict (id) do nothing;
+
+drop policy if exists "attachments logged in" on storage.objects;
+create policy "attachments logged in" on storage.objects
+  for all to authenticated
+  using (bucket_id = 'attachments') with check (bucket_id = 'attachments');
 
 -- =====================================================================
--- 기존 데이터 옮기기 (이미 옮긴 건 다시 옮기지 않습니다)
+-- 6) 기존 데이터 옮기기 (데이터가 없으면 아무 일도 안 일어남)
 -- =====================================================================
-
--- 기존 고객사의 담당자 정보 → 고객 담당자
 insert into customer_contacts (id, customer_id, name, phone, email)
 select 'cc_mig_' || c.id, c.id, coalesce(c.ceo, ''), coalesce(c.contact_phone, ''), coalesce(c.contact_email, '')
 from customers c
 where (coalesce(c.ceo, '') <> '' or coalesce(c.contact_email, '') <> '' or coalesce(c.contact_phone, '') <> '')
   and not exists (select 1 from customer_contacts x where x.customer_id = c.id);
 
--- 기존 계약의 구매담당자 → 고객 담당자 (같은 이름이 없을 때만)
 insert into customer_contacts (id, customer_id, name, email)
 select distinct on (c.customer_id, c.buyer_contact)
        'cc_buy_' || c.id, c.customer_id, c.buyer_contact, coalesce(c.buyer_email, '')
@@ -100,21 +191,16 @@ update contracts c set contact_id = x.id
 from customer_contacts x
 where c.contact_id is null and x.customer_id = c.customer_id and x.name = c.buyer_contact;
 
--- 기존 계약 금액 → 품목 1개로 (매입 = 계약금액 - 이익금액)
 insert into contract_items (id, contract_id, product, vendor, qty, sale_amount, supplier, purchase_amount)
 select 'it_mig_' || c.id, c.id, c.name, coalesce(c.biz_type, ''), 1,
        coalesce(c.amount, 0), '', coalesce(c.amount, 0) - coalesce(c.profit_amount, 0)
 from contracts c
 where not exists (select 1 from contract_items i where i.contract_id = c.id);
 
--- 계약 시작일이 비어 있으면 계약일로
 update contracts set start_date = contract_date where start_date is null;
-
--- 계약 단계 이름 정리
 update contracts set stage = '계산서발행' where stage = '청구완료';
 update contracts set stage = '수금완료'   where stage = '유지보수';
 
--- 유지보수: 고객사 연결, 매입금액 채우기
 update maintenance_contracts m set customer_id = c.customer_id
 from contracts c where m.customer_id is null and m.contract_id = c.id;
 update maintenance_contracts set purchase_amount = coalesce(amount, 0) - coalesce(profit_amount, 0)
