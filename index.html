@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UNION-CRM 계약관리</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f7f8; --grid:#dbe4e6; --grid-strong:#b7c6c9; --header-fill:#e3f6f5;
+    --accent:#0fb4ae; --accent-dark:#0b8f8a; --accent2:#2d6ae3;
+    --warn:#b3261e; --warn-bg:#fdecea;
+    --ink:#1f2b2b; --ink-soft:#5c7273; --card:#ffffff; --radius:6px;
+  }
+  *{box-sizing:border-box;} body{margin:0;}
+  .app{font-family:'Segoe UI','Malgun Gothic','Apple SD Gothic Neo',sans-serif; color:var(--ink); background:var(--bg); min-height:100vh; font-size:13px;}
+  .num{font-family:Consolas,'SF Mono',monospace; font-variant-numeric:tabular-nums;}
+  h1,h2,h3{margin:0; font-weight:600;}
+
+  .login-screen{min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#eaf7f6 0%,#f4f7f8 55%,#eef2f0 100%);}
+  .login-card{background:#fff; width:380px; padding:44px 36px; border-radius:14px; box-shadow:0 20px 45px rgba(15,180,174,.14), 0 2px 8px rgba(0,0,0,.04); text-align:center;}
+  .login-card .logo{font-size:26px; font-weight:800; letter-spacing:1px; color:var(--ink); margin-bottom:22px; font-style:italic;}
+  .login-card h1{font-size:17px; font-weight:700;}
+  .login-card h1 .accent-word{color:var(--accent);}
+  .login-card p.sub{color:var(--ink-soft); font-size:12px; margin:6px 0 24px;}
+  .login-card input{width:100%; padding:12px 14px; font-size:14px; border:1px solid transparent; background:#eef4f5; margin-bottom:12px; border-radius:8px; font-family:inherit;}
+  .login-card input:focus{outline:none; border-color:var(--accent); background:#fff;}
+  .btn-primary{background:var(--accent); color:#fff; border:none; padding:10px 18px; font-size:14px; font-weight:600; cursor:pointer; width:100%; border-radius:var(--radius);}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .login-note{font-size:11px; color:#8a8f98; margin-top:16px; line-height:1.5;}
+
+  .shell{display:flex; min-height:100vh;}
+  .sidebar{width:200px; background:#1b2733; color:#cfd6dd; flex-shrink:0; display:flex; flex-direction:column; padding:20px 0;}
+  .brand{padding:0 18px 16px; border-bottom:1px solid #2e3c4a; margin-bottom:6px;}
+  .brand h2{font-size:16px; color:#fff;}
+  .brand .who{font-size:11px; color:#8b95a1; margin-top:5px;}
+  .nav-item{padding:10px 18px; cursor:pointer; font-size:13px; border-left:3px solid transparent;}
+  .nav-item:hover{background:#243342;}
+  .nav-item.active{background:#243342; color:#fff; border-left:3px solid var(--accent);}
+  .nav-footer{margin-top:auto; padding:14px 18px 0; border-top:1px solid #2e3c4a;}
+  .logout-link{color:#8b95a1; font-size:11px; cursor:pointer;}
+  .logout-link:hover{color:#fff;}
+
+  .main{flex:1; padding:26px 34px; overflow-x:auto;}
+  .page-title{font-size:19px; margin-bottom:3px; font-weight:700;}
+  .page-sub{color:var(--ink-soft); font-size:12px; margin-bottom:20px;}
+
+  .card{background:var(--card); border:1px solid var(--grid); border-radius:var(--radius); padding:20px; margin-bottom:18px;}
+  .card h3{font-size:13px; margin-bottom:14px; text-transform:uppercase; letter-spacing:.4px; color:var(--accent-dark);}
+
+  .field label{display:block; font-size:11px; color:var(--ink-soft); margin-bottom:4px;}
+  .field select, .field input, .field textarea{width:100%; padding:7px 9px; border:1px solid var(--grid-strong); font-size:13px; border-radius:var(--radius); font-family:inherit; background:#fff;}
+  .field{margin-bottom:12px;}
+
+  table{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px; border:1px solid var(--grid);}
+  th{text-align:left; padding:7px 6px; background:var(--header-fill); border-right:1px solid var(--grid); border-bottom:1px solid var(--grid); font-weight:700; color:var(--accent-dark); font-size:11.5px; white-space:nowrap; position:sticky; top:0; z-index:3;}
+  td{padding:6px; border-right:1px solid var(--grid); border-bottom:1px solid var(--grid); vertical-align:middle;}
+  th:last-child, td:last-child{border-right:none;}
+  tbody tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#dcf3f1;}
+
+  .btn-sm{background:#fff; border:1.5px solid var(--accent); color:var(--accent-dark); font-weight:700; padding:6px 12px; cursor:pointer; font-size:12px; border-radius:var(--radius); transition:background .15s,color .15s;}
+  .btn-sm:hover{background:var(--accent); color:#fff;}
+  .btn-danger{color:#b3261e; background:#fff; border:1.5px solid #b3261e; font-weight:700;}
+  .btn-danger:hover{background:#b3261e; color:#fff;}
+  .btn-ghost{background:#fff; border:1.5px solid var(--accent-dark); color:var(--accent-dark); font-weight:700;}
+  .btn-ghost:hover{background:var(--accent-dark); color:#fff;}
+  .icon-btn{width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; border-radius:4px; border:1.5px solid var(--accent); background:#fff; color:var(--accent-dark); cursor:pointer; font-size:12px; padding:0; line-height:1; vertical-align:middle;}
+  .icon-btn:hover{background:var(--accent); color:#fff;}
+  .icon-btn.danger{border-color:#b3261e; color:#b3261e; font-weight:800; font-size:15px;}
+  .icon-btn.danger:hover{background:#b3261e; color:#fff;}
+  .icon-btn.copy{border-color:var(--accent2); color:var(--accent2);}
+  .icon-btn.copy:hover{background:var(--accent2); color:#fff;}
+  .omField{width:100%; padding:5px 7px; border:1px solid var(--grid-strong); border-radius:2px; font-family:inherit; font-size:12.5px; background:#fff; box-sizing:border-box;}
+  .omField:focus{border-color:var(--accent); outline:none;}
+
+  .toolbar{display:flex; gap:10px; margin-bottom:14px; align-items:center; flex-wrap:wrap;}
+  .toolbar input, .toolbar select{padding:7px 9px; border:1px solid var(--grid-strong); border-radius:var(--radius); font-family:inherit; font-size:12.5px;}
+
+  .tabs{display:flex; gap:4px; margin-bottom:14px; flex-wrap:wrap;}
+  .tab-btn{padding:8px 16px; background:#fff; border:1px solid var(--grid); border-bottom:none; cursor:pointer; font-size:12.5px; font-weight:600; color:var(--ink-soft); border-radius:var(--radius) var(--radius) 0 0;}
+  .tab-btn .cnt{color:var(--accent-dark); font-family:Consolas,monospace;}
+  .tab-btn.active{background:var(--header-fill); color:var(--accent-dark); border-color:var(--grid-strong);}
+
+  .badge{display:inline-block; padding:2px 8px; border-radius:10px; font-size:10.5px; font-weight:700;}
+  .badge.blue{background:#e8edfb; color:var(--accent2);}
+  .badge.green{background:#e7f3ec; color:var(--accent-dark);}
+  .badge.warn{background:var(--warn-bg); color:var(--warn);}
+  .badge.gold{background:#fff3d6; color:#8a6d1f;}
+
+  .empty{text-align:center; padding:36px 20px; color:var(--ink-soft); font-size:12.5px;}
+
+  .modal-bg{position:fixed; inset:0; background:rgba(20,25,30,.55); display:flex; align-items:flex-start; justify-content:center; z-index:200; overflow-y:auto; padding:30px 0;}
+  .modal{background:#fff; width:680px; max-width:94vw; padding:0; border-radius:var(--radius); position:relative;}
+  .modal-head{display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid var(--grid); background:var(--header-fill);}
+  .modal-close{cursor:pointer; font-size:18px; color:var(--ink-soft); background:none; border:none;}
+  .modal-body{padding:24px; max-height:78vh; overflow-y:auto;}
+  .modal-actions{padding:14px 20px; border-top:1px solid var(--grid); display:flex; justify-content:flex-end; gap:8px;}
+
+  .pick-row{display:flex; justify-content:space-between; align-items:center; padding:10px 12px; border:1px solid var(--grid); border-radius:var(--radius); margin-bottom:8px;}
+  .pick-row .info{font-size:12.5px;}
+  .pick-row .info .name{font-weight:700; margin-bottom:2px;}
+  .pick-row .info .sub{color:var(--ink-soft); font-size:11.5px;}
+
+  .alert-box{border:1px solid var(--warn); background:var(--warn-bg); border-radius:var(--radius); padding:14px 16px; margin-bottom:18px;}
+  .alert-box-list{max-height:260px; overflow-y:auto; padding-right:4px;}
+  .alert-box h4{margin:0 0 8px; font-size:12.5px; color:var(--warn);}
+  .alert-item{display:flex; justify-content:space-between; font-size:12.5px; padding:4px 0; border-bottom:1px dashed #e6b3ae;}
+  .alert-item:last-child{border-bottom:none;}
+
+  .toast{position:fixed; bottom:26px; left:50%; transform:translateX(-50%); background:#1b2733; color:#fff; padding:11px 20px; border-radius:var(--radius); font-size:13px; z-index:500; box-shadow:0 8px 24px rgba(0,0,0,.3);}
+  .hint{font-size:11px; color:var(--ink-soft); margin-top:6px; line-height:1.5;}
+  .excel-fab{position:fixed; bottom:18px; right:18px; width:30px; height:30px; border-radius:50%; background:#1d6f42; color:#fff; border:none; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 3px 8px rgba(0,0,0,.28); font-size:9px; font-weight:800; z-index:150; letter-spacing:-0.5px;}
+  .excel-fab:hover{background:#155a35; transform:scale(1.06);}
+</style>
+</head>
+<body>
+<div class="app" id="app"></div>
+
+<script>
+(function(){
+  const SUPABASE_URL = 'https://wqqwpqurxfomyolvresd.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_10_lrFOl0rxxagkvY7q8bA_9Ht86O-o';
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const root = document.getElementById('app');
+  const STAGES_CTR = ['계약','납품완료','청구완료','수금완료','유지보수'];
+  const REQUEST_TYPES = ['없음','계산서 요청','완료'];
+  const BILLING_CYCLES = ['연납','분기납','월납'];
+  const RENEWAL_TYPES = ['자동갱신','수동갱신','종료예정'];
+  const NAV = [['contracts','계약관리'],['maintenance','유지보수관리']];
+
+  let state = {
+    view:'login', user:null, userEmail:null, isAdmin:false, tab:'contracts', loading:true,
+    customers:[], contracts:[], reps:[], maintenance:[],
+    ctrStage:'전체', filterText:'',
+    ctrFilterBiz:'전체', ctrFilterRep:'전체', ctrFilterRequest:'전체',
+    mtFilterRep:'전체', mtFilterCycle:'전체', mtFilterRenewal:'전체',
+    ctrExpandedId:null, mtExpandedId:null,
+    modal:null, confirmModal:null, mtPickerOpen:false, mergePickerOpen:false, toast:null,
+    selected:{contracts:new Set(), maintenance:new Set()},
+    sortState:{},
+    pagination:{contracts:1, maintenance:1},
+    alertCollapsed:{ctr:true, mt:true},
+    excelMenuOpen:false,
+    attachUploadTarget:null, attachViewModal:null,
+  };
+
+  function showToast(m){ state.toast=m; render(); clearTimeout(showToast._t); showToast._t=setTimeout(()=>{state.toast=null; render();},2200); }
+  function askConfirm(message,onYes,confirmLabel,danger){ state.confirmModal={message,onYes,confirmLabel:confirmLabel||'삭제',danger:danger!==false}; render(); }
+  function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function excelDateToStr(val){
+    if(val===undefined || val===null || val==='') return '';
+    if(val instanceof Date && !isNaN(val)){
+      return val.getFullYear()+'-'+String(val.getMonth()+1).padStart(2,'0')+'-'+String(val.getDate()).padStart(2,'0');
+    }
+    const s = String(val).trim();
+    if(/^\d+(\.\d+)?$/.test(s)){
+      const n = Number(s);
+      if(n>20000 && n<80000){
+        const epoch = new Date(Date.UTC(1899,11,30));
+        const d = new Date(epoch.getTime() + n*86400000);
+        return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+      }
+    }
+    return s;
+  }
+  function esc(s){ return (s||'').toString().replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+  function won(n){ return '₩'+Math.round(Number(n||0)).toLocaleString('ko-KR'); }
+  function daysUntil(dateStr){ if(!dateStr) return null; const d=new Date(dateStr+'T00:00:00'), now=new Date(todayStr()+'T00:00:00'); return Math.round((d-now)/86400000); }
+  function nextCode(prefix, list){
+    const compact = todayStr().replace(/-/g,'').slice(2);
+    const n = list.filter(x=>x.code && x.code.startsWith(prefix+compact)).length+1;
+    return prefix+compact+'-'+String(n).padStart(3,'0');
+  }
+  function buildRepOpts(current){
+    const set = new Set(state.reps.map(r=>r.name).filter(Boolean));
+    if(current) set.add(current);
+    if(set.size===0) set.add(state.user);
+    return [...set].sort((a,b)=>a.localeCompare(b,'ko'));
+  }
+  function sortedCustomers(){ return [...state.customers].sort((a,b)=>a.name.localeCompare(b.name,'ko')); }
+  function sortedContracts(){ return [...state.contracts].sort((a,b)=>a.name.localeCompare(b.name,'ko')); }
+  function custName(id){ const c=state.customers.find(x=>x.id===id); return c?c.name:'(미지정)'; }
+  function contractCustomerName(id){ const c=state.contracts.find(x=>x.id===id); return c?custName(c.customerId):'-'; }
+  function contractCode(id){ const c=state.contracts.find(x=>x.id===id); return c?c.code:'-'; }
+  function contractVendor(id){ const c=state.contracts.find(x=>x.id===id); return c?c.bizType:'-'; }
+  function contractEndUserName(id){ const c=state.contracts.find(x=>x.id===id); return c&&c.endUserName ? c.endUserName : '-'; }
+  function contractVendorList(c){ return String(c.bizType||'').split(',').map(s=>s.trim()).filter(Boolean); }
+  function allVendorNames(){ const set=new Set(); state.contracts.forEach(c=>contractVendorList(c).forEach(v=>set.add(v))); return [...set].sort((a,b)=>a.localeCompare(b,'ko')); }
+  function expiringContracts(){
+    return state.contracts.filter(c=>{
+      if(c.alertDismissed || !c.expiryDate) return false;
+      const d = daysUntil(c.expiryDate);
+      return d!==null && d>=0 && d<=Number(c.alertDays||0);
+    }).sort((a,b)=>daysUntil(a.expiryDate)-daysUntil(b.expiryDate));
+  }
+  function expiringMaintenance(){
+    return state.maintenance.filter(m=>{
+      if(m.alertDismissed || !m.endDate) return false;
+      const d = daysUntil(m.endDate);
+      return d!==null && d>=0 && d<=Number(m.alertDays||0);
+    }).sort((a,b)=>daysUntil(a.endDate)-daysUntil(b.endDate));
+  }
+  async function dismissExpiryAlert(kind, id){
+    askConfirm('이 항목을 만료 임박 목록에서 확인 처리할까요?', async ()=>{
+      if(kind==='ctr'){
+        const c = state.contracts.find(x=>x.id===id); if(!c) return;
+        c.alertDismissed = true;
+        const { error } = await sb.from('contracts').update({alert_dismissed:true}).eq('id', id);
+        if(error){ alert('처리 실패: '+error.message); c.alertDismissed=false; return; }
+      } else {
+        const m = state.maintenance.find(x=>x.id===id); if(!m) return;
+        m.alertDismissed = true;
+        const { error } = await sb.from('maintenance_contracts').update({alert_dismissed:true}).eq('id', id);
+        if(error){ alert('처리 실패: '+error.message); m.alertDismissed=false; return; }
+      }
+      render();
+    }, '확인', false);
+  }
+  function compareValues(a,b){
+    const an = Number(a), bn = Number(b);
+    if(a!=='' && b!=='' && a!=null && b!=null && !isNaN(an) && !isNaN(bn)) return an-bn;
+    return String(a||'').localeCompare(String(b||''),'ko');
+  }
+  function applySortState(list, tableKey, getters){
+    const st = state.sortState[tableKey];
+    if(!st || !st.key || !getters[st.key]) return list;
+    const getter = getters[st.key];
+    return [...list].sort((a,b)=>{ const cmp = compareValues(getter(a), getter(b)); return st.dir==='asc' ? cmp : -cmp; });
+  }
+  const PAGE_SIZE = 50;
+  function paginateList(list, tableKey){
+    if(!state.pagination[tableKey]) state.pagination[tableKey]=1;
+    const totalPages = Math.max(1, Math.ceil(list.length/PAGE_SIZE));
+    if(state.pagination[tableKey]>totalPages) state.pagination[tableKey]=totalPages;
+    const page = state.pagination[tableKey];
+    const start = (page-1)*PAGE_SIZE;
+    return {items:list.slice(start, start+PAGE_SIZE), page, totalPages, total:list.length};
+  }
+  function renderPagination(tableKey, page, totalPages, total){
+    if(totalPages<=1) return '';
+    return `<div style="display:flex; justify-content:center; align-items:center; gap:12px; padding:12px; border-top:1px solid var(--grid);">
+      <button class="btn-sm btn-ghost pageBtn" data-table="${tableKey}" data-page="1" ${page<=1?'disabled':''}>&laquo; 처음</button>
+      <button class="btn-sm btn-ghost pageBtn" data-table="${tableKey}" data-page="${page-1}" ${page<=1?'disabled':''}>이전</button>
+      <span style="font-size:12.5px; color:var(--ink-soft);">${page} / ${totalPages} 페이지 (전체 ${total}건)</span>
+      <button class="btn-sm btn-ghost pageBtn" data-table="${tableKey}" data-page="${page+1}" ${page>=totalPages?'disabled':''}>다음</button>
+      <button class="btn-sm btn-ghost pageBtn" data-table="${tableKey}" data-page="${totalPages}" ${page>=totalPages?'disabled':''}>마지막 &raquo;</button>
+    </div>`;
+  }
+  function sortTh(label, tableKey, colKey, extraStyle){
+    const st = state.sortState[tableKey] || {};
+    const active = st.key===colKey;
+    const arrow = active ? (st.dir==='asc'?'▲':'▼') : '▵';
+    return `<th style="${extraStyle||''}"><span class="sort-th" data-table="${tableKey}" data-col="${colKey}" style="cursor:pointer; user-select:none; display:flex; align-items:center; justify-content:space-between; gap:4px;">${label}<span style="font-size:8px; color:${active?'var(--accent-dark)':'#c3ccce'};">${arrow}</span></span></th>`;
+  }
+  function bulkDeleteBtnHTML(tableKey, id){
+    const n = state.selected[tableKey].size;
+    return `<button class="icon-btn danger" id="${id}" title="선택 삭제" style="position:relative; width:26px; height:26px;">&minus;${n>0?`<span style="position:absolute; top:-6px; right:-6px; background:var(--warn); color:#fff; border-radius:8px; font-size:9px; padding:1px 4px; line-height:1.2; font-weight:700;">${n}</span>`:''}</button>`;
+  }
+  function bindTableCheckboxes(tableKey, rowClass, selectAllId){
+    const set = state.selected[tableKey];
+    const rowEls = [...document.querySelectorAll('.'+rowClass)];
+    const visibleIds = rowEls.map(cb=>cb.dataset.id);
+    const selAll = document.getElementById(selectAllId);
+    if(selAll){
+      selAll.checked = visibleIds.length>0 && visibleIds.every(id=>set.has(id));
+      selAll.onchange = e=>{ visibleIds.forEach(id=> e.target.checked ? set.add(id) : set.delete(id)); render(); };
+    }
+    rowEls.forEach(cb=>{ cb.onchange = e=>{ if(e.target.checked) set.add(cb.dataset.id); else set.delete(cb.dataset.id); render(); }; });
+  }
+  function bindBulkDelete(tableKey, btnId, dbTable, stateField, label){
+    const btn = document.getElementById(btnId);
+    if(!btn) return;
+    btn.onclick = ()=>{
+      const set = state.selected[tableKey];
+      if(set.size===0){ alert('삭제할 항목을 먼저 체크해주세요.'); return; }
+      askConfirm(`선택한 ${label} ${set.size}건을 삭제할까요?`, async ()=>{
+        const ids = [...set];
+        for(const id of ids){ await sb.from(dbTable).delete().eq('id', id); }
+        state[stateField] = state[stateField].filter(x=>!set.has(x.id));
+        set.clear();
+        render();
+      });
+    };
+  }
+  function bindFilterInput(id, tableKey){
+    const el = document.getElementById(id); if(!el) return;
+    let composing=false, timer=null;
+    const scheduleRender = ()=>{ clearTimeout(timer); timer=setTimeout(()=>{ if(!composing) render(); }, 220); };
+    el.addEventListener('compositionstart', ()=>{ composing=true; clearTimeout(timer); });
+    el.addEventListener('compositionend', ()=>{ composing=false; state.filterText=el.value; state.selected[tableKey].clear(); state.pagination[tableKey]=1; scheduleRender(); });
+    el.addEventListener('input', ()=>{ state.filterText=el.value; state.selected[tableKey].clear(); state.pagination[tableKey]=1; if(!composing) scheduleRender(); });
+  }
+  function downloadTemplate(){
+    const headers = ['계약명','고객사명','앤드유저','벤더사','계약일','계약금액','이익금액','만료일','구매담당자','구매담당자이메일','계산서발행일자','영업담당','비고'];
+    const ws = XLSX.utils.aoa_to_sheet([headers]);
+    ws['!cols'] = headers.map(h=>({wch: Math.max(12, h.length+4)}));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, '계약관리_업로드양식.xlsx');
+  }
+  function exportCurrentPage(){
+    let rows = [], filename = 'export.xlsx';
+    if(state.tab==='contracts'){
+      rows = state.contracts.map(c=>({'계약코드':c.code,'계약명':c.name,'고객사':custName(c.customerId),'앤드유저':c.endUserName||'','벤더사':c.bizType,'단계':c.stage,'요청':c.request,'계약일':c.contractDate,'계약금액':c.amount,'이익금액':c.profitAmount,'만료일':c.expiryDate||'','구매담당자':c.buyerContact||'','구매담당자이메일':c.buyerEmail||'','계산서발행일자':c.invoiceDate||'','영업담당':c.salesRep,'비고':c.remarks||''}));
+      filename='계약관리.xlsx';
+    } else if(state.tab==='maintenance'){
+      rows = state.maintenance.map(m=>({'계약코드':contractCode(m.contractId),'유지보수명':m.name,'고객사':contractCustomerName(m.contractId),'앤드유저':contractEndUserName(m.contractId),'벤더사':contractVendor(m.contractId),'시작일':m.startDate||'','종료일':m.endDate||'','결제주기':m.billingCycle,'금액':m.amount,'이익금액':m.profitAmount,'갱신여부':m.renewalType,'담당자':m.salesRep,'비고':m.remarks||''}));
+      filename='유지보수관리.xlsx';
+    }
+    if(rows.length===0){ alert('내보낼 데이터가 없습니다.'); return; }
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Sheet1');
+    XLSX.writeFile(wb, filename);
+  }
+  function bindCustomerSearchField(d, key, inputEl, suggEl){
+    if(!inputEl || !suggEl) return;
+    function showSuggestions(query){
+      const q = query.trim();
+      if(!q){ suggEl.style.display='none'; suggEl.innerHTML=''; return; }
+      const matches = sortedCustomers().filter(c=>c.name.includes(q)).slice(0,8);
+      if(matches.length===0){
+        suggEl.innerHTML = `<div style="padding:8px 10px; color:var(--ink-soft); font-size:12.5px;">일치하는 고객사가 없습니다 — 저장하면 새 고객사로 등록됩니다</div>`;
+      } else {
+        suggEl.innerHTML = matches.map(c=>`<div class="cust-sugg-item" data-id="${c.id}" style="padding:8px 10px; cursor:pointer; font-size:12.5px; border-bottom:1px solid var(--grid);">${esc(c.name)}</div>`).join('');
+        suggEl.querySelectorAll('.cust-sugg-item').forEach(item=>{
+          item.addEventListener('mousedown', e=>{
+            e.preventDefault();
+            d[key] = item.dataset.id;
+            d._newCustomerName = '';
+            inputEl.value = custName(d[key]);
+            suggEl.style.display='none';
+          });
+          item.addEventListener('mouseenter', ()=>{ item.style.background='var(--header-fill)'; });
+          item.addEventListener('mouseleave', ()=>{ item.style.background='#fff'; });
+        });
+      }
+      suggEl.style.display='block';
+    }
+    inputEl.addEventListener('input', e=>{ d[key]=''; d._newCustomerName=e.target.value.trim(); showSuggestions(e.target.value); });
+    inputEl.addEventListener('focus', e=>{ if(e.target.value.trim()) showSuggestions(e.target.value); });
+    inputEl.addEventListener('blur', ()=>{ setTimeout(()=>{ suggEl.style.display='none'; }, 150); });
+  }
+  function bindRemarksLogField(d, key, logEl, inputEl){
+    function splitEntries(){ return (d[key]||'').split('\n\n').filter(l=>l.trim()); }
+    function refresh(){
+      const lines = splitEntries();
+      if(lines.length===0){
+        logEl.innerHTML = '<span style="color:#b9c1c9;">등록된 비고가 없습니다.</span>';
+      } else {
+        logEl.innerHTML = lines.map((line,i)=>`<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:6px; padding:3px 0; border-bottom:1px dashed var(--grid);"><span style="flex:1; white-space:pre-wrap;">${esc(line)}</span><button type="button" class="remarks-del-btn" data-idx="${i}" title="삭제" style="border:none; background:none; color:#b3261e; cursor:pointer; font-size:13px; font-weight:800; line-height:1; flex-shrink:0; padding:0 2px;">&times;</button></div>`).join('');
+        logEl.querySelectorAll('.remarks-del-btn').forEach(btn=>{
+          btn.onclick=()=>{ const arr = splitEntries(); arr.splice(Number(btn.dataset.idx),1); d[key] = arr.join('\n\n'); refresh(); };
+        });
+      }
+    }
+    refresh();
+    function autoGrow(){ inputEl.rows = Math.min(6, Math.max(1, inputEl.value.split('\n').length)); }
+    inputEl.addEventListener('input', autoGrow);
+    inputEl.addEventListener('keydown', e=>{
+      if(e.key==='Enter' && !e.shiftKey){
+        e.preventDefault();
+        const text = inputEl.value.trim();
+        if(!text) return;
+        const line = `[${todayStr()}] ${text}`;
+        d[key] = d[key] ? line+'\n\n'+d[key] : line;
+        inputEl.value=''; inputEl.rows = 1;
+        refresh();
+      }
+    });
+  }
+
+  // ---- row mapping (JS camelCase <-> Supabase snake_case) ----
+  function custToRow(c){ return {id:c.id, code:c.code, name:c.name, biz_reg_no:c.bizRegNo||'', ceo:c.contactName, contact_email:c.contactEmail, contact_phone:c.contactPhone, industry:c.industry, type:c.type, source:c.source, sales_rep:c.salesRep, reg_date:c.regDate||null}; }
+  function custFromRow(r){ return {id:r.id, code:r.code, name:r.name, bizRegNo:r.biz_reg_no||'', contactName:r.ceo, contactEmail:r.contact_email, contactPhone:r.contact_phone, industry:r.industry, type:r.type, source:r.source, salesRep:r.sales_rep, regDate:r.reg_date}; }
+  function ctrToRow(c){ return {id:c.id, code:c.code, name:c.name, customer_id:c.customerId||null, end_user_name:c.endUserName||'', biz_type:c.bizType, stage:c.stage, request:c.request||'없음', contract_date:c.contractDate||null, amount:Number(c.amount)||0, profit_amount:Number(c.profitAmount)||0, expiry_date:c.expiryDate||null, alert_days:Number(c.alertDays)||0, alert_dismissed:!!c.alertDismissed, buyer_contact:c.buyerContact||'', buyer_email:c.buyerEmail||'', invoice_date:c.invoiceDate||null, remarks:c.remarks||'', sales_rep:c.salesRep, opportunity_id:c.opportunityId||null, attachment_url:c.attachmentUrl||null, attachment_name:c.attachmentName||null, attachment_path:c.attachmentPath||null, reg_date:c.regDate||null}; }
+  function ctrFromRow(r){ return {id:r.id, code:r.code, name:r.name, customerId:r.customer_id, endUserName:r.end_user_name||'', bizType:r.biz_type, stage:r.stage, request:r.request||'없음', contractDate:r.contract_date, amount:r.amount, profitAmount:r.profit_amount, expiryDate:r.expiry_date, alertDays:r.alert_days, alertDismissed:!!r.alert_dismissed, buyerContact:r.buyer_contact, buyerEmail:r.buyer_email, invoiceDate:r.invoice_date, remarks:r.remarks||'', salesRep:r.sales_rep, opportunityId:r.opportunity_id, attachmentUrl:r.attachment_url||'', attachmentName:r.attachment_name||'', attachmentPath:r.attachment_path||'', regDate:r.reg_date}; }
+  function mtToRow(m){ return {id:m.id, name:m.name, contract_id:m.contractId||null, start_date:m.startDate||null, end_date:m.endDate||null, billing_cycle:m.billingCycle, amount:Number(m.amount)||0, profit_amount:Number(m.profitAmount)||0, renewal_type:m.renewalType, sales_rep:m.salesRep, alert_days:Number(m.alertDays)||0, alert_dismissed:!!m.alertDismissed, remarks:m.remarks||'', attachment_url:m.attachmentUrl||null, attachment_name:m.attachmentName||null, attachment_path:m.attachmentPath||null, reg_date:m.regDate||null}; }
+  function mtFromRow(r){ return {id:r.id, name:r.name, contractId:r.contract_id, startDate:r.start_date, endDate:r.end_date, billingCycle:r.billing_cycle, amount:r.amount, profitAmount:r.profit_amount, renewalType:r.renewal_type, salesRep:r.sales_rep, alertDays:r.alert_days, alertDismissed:!!r.alert_dismissed, remarks:r.remarks||'', attachmentUrl:r.attachment_url||'', attachmentName:r.attachment_name||'', attachmentPath:r.attachment_path||'', regDate:r.reg_date}; }
+
+  async function loadAll(){
+    state.loading=true; render();
+    // 고객사·담당자 데이터는 화면은 없지만 계약의 고객사 연결과 영업담당/관리자 권한 판정에 계속 사용됩니다.
+    const [cu, cr, rp, mt] = await Promise.all([
+      sb.from('customers').select('*').order('created_at',{ascending:false}),
+      sb.from('contracts').select('*').order('created_at',{ascending:false}),
+      sb.from('reps').select('*').order('created_at',{ascending:false}),
+      sb.from('maintenance_contracts').select('*').order('created_at',{ascending:false}),
+    ]);
+    state.customers = (cu.data||[]).map(custFromRow);
+    state.contracts = (cr.data||[]).map(ctrFromRow);
+    state.reps = rp.data||[];
+    state.maintenance = (mt.data||[]).map(mtFromRow);
+    const myRep = state.reps.find(r=>r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase());
+    state.isAdmin = !!(myRep && myRep.is_admin);
+    if(myRep && myRep.name) state.user = myRep.name;
+    state.loading=false; render();
+  }
+
+  function render(){
+    const active = document.activeElement;
+    let restoreId=null, selStart=null, selEnd=null;
+    if(active && active.id && (active.tagName==='INPUT' || active.tagName==='TEXTAREA')){
+      restoreId = active.id;
+      try{ selStart=active.selectionStart; selEnd=active.selectionEnd; }catch(e){}
+    }
+    if(state.view==='login'){ root.innerHTML=renderLogin(); bindLogin(); return; }
+    root.innerHTML=renderShell();
+    bindShell();
+    makeTablesResizable();
+    if(restoreId){
+      const el = document.getElementById(restoreId);
+      if(el && el.focus){
+        el.focus();
+        if(selStart!=null && el.setSelectionRange){ try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
+      }
+    }
+  }
+
+  function makeTablesResizable(){
+    document.querySelectorAll('.main table, .modal table').forEach(table=>{
+      table.querySelectorAll('th').forEach(th=>{
+        if(th.querySelector('.col-resize-handle')) return;
+        if(getComputedStyle(th).position==='static') th.style.position='relative';
+        const handle = document.createElement('span');
+        handle.className='col-resize-handle';
+        handle.style.cssText='position:absolute; top:0; right:0; width:6px; height:100%; cursor:col-resize; user-select:none; z-index:6;';
+        th.appendChild(handle);
+        handle.addEventListener('click', e=>e.stopPropagation());
+        handle.addEventListener('mousedown', e=>{
+          e.preventDefault(); e.stopPropagation();
+          const startX = e.pageX, startWidth = th.offsetWidth;
+          function onMove(ev){ th.style.width = Math.max(36, startWidth + (ev.pageX-startX)) + 'px'; }
+          function onUp(){ document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        });
+      });
+    });
+  }
+  function renderLogin(){
+    return `<div class="login-screen"><div class="login-card">
+      <div class="logo">UNION-CRM</div>
+      <h1><span class="accent-word">계약·유지보수 관리</span> 로그인</h1>
+      <p class="sub" id="loginSub">이메일과 비밀번호로 로그인하세요</p>
+      <div id="signupNameWrap" style="display:none;"><input id="loginName" placeholder="이름 (예: 최신영)"/></div>
+      <input id="loginEmail" type="email" placeholder="이메일" autocomplete="username"/>
+      <input id="loginPassword" type="password" placeholder="비밀번호" autocomplete="current-password"/>
+      <button class="btn-primary" id="loginBtn">로그인</button>
+      <p style="font-size:12px; color:var(--ink-soft); margin-top:14px;">계정이 없으신가요? <a href="#" id="toggleSignup" style="color:var(--accent-dark); font-weight:600;">회원가입</a></p>
+      <p id="loginError" style="color:#b3261e; font-size:12px; margin-top:6px; min-height:16px;"></p>
+      <p class="login-note">팀 전체가 공유하는 계약관리 시스템입니다.<br/>등록된 회사 계정으로 로그인해주세요.</p>
+    </div></div>`;
+  }
+  function bindLogin(){
+    let mode='login';
+    const btn=document.getElementById('loginBtn'), emailEl=document.getElementById('loginEmail'), pwEl=document.getElementById('loginPassword'), nameEl=document.getElementById('loginName');
+    const nameWrap=document.getElementById('signupNameWrap'), sub=document.getElementById('loginSub'), toggle=document.getElementById('toggleSignup'), errEl=document.getElementById('loginError');
+    toggle.onclick=(e)=>{
+      e.preventDefault();
+      mode = mode==='login'?'signup':'login';
+      nameWrap.style.display = mode==='signup'?'block':'none';
+      sub.textContent = mode==='signup'?'이메일, 비밀번호, 이름을 입력해 가입하세요':'이메일과 비밀번호로 로그인하세요';
+      btn.textContent = mode==='signup'?'가입하기':'로그인';
+      toggle.textContent = mode==='signup'?'로그인으로 돌아가기':'회원가입';
+      errEl.textContent='';
+    };
+    async function go(){
+      const email=emailEl.value.trim(), password=pwEl.value;
+      if(!email || !password){ errEl.textContent='이메일과 비밀번호를 입력하세요.'; return; }
+      btn.disabled=true;
+      if(mode==='signup'){
+        const name=(nameEl.value||'').trim();
+        const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ name: name||email } } });
+        btn.disabled=false;
+        if(error){ errEl.textContent=error.message; return; }
+        if(!data.session){ errEl.textContent='가입 완료. 관리자가 이메일 인증을 켜둔 경우 인증 후 로그인해주세요.'; return; }
+        state.user = name||email; state.userEmail = email; state.view='main'; loadAll();
+      } else {
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        btn.disabled=false;
+        if(error){ errEl.textContent='로그인 실패: '+error.message; return; }
+        const u = data.user;
+        state.user = (u.user_metadata && u.user_metadata.name) || u.email;
+        state.userEmail = u.email;
+        state.view='main'; loadAll();
+      }
+    }
+    btn.onclick=go;
+    pwEl.addEventListener('keydown', e=>{ if(e.key==='Enter') go(); });
+    emailEl.focus();
+  }
+
+  function renderShell(){
+    if(state.loading) return `<div style="padding:60px;text-align:center;color:var(--ink-soft);">불러오는 중...</div>`;
+    return `<div class="shell">
+      <div class="sidebar">
+        <div class="brand"><h2>UNION-CRM</h2><div class="who">${esc(state.user)} 님</div></div>
+        ${NAV.map(([k,l])=>`<div class="nav-item ${state.tab===k?'active':''}" data-tab="${k}">${l}</div>`).join('')}
+        <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span></div>
+      </div>
+      <div class="main">
+        ${state.tab==='contracts'?renderContracts():''}
+        ${state.tab==='maintenance'?renderMaintenance():''}
+      </div>
+    </div>
+    ${state.modal?renderModal():''}
+    ${state.mtPickerOpen?renderMtPicker():''}
+    ${state.mergePickerOpen?renderMergePicker():''}
+    ${state.attachViewModal?renderAttachViewModal():''}
+    ${state.confirmModal?renderConfirm():''}
+    ${state.toast?`<div class="toast">${esc(state.toast)}</div>`:''}
+    <input type="file" id="attachFileInput" style="display:none;" accept=".pdf,.doc,.docx,.hwp,.png,.jpg,.jpeg"/>
+    <div style="position:fixed; bottom:18px; right:18px; z-index:150;">
+      ${state.excelMenuOpen?`<div id="excelMenuBox" style="position:absolute; bottom:38px; right:0; background:#fff; border:1px solid var(--grid-strong); border-radius:var(--radius); box-shadow:0 8px 20px rgba(0,0,0,.18); overflow:hidden; width:140px;">
+        ${state.tab==='contracts'?`
+        <button class="excelMenuItem" data-action="import" style="display:block; width:100%; text-align:left; padding:9px 12px; border:none; background:#fff; cursor:pointer; font-size:12.5px; font-family:inherit;">📥 가져오기</button>
+        <button class="excelMenuItem" data-action="template" style="display:block; width:100%; text-align:left; padding:9px 12px; border:none; background:#fff; cursor:pointer; font-size:12.5px; font-family:inherit; border-top:1px solid var(--grid);">📄 양식 다운로드</button>
+        <button class="excelMenuItem" data-action="export" style="display:block; width:100%; text-align:left; padding:9px 12px; border:none; background:#fff; cursor:pointer; font-size:12.5px; font-family:inherit; border-top:1px solid var(--grid);">📤 내보내기</button>
+        `:`
+        <button class="excelMenuItem" data-action="export" style="display:block; width:100%; text-align:left; padding:9px 12px; border:none; background:#fff; cursor:pointer; font-size:12.5px; font-family:inherit;">📤 내보내기</button>
+        `}
+      </div>`:''}
+      <button class="excel-fab" id="excelExportBtn" title="엑셀 가져오기/내보내기">XLS</button>
+    </div>`;
+  }
+
+  function renderConfirm(){
+    const cm = state.confirmModal;
+    return `<div class="modal-bg" id="confirmBg" style="z-index:400;"><div class="modal" style="width:340px;">
+      <div class="modal-body" style="padding:24px 22px 18px; text-align:center;">
+        <p style="font-size:13.5px; margin:0 0 18px;">${esc(cm.message)}</p>
+        <div style="display:flex; gap:8px; justify-content:center;">
+          <button class="btn-sm btn-ghost" id="confirmCancel">취소</button>
+          <button class="btn-sm ${cm.danger?'btn-danger':'btn-primary'}" style="${cm.danger?'':'width:auto; padding:8px 16px;'}" id="confirmYes">${esc(cm.confirmLabel)}</button>
+        </div>
+      </div></div></div>`;
+  }
+  function bindConfirm(){
+    const yes=document.getElementById('confirmYes'), cancel=document.getElementById('confirmCancel');
+    if(yes) yes.onclick=()=>{ const fn=state.confirmModal.onYes; state.confirmModal=null; render(); fn&&fn(); };
+    if(cancel) cancel.onclick=()=>{ state.confirmModal=null; render(); };
+  }
+
+  // ================= CONTRACTS =================
+  function renderContracts(){
+    let list = state.contracts;
+    if(state.ctrStage!=='전체') list = list.filter(c=>c.stage===state.ctrStage);
+    if(state.filterText) list = list.filter(c=>c.name.includes(state.filterText));
+    if(state.ctrFilterBiz!=='전체') list = list.filter(c=>contractVendorList(c).includes(state.ctrFilterBiz));
+    if(state.ctrFilterRep!=='전체') list = list.filter(c=>c.salesRep===state.ctrFilterRep);
+    if(state.ctrFilterRequest!=='전체') list = list.filter(c=>(c.request||'없음')===state.ctrFilterRequest);
+    const counts = {'전체':state.contracts.length};
+    STAGES_CTR.forEach(s=>counts[s]=state.contracts.filter(c=>c.stage===s).length);
+    const repOpts = [...new Set(state.contracts.map(c=>c.salesRep).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+    list = applySortState(list, 'contracts', {code:c=>c.code, name:c=>c.name, customer:c=>custName(c.customerId), endUser:c=>c.endUserName||'', stage:c=>c.stage, request:c=>c.request, contractDate:c=>c.contractDate, amount:c=>c.amount, profitAmount:c=>c.profitAmount, expiryDate:c=>c.expiryDate, salesRep:c=>c.salesRep});
+    const totalAmt = list.reduce((s,c)=>s+Number(c.amount||0),0);
+    const totalProfitAmt = list.reduce((s,c)=>s+Number(c.profitAmount||0),0);
+    const expiring = expiringContracts();
+    return `
+      <div class="page-title">계약관리</div>
+      <div class="page-sub">계약 진행 단계·만료일을 관리합니다.</div>
+      ${expiring.length===0?'':`
+      <div class="alert-box"><h4 class="alertToggle" data-kind="ctr" style="cursor:pointer; user-select:none;">⚠ 만료 임박 계약 (${expiring.length}건) <span style="font-size:11px; font-weight:400;">${state.alertCollapsed.ctr?'▸ 펼치기':'▾ 접기'}</span></h4>
+        ${state.alertCollapsed.ctr?'':`<div class="alert-box-list">${expiring.map(c=>`<div class="alert-item"><span>${esc(c.name)} · ${esc(custName(c.customerId))}</span><span><span class="badge warn">D-${daysUntil(c.expiryDate)}</span> ${esc(c.expiryDate)} <button class="alertDismissBtn" data-kind="ctr" data-id="${c.id}" title="확인" style="border:none; background:var(--accent); color:#fff; border-radius:50%; width:18px; height:18px; cursor:pointer; font-size:11px; line-height:1; margin-left:6px; vertical-align:middle;">&#10003;</button></span></div>`).join('')}</div>`}
+      </div>`}
+      <div class="tabs" style="justify-content:space-between;">
+        <div style="display:flex; gap:4px; flex-wrap:wrap;">
+          ${['전체',...STAGES_CTR.filter(s=>s!=='유지보수')].map(s=>`<div class="tab-btn ${state.ctrStage===s?'active':''}" data-stage="${s}">${s} <span class="cnt">${counts[s]}</span></div>`).join('')}
+        </div>
+        <div class="tab-btn ${state.ctrStage==='유지보수'?'active':''}" data-stage="유지보수">유지보수 <span class="cnt">${counts['유지보수']}</span></div>
+      </div>
+      <div class="toolbar" style="justify-content:space-between;">
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <button class="btn-primary" style="width:auto; padding:8px 16px;" id="addCtrBtn">+ 계약추가</button>
+          <input type="file" id="ctrExcelInput" accept=".xlsx,.xls,.csv" style="display:none;"/>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <input id="ctrFilter" placeholder="계약명 검색" value="${esc(state.filterText)}" style="width:200px;"/>
+          <select id="ctrBizFilterSel"><option value="전체">벤더사 전체</option>${allVendorNames().map(b=>`<option value="${esc(b)}" ${state.ctrFilterBiz===b?'selected':''}>${esc(b)}</option>`).join('')}</select>
+          <select id="ctrRepFilterSel"><option value="전체">영업담당 전체</option>${repOpts.map(r=>`<option value="${esc(r)}" ${state.ctrFilterRep===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
+          <select id="ctrReqFilterSel"><option value="전체">요청 전체</option>${REQUEST_TYPES.map(r=>`<option value="${r}" ${state.ctrFilterRequest===r?'selected':''}>${r}</option>`).join('')}</select>
+          <button class="icon-btn copy" id="ctrMergeBtn" title="선택한 계약 합치기" style="position:relative; width:26px; height:26px;">
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1,4 5,8 1,12"/><polyline points="15,4 11,8 15,12"/><line x1="5" y1="8" x2="11" y2="8"/></svg>
+            ${state.selected.contracts.size>0?`<span style="position:absolute; top:-6px; right:-6px; background:var(--warn); color:#fff; border-radius:8px; font-size:9px; padding:1px 4px; line-height:1.2; font-weight:700;">${state.selected.contracts.size}</span>`:''}
+          </button>
+          ${bulkDeleteBtnHTML('contracts','ctrBulkDelBtn')}
+        </div>
+      </div>
+      <p class="hint" style="margin-top:-10px; margin-bottom:14px;">엑셀 일괄등록(하단 XLS 버튼 → 가져오기) 열 이름: <b>계약명, 고객사명, 앤드유저, 벤더사, 계약일, 계약금액, 이익금액, 만료일, 구매담당자, 구매담당자이메일, 계산서발행일자, 영업담당, 비고</b> (계약명·고객사명은 필수. 처음 보는 고객사명은 <b>자동으로 새 고객사로 등록</b>되어 연결됩니다)</p>
+      <div class="card" style="padding:0;">
+        ${list.length===0?'<div class="empty">해당 조건의 계약이 없습니다.</div>':(()=>{ const pg=paginateList(list,'contracts'); return `
+        <table><thead><tr><th style="width:28px;"><input type="checkbox" id="ctrSelectAll"/></th>${sortTh('계약코드','contracts','code','width:110px;')}${sortTh('계약명','contracts','name','width:260px;')}${sortTh('고객사','contracts','customer','width:130px;')}${sortTh('앤드유저','contracts','endUser','width:130px;')}${sortTh('단계','contracts','stage','text-align:center;')}${sortTh('요청','contracts','request','text-align:center;')}${sortTh('계약일','contracts','contractDate')}${sortTh('계약금액','contracts','amount')}${sortTh('이익금액','contracts','profitAmount')}${sortTh('만료일','contracts','expiryDate')}${sortTh('영업담당','contracts','salesRep')}<th style="text-align:center; width:50px;">첨부</th><th></th></tr></thead>
+        <tbody>${pg.items.map(c=>{
+          const isOpen = state.ctrExpandedId===c.id;
+          const reqBadge = c.request==='계산서 요청' ? `<span class="badge gold">계산서 요청</span>` : c.request==='완료' ? `<span class="badge green">완료</span>` : '-';
+          let rows = `<tr>
+          <td><input type="checkbox" class="ctrRowCheck" data-id="${c.id}" ${state.selected.contracts.has(c.id)?'checked':''}/></td>
+          <td style="font-size:11.5px;">${esc(c.code)}</td><td style="font-size:11.5px;"><span class="ctrNameToggle" data-id="${c.id}" style="cursor:pointer; text-decoration:underline dotted; color:var(--accent-dark);">${esc(c.name)}</span></td><td style="font-size:11.5px;">${esc(custName(c.customerId))}</td><td style="font-size:11.5px;">${c.endUserName?esc(c.endUserName):'-'}</td>
+          <td style="text-align:center;"><span class="badge ${c.stage==='수금완료'?'green':c.stage==='유지보수'?'gold':'blue'}">${esc(c.stage)}</span></td>
+          <td style="text-align:center;">${reqBadge}</td>
+          <td>${esc(c.contractDate)}</td><td class="num">${won(c.amount)}</td><td class="num">${won(c.profitAmount)}</td>
+          <td>${c.expiryDate?esc(c.expiryDate):'-'}</td><td>${esc(c.salesRep)}</td>
+          <td style="text-align:center;">${c.attachmentUrl?`<button class="icon-btn attachViewBtn" data-kind="ctr" data-id="${c.id}" title="첨부 문서 보기">&#128269;</button>`:`<button class="icon-btn attachBtn" data-kind="ctr" data-id="${c.id}" title="계약서 첨부">&#128206;</button>`}</td>
+          <td><button class="icon-btn editCtrBtn" data-id="${c.id}" title="수정">&#9998;</button></td>
+        </tr>`;
+          if(isOpen){
+            rows += `<tr><td colspan="14" style="background:#fafcfb;"><div style="padding:10px 14px; font-size:12.5px;">
+              <div style="margin-bottom:8px;"><b>벤더사:</b> ${c.bizType?esc(c.bizType):'-'} &nbsp;&nbsp; <b>구매담당자:</b> ${c.buyerContact?esc(c.buyerContact):'-'} &nbsp;&nbsp; <b>구매담당자 이메일:</b> ${c.buyerEmail?esc(c.buyerEmail):'-'} &nbsp;&nbsp; <b>계산서 발행일자:</b> ${c.invoiceDate?esc(c.invoiceDate):'-'}</div>
+              ${c.remarks?`<div><b>비고:</b><div style="white-space:pre-wrap; margin-top:4px;">${esc(c.remarks)}</div></div>`:'<div style="color:var(--ink-soft);">등록된 비고가 없습니다.</div>'}
+            </div></td></tr>`;
+          }
+          return rows;
+        }).join('')}
+        <tr><td colspan="8" style="text-align:right; font-weight:700;">합계 (조회 전체 ${list.length}건)</td><td class="num" style="font-weight:700;">${won(totalAmt)}</td><td class="num" style="font-weight:700; color:#c47a13;">${won(totalProfitAmt)}</td><td colspan="4"></td></tr>
+        </tbody></table>
+        ${renderPagination('contracts',pg.page,pg.totalPages,pg.total)}`; })()}
+      </div>`;
+  }
+  function bindContracts(){
+    document.querySelectorAll('[data-stage]').forEach(el=>el.onclick=()=>{ state.ctrStage=el.dataset.stage; state.selected.contracts.clear(); state.pagination.contracts=1; render(); });
+    bindFilterInput('ctrFilter','contracts');
+    const bizSel=document.getElementById('ctrBizFilterSel'); if(bizSel) bizSel.onchange=e=>{ state.ctrFilterBiz=e.target.value; state.selected.contracts.clear(); state.pagination.contracts=1; render(); };
+    const repSel=document.getElementById('ctrRepFilterSel'); if(repSel) repSel.onchange=e=>{ state.ctrFilterRep=e.target.value; state.selected.contracts.clear(); state.pagination.contracts=1; render(); };
+    const reqSel=document.getElementById('ctrReqFilterSel'); if(reqSel) reqSel.onchange=e=>{ state.ctrFilterRequest=e.target.value; state.selected.contracts.clear(); state.pagination.contracts=1; render(); };
+    const add=document.getElementById('addCtrBtn'); if(add) add.onclick=()=>openCtrModal(null);
+    const excelInput=document.getElementById('ctrExcelInput');
+    if(excelInput) excelInput.onchange=(e)=>{
+      const file=e.target.files[0]; if(!file) return;
+      const reader = new FileReader();
+      reader.onload = async (ev)=>{
+        try{
+          const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array', cellDates:true});
+          const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {defval:''});
+          const newCtrs = []; const newCustsAuto = [];
+          function findOrCreateCustomer(nameStr){
+            let cust = state.customers.find(c=>c.name===nameStr) || newCustsAuto.find(c=>c.name===nameStr);
+            if(!cust){
+              cust = makeCustomer(nameStr, [...state.customers,...newCustsAuto]);
+              newCustsAuto.push(cust);
+            }
+            return cust;
+          }
+          rows.forEach((r,idx)=>{
+            const name = String(r['계약명']||'').trim();
+            const custNameStr = String(r['고객사명']||'').trim();
+            if(!name || !custNameStr) return;
+            const cust = findOrCreateCustomer(custNameStr);
+            newCtrs.push({
+              id:'cr_'+Date.now()+'_'+idx, code:nextCode('CR',[...state.contracts,...newCtrs]),
+              name, customerId:cust.id, endUserName:String(r['앤드유저']||'').trim(), bizType:String(r['벤더사']||'').trim(),
+              stage:STAGES_CTR[0], request:'없음',
+              contractDate: r['계약일'] ? excelDateToStr(r['계약일']) : todayStr(), amount:Number(r['계약금액'])||0, profitAmount:Number(r['이익금액'])||0,
+              expiryDate: excelDateToStr(r['만료일']), alertDays:30,
+              buyerContact:String(r['구매담당자']||'').trim(), buyerEmail:String(r['구매담당자이메일']||'').trim(),
+              invoiceDate: excelDateToStr(r['계산서발행일자']),
+              salesRep:String(r['영업담당']||state.user).trim(), remarks:String(r['비고']||'').trim(),
+              opportunityId:null, regDate:todayStr()
+            });
+          });
+          if(newCtrs.length===0){ alert('등록할 데이터를 찾지 못했습니다. 계약명·고객사명을 확인해주세요.'); return; }
+          if(newCustsAuto.length>0){
+            const { error: custErr } = await sb.from('customers').insert(newCustsAuto.map(custToRow));
+            if(custErr){ alert('고객사 자동생성 실패: '+custErr.message); return; }
+            state.customers.unshift(...newCustsAuto);
+          }
+          const { error } = await sb.from('contracts').insert(newCtrs.map(ctrToRow));
+          if(error){ alert('일괄등록 실패: '+error.message); return; }
+          state.contracts.unshift(...newCtrs);
+          showToast(newCtrs.length+'건 일괄등록되었습니다.'+(newCustsAuto.length>0?` (신규 고객사 ${newCustsAuto.length}건 자동생성)`:''));
+          render();
+        }catch(err){ alert('엑셀 파일을 읽는 중 오류가 발생했습니다.'); }
+        finally{ excelInput.value=''; }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+    document.querySelectorAll('.ctrNameToggle').forEach(el=>el.onclick=()=>{ state.ctrExpandedId = state.ctrExpandedId===el.dataset.id ? null : el.dataset.id; render(); });
+    document.querySelectorAll('.editCtrBtn').forEach(b=>b.onclick=()=>openCtrModal(state.contracts.find(c=>c.id===b.dataset.id)));
+    bindTableCheckboxes('contracts','ctrRowCheck','ctrSelectAll');
+    bindBulkDelete('contracts','ctrBulkDelBtn','contracts','contracts','계약');
+    const mergeBtn=document.getElementById('ctrMergeBtn'); if(mergeBtn) mergeBtn.onclick=()=>{
+      if(state.selected.contracts.size<2){ alert('합칠 계약을 2건 이상 체크해주세요.'); return; }
+      const selectedContracts = state.contracts.filter(c=>state.selected.contracts.has(c.id));
+      const firstCust = selectedContracts[0].customerId;
+      if(selectedContracts.some(c=>c.customerId!==firstCust)){ alert('고객사가 서로 다른 계약은 합칠 수 없습니다. 같은 고객사의 계약만 선택해주세요.'); return; }
+      state.mergePickerOpen=true; render();
+    };
+  }
+  function makeCustomer(nameStr, existing){
+    return {id:'cu_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), code:nextCode('CT',existing), name:nameStr, bizRegNo:'', contactName:'', contactEmail:'', contactPhone:'', industry:'', salesRep:state.user, regDate:todayStr()};
+  }
+  function openCtrModal(c){
+    const isNew=!c;
+    const base = {id:'cr_'+Date.now(), code:nextCode('CR',state.contracts), name:'', customerId:'', endUserName:'', bizType:'', stage:STAGES_CTR[0], request:'없음', contractDate:todayStr(), amount:0, profitAmount:0, expiryDate:'', alertDays:30, buyerContact:'', buyerEmail:'', invoiceDate:'', salesRep:state.user, remarks:'', opportunityId:null, regDate:todayStr()};
+    const data = c? {...c} : base;
+    if(data.request===undefined) data.request='없음';
+    if(data.remarks===undefined) data.remarks='';
+    if(data.endUserName===undefined) data.endUserName='';
+    state.modal = {
+      type:'contract', title: isNew?'계약 추가':'계약 수정',
+      data, isNew,
+      fields:[
+        {k:'name',label:'계약명',type:'text'},
+        {k:'customerId',label:'고객사',type:'customersearch'},
+        {k:'endUserName',label:'앤드유저 (최종납품처, 직접 입력)',type:'text'},
+        {k:'bizType',label:'벤더사 (여러 개면 쉼표로 구분)',type:'text'},
+        {k:'stage',label:'계약단계',type:'select',opts:STAGES_CTR},
+        {k:'request',label:'요청 (경영지원요청)',type:'select',opts:REQUEST_TYPES},
+        {k:'contractDate',label:'계약일',type:'date'},
+        {k:'expiryDate',label:'계약 만료일',type:'date'},
+        {k:'alertDays',label:'만료 알림 (며칠 전부터 표시)',type:'number'},
+        {k:'amount',label:'계약금액',type:'number'},
+        {k:'profitAmount',label:'이익금액',type:'number'},
+        {k:'buyerContact',label:'구매담당자',type:'text'},
+        {k:'buyerEmail',label:'구매담당자 이메일',type:'text'},
+        {k:'invoiceDate',label:'계산서 발행일자',type:'date'},
+        {k:'salesRep',label:'영업담당',type:'select',opts:buildRepOpts(data.salesRep),disabled:!state.isAdmin},
+        {k:'remarks',label:'비고',type:'remarkslog'},
+      ]
+    };
+    render();
+  }
+  function renderMergePicker(){
+    const selected = state.contracts.filter(c=>state.selected.contracts.has(c.id));
+    return `<div class="modal-bg" id="mergePickBg"><div class="modal">
+      <div class="modal-head"><h3>계약 합치기</h3><button class="modal-close" id="mergePickClose">&times;</button></div>
+      <div class="modal-body">
+        <p class="hint" style="margin-top:0;">기준이 될 계약코드를 하나 선택하세요. 계약금액·이익금액이 합산되고 나머지 계약은 삭제됩니다.</p>
+        ${selected.map((c,i)=>`<label class="pick-row" style="cursor:pointer; display:flex; align-items:center; gap:10px;">
+          <input type="radio" name="mergeTarget" value="${c.id}" ${i===0?'checked':''}/>
+          <div class="info" style="flex:1;"><div class="name">${esc(c.code)} · ${esc(c.name)}</div><div class="sub">${esc(custName(c.customerId))} · ${won(c.amount)}</div></div>
+        </label>`).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm btn-ghost" id="mergePickCancel">취소</button>
+        <button class="btn-primary" style="width:auto; padding:8px 20px;" id="mergePickConfirm">합치기</button>
+      </div>
+    </div></div>`;
+  }
+  function bindMergePicker(){
+    const bg=document.getElementById('mergePickBg'), close=document.getElementById('mergePickClose'), cancel=document.getElementById('mergePickCancel'), confirm=document.getElementById('mergePickConfirm');
+    const closeFn=()=>{ state.mergePickerOpen=false; render(); };
+    if(close) close.onclick=closeFn;
+    if(cancel) cancel.onclick=closeFn;
+    if(bg) bg.addEventListener('click', e=>{ if(e.target.id==='mergePickBg') closeFn(); });
+    if(confirm) confirm.onclick=async ()=>{
+      const targetRadio = document.querySelector('input[name="mergeTarget"]:checked');
+      if(!targetRadio) return;
+      const targetId = targetRadio.value;
+      await mergeContracts(targetId, [...state.selected.contracts].filter(id=>id!==targetId));
+    };
+  }
+  async function mergeContracts(targetId, otherIds){
+    const target = state.contracts.find(c=>c.id===targetId);
+    if(!target) return;
+    const others = otherIds.map(id=>state.contracts.find(c=>c.id===id)).filter(Boolean);
+    if(others.some(c=>c.customerId!==target.customerId)){ alert('고객사가 서로 다른 계약은 합칠 수 없습니다. 같은 고객사의 계약만 선택해주세요.'); return; }
+    target.amount = Number(target.amount||0) + others.reduce((s,c)=>s+Number(c.amount||0),0);
+    target.profitAmount = Number(target.profitAmount||0) + others.reduce((s,c)=>s+Number(c.profitAmount||0),0);
+    const vendors = new Set(contractVendorList(target)); others.forEach(c=>contractVendorList(c).forEach(v=>vendors.add(v)));
+    target.bizType = [...vendors].join(', ');
+    const { error } = await sb.from('contracts').update(ctrToRow(target)).eq('id', target.id);
+    if(error){ alert('계약 합치기 실패: '+error.message); return; }
+    for(const c of others){ await sb.from('contracts').delete().eq('id', c.id); }
+    state.contracts = state.contracts.filter(c=>c.id===target.id || !otherIds.includes(c.id));
+    state.selected.contracts = new Set();
+    state.mergePickerOpen = false;
+    showToast(target.code+' 로 합쳐졌습니다.');
+  }
+
+  // ================= MAINTENANCE CONTRACTS =================
+  function renderMaintenance(){
+    let list = state.maintenance;
+    if(state.filterText) list = list.filter(m=>m.name.includes(state.filterText));
+    if(state.mtFilterRep!=='전체') list = list.filter(m=>m.salesRep===state.mtFilterRep);
+    if(state.mtFilterCycle!=='전체') list = list.filter(m=>m.billingCycle===state.mtFilterCycle);
+    if(state.mtFilterRenewal!=='전체') list = list.filter(m=>m.renewalType===state.mtFilterRenewal);
+    const repOpts = [...new Set(state.maintenance.map(m=>m.salesRep).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+    list = applySortState(list, 'maintenance', {code:m=>contractCode(m.contractId), name:m=>m.name, customer:m=>contractCustomerName(m.contractId), endUser:m=>contractEndUserName(m.contractId), vendor:m=>contractVendor(m.contractId), startDate:m=>m.startDate, endDate:m=>m.endDate, billingCycle:m=>m.billingCycle, amount:m=>m.amount, profitAmount:m=>m.profitAmount, renewalType:m=>m.renewalType, salesRep:m=>m.salesRep});
+    const totalAmt = list.reduce((s,m)=>s+Number(m.amount||0),0);
+    const totalProfit = list.reduce((s,m)=>s+Number(m.profitAmount||0),0);
+    const expiring = expiringMaintenance();
+    return `
+      <div class="page-title">유지보수관리</div>
+      <div class="page-sub">판매 계약에 연결된 유지보수(갱신) 계약을 관리합니다.</div>
+      ${expiring.length===0?'':`
+      <div class="alert-box"><h4 class="alertToggle" data-kind="mt" style="cursor:pointer; user-select:none;">⚠ 만료 임박 유지보수 (${expiring.length}건) <span style="font-size:11px; font-weight:400;">${state.alertCollapsed.mt?'▸ 펼치기':'▾ 접기'}</span></h4>
+        ${state.alertCollapsed.mt?'':`<div class="alert-box-list">${expiring.map(m=>`<div class="alert-item"><span>${esc(m.name)} · ${esc(contractCustomerName(m.contractId))}</span><span><span class="badge warn">D-${daysUntil(m.endDate)}</span> ${esc(m.endDate)} <button class="alertDismissBtn" data-kind="mt" data-id="${m.id}" title="확인" style="border:none; background:var(--accent); color:#fff; border-radius:50%; width:18px; height:18px; cursor:pointer; font-size:11px; line-height:1; margin-left:6px; vertical-align:middle;">&#10003;</button></span></div>`).join('')}</div>`}
+      </div>`}
+      <div class="toolbar" style="justify-content:space-between;">
+        <button class="btn-primary" style="width:auto; padding:8px 16px;" id="addMtBtn">+ 유지보수 추가</button>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <input id="mtFilter" placeholder="유지보수명 검색" value="${esc(state.filterText)}" style="width:200px;"/>
+          <select id="mtRepFilterSel"><option value="전체">담당자 전체</option>${repOpts.map(r=>`<option value="${esc(r)}" ${state.mtFilterRep===r?'selected':''}>${esc(r)}</option>`).join('')}</select>
+          <select id="mtCycleFilterSel"><option value="전체">결제주기 전체</option>${BILLING_CYCLES.map(c=>`<option value="${c}" ${state.mtFilterCycle===c?'selected':''}>${c}</option>`).join('')}</select>
+          <select id="mtRenewalFilterSel"><option value="전체">갱신여부 전체</option>${RENEWAL_TYPES.map(r=>`<option value="${r}" ${state.mtFilterRenewal===r?'selected':''}>${r}</option>`).join('')}</select>
+          ${bulkDeleteBtnHTML('maintenance','mtBulkDelBtn')}
+        </div>
+      </div>
+      <div class="card" style="padding:0;">
+        ${list.length===0?'<div class="empty">등록된 유지보수 계약이 없습니다.</div>':(()=>{ const pg=paginateList(list,'maintenance'); return `
+        <table><thead><tr><th style="width:28px;"><input type="checkbox" id="mtSelectAll"/></th>${sortTh('계약코드','maintenance','code')}${sortTh('유지보수명','maintenance','name')}${sortTh('고객사','maintenance','customer')}${sortTh('앤드유저','maintenance','endUser')}${sortTh('벤더사','maintenance','vendor')}${sortTh('시작일','maintenance','startDate')}${sortTh('종료일','maintenance','endDate')}${sortTh('결제주기','maintenance','billingCycle')}${sortTh('금액','maintenance','amount')}${sortTh('이익금액','maintenance','profitAmount')}${sortTh('갱신여부','maintenance','renewalType')}${sortTh('담당자','maintenance','salesRep')}<th style="text-align:center; width:50px;">첨부</th><th></th></tr></thead>
+        <tbody>${pg.items.map(m=>{
+          const isOpen = state.mtExpandedId===m.id;
+          let rows = `<tr>
+          <td><input type="checkbox" class="mtRowCheck" data-id="${m.id}" ${state.selected.maintenance.has(m.id)?'checked':''}/></td>
+          <td>${esc(contractCode(m.contractId))}</td>
+          <td><span class="mtNameToggle" data-id="${m.id}" style="cursor:pointer; text-decoration:underline dotted; color:var(--accent-dark);">${esc(m.name)}</span></td>
+          <td>${esc(contractCustomerName(m.contractId))}</td>
+          <td>${esc(contractEndUserName(m.contractId))}</td>
+          <td>${esc(contractVendor(m.contractId))}</td>
+          <td>${m.startDate?esc(m.startDate):'-'}</td><td>${m.endDate?esc(m.endDate):'-'}</td>
+          <td>${esc(m.billingCycle)}</td><td class="num">${won(m.amount)}</td><td class="num">${won(m.profitAmount)}</td>
+          <td><span class="badge ${m.renewalType==='자동갱신'?'green':m.renewalType==='종료예정'?'warn':'blue'}">${esc(m.renewalType)}</span></td>
+          <td>${esc(m.salesRep)}</td>
+          <td style="text-align:center;">${m.attachmentUrl?`<button class="icon-btn attachViewBtn" data-kind="mt" data-id="${m.id}" title="첨부 문서 보기">&#128269;</button>`:`<button class="icon-btn attachBtn" data-kind="mt" data-id="${m.id}" title="계약서 첨부">&#128206;</button>`}</td>
+          <td><button class="icon-btn editMtBtn" data-id="${m.id}" title="수정">&#9998;</button></td>
+        </tr>`;
+          if(isOpen){
+            rows += `<tr><td colspan="15" style="background:#fafcfb;"><div style="padding:10px 14px; font-size:12.5px;">
+              ${m.remarks?`<div><b>비고:</b><div style="white-space:pre-wrap; margin-top:4px;">${esc(m.remarks)}</div></div>`:'<div style="color:var(--ink-soft);">등록된 비고가 없습니다.</div>'}
+            </div></td></tr>`;
+          }
+          return rows;
+        }).join('')}
+        <tr><td colspan="9" style="text-align:right; font-weight:700;">합계 (조회 전체 ${list.length}건)</td><td class="num" style="font-weight:700;">${won(totalAmt)}</td><td class="num" style="font-weight:700; color:#c47a13;">${won(totalProfit)}</td><td colspan="4"></td></tr>
+        </tbody></table>
+        ${renderPagination('maintenance',pg.page,pg.totalPages,pg.total)}`; })()}
+      </div>`;
+  }
+  function bindMaintenance(){
+    bindFilterInput('mtFilter','maintenance');
+    const repSel=document.getElementById('mtRepFilterSel'); if(repSel) repSel.onchange=e=>{ state.mtFilterRep=e.target.value; state.selected.maintenance.clear(); state.pagination.maintenance=1; render(); };
+    const cycleSel=document.getElementById('mtCycleFilterSel'); if(cycleSel) cycleSel.onchange=e=>{ state.mtFilterCycle=e.target.value; state.selected.maintenance.clear(); state.pagination.maintenance=1; render(); };
+    const renewalSel=document.getElementById('mtRenewalFilterSel'); if(renewalSel) renewalSel.onchange=e=>{ state.mtFilterRenewal=e.target.value; state.selected.maintenance.clear(); state.pagination.maintenance=1; render(); };
+    const add=document.getElementById('addMtBtn'); if(add) add.onclick=()=>{ state.mtPickerOpen=true; render(); };
+    document.querySelectorAll('.mtNameToggle').forEach(el=>el.onclick=()=>{ state.mtExpandedId = state.mtExpandedId===el.dataset.id ? null : el.dataset.id; render(); });
+    document.querySelectorAll('.editMtBtn').forEach(b=>b.onclick=()=>openMtModal(state.maintenance.find(m=>m.id===b.dataset.id)));
+    bindTableCheckboxes('maintenance','mtRowCheck','mtSelectAll');
+    bindBulkDelete('maintenance','mtBulkDelBtn','maintenance_contracts','maintenance','유지보수');
+  }
+  function openMtModal(m, fromContract){
+    const isNew=!m;
+    let base = {id:'mt_'+Date.now(), name:'', contractId:'', startDate:todayStr(), endDate:'', billingCycle:BILLING_CYCLES[0], amount:0, profitAmount:0, renewalType:RENEWAL_TYPES[0], salesRep:state.user, alertDays:30, remarks:'', regDate:todayStr()};
+    if(fromContract){ base = {...base, name:fromContract.name+' 유지보수', contractId:fromContract.id, salesRep:fromContract.salesRep, amount:fromContract.amount||0, profitAmount:fromContract.profitAmount||0}; }
+    const data = m? {...m} : base;
+    const linkedContract = state.contracts.find(x=>x.id===data.contractId);
+    state.modal = {
+      type:'maintenance', title: isNew?'유지보수 계약 추가':'유지보수 계약 수정',
+      data, isNew,
+      infoLine: linkedContract ? `연결된 계약: ${linkedContract.code} · ${linkedContract.name} (${custName(linkedContract.customerId)})` : '',
+      fields:[
+        {k:'name',label:'유지보수명',type:'text'},
+        {k:'startDate',label:'유지보수 시작일',type:'date'},
+        {k:'endDate',label:'유지보수 종료일',type:'date'},
+        {k:'alertDays',label:'만료 알림 (며칠 전부터 표시)',type:'number'},
+        {k:'billingCycle',label:'결제주기',type:'select',opts:BILLING_CYCLES},
+        {k:'amount',label:'유지보수 금액',type:'number'},
+        {k:'profitAmount',label:'이익금액',type:'number'},
+        {k:'renewalType',label:'갱신여부',type:'select',opts:RENEWAL_TYPES},
+        {k:'salesRep',label:'담당자',type:'select',opts:buildRepOpts(data.salesRep),disabled:!state.isAdmin},
+        {k:'remarks',label:'비고',type:'remarkslog'},
+      ]
+    };
+    render();
+  }
+  function renderMtPicker(){
+    const list = sortedContracts().filter(c=>c.stage==='유지보수' && !state.maintenance.some(m=>m.contractId===c.id));
+    return `<div class="modal-bg" id="mtPickBg"><div class="modal">
+      <div class="modal-head"><h3>유지보수를 연결할 계약 선택</h3><button class="modal-close" id="mtPickClose">&times;</button></div>
+      <div class="modal-body">
+        ${list.length===0?'<div class="empty">추가 가능한 계약이 없습니다.<br/>계약단계가 "유지보수"이면서 아직 유지보수가 등록되지 않은 계약만 목록에 표시됩니다.</div>':
+        list.map(c=>`<div class="pick-row"><div class="info"><div class="name">${esc(c.name)}</div><div class="sub">${esc(custName(c.customerId))} · ${esc(c.bizType)} · ${won(c.amount)}</div></div><button class="btn-sm pickCtrBtn" data-id="${c.id}">이 계약으로 유지보수 생성</button></div>`).join('')}
+      </div>
+      <div class="modal-actions"><button class="btn-sm btn-ghost" id="mtPickCancel">닫기</button></div>
+    </div></div>`;
+  }
+  function bindMtPicker(){
+    const bg=document.getElementById('mtPickBg'), close=document.getElementById('mtPickClose'), cancel=document.getElementById('mtPickCancel');
+    const closeFn=()=>{ state.mtPickerOpen=false; render(); };
+    if(close) close.onclick=closeFn;
+    if(cancel) cancel.onclick=closeFn;
+    if(bg) bg.addEventListener('click', e=>{ if(e.target.id==='mtPickBg') closeFn(); });
+    document.querySelectorAll('.pickCtrBtn').forEach(b=>b.onclick=()=>{
+      const ctr = state.contracts.find(c=>c.id===b.dataset.id);
+      state.mtPickerOpen=false;
+      openMtModal(null, ctr);
+    });
+  }
+  function renderAttachViewModal(){
+    const {kind, id} = state.attachViewModal;
+    const rec = kind==='ctr' ? state.contracts.find(x=>x.id===id) : state.maintenance.find(x=>x.id===id);
+    if(!rec || !rec.attachmentUrl) return '';
+    const url = rec.attachmentUrl, name = rec.attachmentName||'첨부파일';
+    const ext = (name.split('.').pop()||'').toLowerCase();
+    let body;
+    if(ext==='pdf'){
+      body = `<iframe src="${esc(url)}" style="width:100%; height:82vh; border:1px solid var(--grid);"></iframe>`;
+    } else if(['png','jpg','jpeg','gif','webp'].includes(ext)){
+      body = `<div style="max-height:82vh; overflow:auto; text-align:center;"><img src="${esc(url)}" style="max-width:100%;"/></div>`;
+    } else {
+      body = `<div style="text-align:center; padding:60px 30px;"><p style="margin-bottom:14px;">미리보기를 지원하지 않는 파일 형식입니다.</p><a href="${esc(url)}" target="_blank" class="btn-primary" style="display:inline-block; width:auto; padding:10px 20px; text-decoration:none;">${esc(name)} 다운로드</a></div>`;
+    }
+    return `<div class="modal-bg" id="attachViewBg" style="z-index:300; padding:20px 0;"><div class="modal" style="width:96vw; max-width:1400px;">
+      <div class="modal-head"><h3 style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(name)}</h3>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <button class="icon-btn danger" id="attachDeleteBtn" title="첨부 삭제">&minus;</button>
+          <button class="modal-close" id="attachViewClose">&times;</button>
+        </div>
+      </div>
+      <div class="modal-body" style="max-height:86vh; padding:14px;">${body}</div>
+    </div></div>`;
+  }
+
+  // ================= GENERIC MODAL (contract / maintenance) =================
+  function renderModal(){
+    const m = state.modal, d = m.data;
+    return `<div class="modal-bg" id="genModalBg"><div class="modal">
+      <div class="modal-head"><h3>${esc(m.title)}</h3><button class="modal-close" id="genModalClose">&times;</button></div>
+      <div class="modal-body">
+        ${m.infoLine?`<div class="hint" style="background:var(--header-fill); padding:8px 10px; border-radius:var(--radius); margin-bottom:14px;">${esc(m.infoLine)}</div>`:''}
+        ${m.fields.map(f=>{
+          const val = d[f.k];
+          if(f.type==='select'){
+            return `<div class="field"><label>${f.label}</label><select data-k="${f.k}" ${f.disabled?'disabled':''}>
+              ${f.opts.map(o=>`<option value="${esc(o)}" ${String(val)===String(o)?'selected':''}>${esc(o)}</option>`).join('')}
+            </select>${f.disabled?'<p class="hint">일반 담당자는 본인 이름으로 고정됩니다.</p>':''}</div>`;
+          }
+          if(f.type==='remarkslog'){
+            return `<div class="field"><label>${f.label}</label>
+              <div id="genRemarksLog" style="border:1px solid var(--grid-strong); border-radius:var(--radius); padding:8px 10px; max-height:120px; overflow-y:auto; font-size:12.5px; margin-bottom:6px; background:#fbfbfa;"></div>
+              <textarea id="genRemarksInput" class="omField" rows="1" placeholder="비고를 입력하고 Enter를 누르세요 (줄바꿈은 Shift+Enter)"></textarea>
+            </div>`;
+          }
+          if(f.type==='customersearch'){
+            return `<div class="field" style="position:relative;"><label>${f.label}</label>
+              <input type="text" id="cs_${f.k}" class="omField" placeholder="고객사명을 입력하세요" value="${val?esc(custName(val)):esc(d._newCustomerName||'')}" autocomplete="off"/>
+              <div id="cs_${f.k}_sugg" style="display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--grid-strong); max-height:190px; overflow-y:auto; z-index:50; border-radius:0 0 var(--radius) var(--radius); box-shadow:0 6px 14px rgba(0,0,0,.12);"></div>
+            </div>`;
+          }
+          return `<div class="field"><label>${f.label}</label><input data-k="${f.k}" type="${f.type}" value="${esc(val)}"/></div>`;
+        }).join('')}
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm btn-ghost" id="genModalCancel">취소</button>
+        <button class="btn-primary" style="width:auto; padding:8px 20px;" id="genModalSave">저장</button>
+      </div>
+    </div></div>`;
+  }
+  function bindModal(){
+    const m = state.modal; if(!m) return;
+    const bg=document.getElementById('genModalBg'), close=document.getElementById('genModalClose'), cancel=document.getElementById('genModalCancel'), save=document.getElementById('genModalSave');
+    const closeFn=()=>{ state.modal=null; render(); };
+    if(close) close.onclick=closeFn;
+    if(cancel) cancel.onclick=closeFn;
+    if(bg) bg.addEventListener('click', e=>{ if(e.target.id==='genModalBg') closeFn(); });
+    document.querySelectorAll('[data-k]').forEach(el=>{
+      el.addEventListener(el.tagName==='SELECT'?'change':'input', e=>{ m.data[e.target.dataset.k]=e.target.value; });
+    });
+    const remarksLogField = m.fields.find(f=>f.type==='remarkslog');
+    if(remarksLogField){
+      const logEl=document.getElementById('genRemarksLog'), inputEl=document.getElementById('genRemarksInput');
+      if(logEl && inputEl) bindRemarksLogField(m.data, remarksLogField.k, logEl, inputEl);
+    }
+    m.fields.filter(f=>f.type==='customersearch').forEach(f=>{
+      bindCustomerSearchField(m.data, f.k, document.getElementById('cs_'+f.k), document.getElementById('cs_'+f.k+'_sugg'));
+    });
+    if(save) save.onclick=async ()=>{
+      const d = m.data;
+      if(!String(d.name||'').trim()){ alert('이름을 입력하세요.'); return; }
+      m.fields.forEach(f=>{ if(f.type==='number') d[f.k]=Number(d[f.k])||0; });
+      // 계약: 목록에 없는 고객사명을 입력했으면 새 고객사로 등록 후 연결
+      if(m.type==='contract' && !d.customerId && d._newCustomerName){
+        const existing = state.customers.find(c=>c.name===d._newCustomerName);
+        if(existing){ d.customerId = existing.id; }
+        else {
+          const nc = makeCustomer(d._newCustomerName, state.customers);
+          const { error: ce } = await sb.from('customers').insert(custToRow(nc));
+          if(ce){ alert('고객사 등록 실패: '+ce.message); return; }
+          state.customers.unshift(nc);
+          d.customerId = nc.id;
+        }
+      }
+      delete d._newCustomerName;
+      const cfg = m.type==='contract'
+        ? {table:'contracts', field:'contracts', toRow:ctrToRow}
+        : {table:'maintenance_contracts', field:'maintenance', toRow:mtToRow};
+      const row = cfg.toRow(d);
+      if(m.isNew){
+        const { error } = await sb.from(cfg.table).insert(row);
+        if(error){ alert('저장 실패: '+error.message); return; }
+        state[cfg.field].unshift(d);
+      } else {
+        const { error } = await sb.from(cfg.table).update(row).eq('id', d.id);
+        if(error){ alert('저장 실패: '+error.message); return; }
+        const i=state[cfg.field].findIndex(x=>x.id===d.id); if(i>-1) state[cfg.field][i]=d;
+      }
+      state.modal=null;
+      showToast('저장되었습니다.');
+    };
+  }
+
+  // ================= SHELL BINDING =================
+  function bindShell(){
+    if(state.loading) return;
+    document.querySelectorAll('.nav-item').forEach(el=>{ el.onclick=()=>{ state.tab=el.dataset.tab; state.filterText=''; state.ctrStage='전체'; Object.keys(state.selected).forEach(k=>state.selected[k].clear()); Object.keys(state.pagination).forEach(k=>state.pagination[k]=1); render(); }; });
+    document.querySelectorAll('.sort-th').forEach(el=>{
+      el.onclick=()=>{
+        const table = el.dataset.table, col = el.dataset.col;
+        const st = state.sortState[table] || (state.sortState[table]={key:null,dir:'asc'});
+        if(st.key===col){ st.dir = st.dir==='asc'?'desc':'asc'; } else { st.key=col; st.dir='asc'; }
+        render();
+      };
+    });
+    document.querySelectorAll('.alertToggle').forEach(el=>{ el.onclick=()=>{ const k=el.dataset.kind; state.alertCollapsed[k] = !state.alertCollapsed[k]; render(); }; });
+    document.querySelectorAll('.alertDismissBtn').forEach(el=>{ el.onclick=(e)=>{ e.stopPropagation(); dismissExpiryAlert(el.dataset.kind, el.dataset.id); }; });
+    document.querySelectorAll('.pageBtn').forEach(btn=>{ btn.onclick=()=>{ state.pagination[btn.dataset.table]=Number(btn.dataset.page); render(); }; });
+    document.querySelectorAll('.attachBtn').forEach(btn=>{
+      btn.onclick=()=>{
+        state.attachUploadTarget = {kind:btn.dataset.kind, id:btn.dataset.id};
+        const fileInput = document.getElementById('attachFileInput');
+        if(fileInput) fileInput.click();
+      };
+    });
+    const attachFileInput = document.getElementById('attachFileInput');
+    if(attachFileInput) attachFileInput.onchange = async (e)=>{
+      const file = e.target.files[0]; if(!file || !state.attachUploadTarget) return;
+      const { kind, id } = state.attachUploadTarget;
+      const table = kind==='ctr' ? 'contracts' : 'maintenance_contracts';
+      const path = `${kind}/${id}/${Date.now()}_${file.name}`;
+      const { error: upErr } = await sb.storage.from('attachments').upload(path, file, {upsert:true});
+      if(upErr){ alert('업로드 실패: '+upErr.message); attachFileInput.value=''; return; }
+      const { data: urlData } = sb.storage.from('attachments').getPublicUrl(path);
+      const url = urlData.publicUrl;
+      const { error: dbErr } = await sb.from(table).update({attachment_url:url, attachment_name:file.name, attachment_path:path}).eq('id', id);
+      if(dbErr){ alert('저장 실패: '+dbErr.message); attachFileInput.value=''; return; }
+      const arr = kind==='ctr' ? state.contracts : state.maintenance;
+      const rec = arr.find(x=>x.id===id);
+      if(rec){ rec.attachmentUrl=url; rec.attachmentName=file.name; rec.attachmentPath=path; }
+      attachFileInput.value='';
+      showToast('첨부파일이 등록되었습니다.');
+    };
+    document.querySelectorAll('.attachViewBtn').forEach(btn=>{ btn.onclick=()=>{ state.attachViewModal = {kind:btn.dataset.kind, id:btn.dataset.id}; render(); }; });
+    const attachViewBg=document.getElementById('attachViewBg'), attachViewClose=document.getElementById('attachViewClose'), attachDeleteBtn=document.getElementById('attachDeleteBtn');
+    const closeAttachView=()=>{ state.attachViewModal=null; render(); };
+    if(attachViewClose) attachViewClose.onclick=closeAttachView;
+    if(attachViewBg) attachViewBg.addEventListener('click', e=>{ if(e.target.id==='attachViewBg') closeAttachView(); });
+    if(attachDeleteBtn) attachDeleteBtn.onclick=()=>{
+      const { kind, id } = state.attachViewModal;
+      askConfirm('첨부된 문서를 삭제할까요?', async ()=>{
+        const table = kind==='ctr' ? 'contracts' : 'maintenance_contracts';
+        const arr = kind==='ctr' ? state.contracts : state.maintenance;
+        const rec = arr.find(x=>x.id===id);
+        if(rec && rec.attachmentPath){ await sb.storage.from('attachments').remove([rec.attachmentPath]); }
+        await sb.from(table).update({attachment_url:null, attachment_name:null, attachment_path:null}).eq('id', id);
+        if(rec){ rec.attachmentUrl=''; rec.attachmentName=''; rec.attachmentPath=''; }
+        state.attachViewModal=null;
+        showToast('첨부파일이 삭제되었습니다.');
+      });
+    };
+    const logout=document.getElementById('logoutBtn'); if(logout) logout.onclick=async ()=>{ await sb.auth.signOut(); state.view='login'; state.user=null; render(); };
+    const excelBtn=document.getElementById('excelExportBtn');
+    if(excelBtn) excelBtn.onclick=(e)=>{ e.stopPropagation(); state.excelMenuOpen = !state.excelMenuOpen; render(); };
+    document.querySelectorAll('.excelMenuItem').forEach(btn=>{
+      btn.onclick=(e)=>{
+        e.stopPropagation();
+        state.excelMenuOpen=false;
+        if(btn.dataset.action==='export'){ exportCurrentPage(); render(); }
+        else if(btn.dataset.action==='template'){ downloadTemplate(); render(); }
+        else { const input = document.getElementById('ctrExcelInput'); if(input) input.click(); }
+      };
+    });
+    if(state.excelMenuOpen){
+      document.addEventListener('click', function closeExcelMenu(e){
+        if(!e.target.closest('#excelMenuBox') && e.target.id!=='excelExportBtn'){ state.excelMenuOpen=false; render(); }
+      }, {once:true});
+    }
+    if(state.tab==='contracts') bindContracts();
+    if(state.tab==='maintenance') bindMaintenance();
+    bindModal();
+    bindMtPicker();
+    bindMergePicker();
+    bindConfirm();
+  }
+
+  async function init(){
+    const { data } = await sb.auth.getSession();
+    if(data && data.session){
+      const u = data.session.user;
+      state.user = (u.user_metadata && u.user_metadata.name) || u.email;
+      state.userEmail = u.email;
+      state.view='main';
+      await loadAll();
+    } else {
+      render();
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
