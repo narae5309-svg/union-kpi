@@ -791,6 +791,7 @@
   // ---- 카카오톡 공유 (Kakao JavaScript SDK) ----
   const KAKAO_JS_KEY = '9d6e404932d14d6f3801bee6c4457b78';
   const KAKAO_SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.8.3/kakao.min.js';
+  const KAKAO_LINK_URL = 'https://union-kpi.vercel.app';
   let kakaoLoading = null;
   function loadKakao(){
     if(window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) return Promise.resolve(window.Kakao);
@@ -806,7 +807,8 @@
   const clip = (v,n) => { v=String(v==null?'':v); return v.length>n ? v.slice(0,n-1)+'…' : v; };
   function shortWon(n){ const w='₩'+won(n); if(w.length<=11) return w; const man=Math.round(num(n)/10000); const m=man.toLocaleString('ko-KR')+'만원'; return m.length<=11 ? m : Math.round(num(n)/100000000).toLocaleString('ko-KR')+'억원'; }
   function kakaoCard(kind, id, withAmount){
-    const url = location.origin + location.pathname;
+    // 카카오 [제품 링크 관리]에 등록한 주소로 고정 (다른 주소로 접속해도 링크 오류가 나지 않게)
+    const url = KAKAO_LINK_URL;
     const link = {webUrl:url, mobileWebUrl:url};
     if(kind==='ctr'){
       const c=contractById(id); if(!c) return null;
