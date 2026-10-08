@@ -67,6 +67,7 @@
   .notify-btn{margin:10px 14px 0; padding:7px 10px; border:1px solid #2e3c4a; border-radius:var(--radius); font-size:12px; cursor:pointer;}
   .notify-btn:hover{background:#243342;}
   .nav-footer{padding:12px 18px 0; margin-top:12px; border-top:1px solid #2e3c4a;}
+  .conn-info{margin-top:8px; font-size:10px; color:#6f7c88; line-height:1.5; word-break:break-all;}
   .logout-link{color:#8b95a1; font-size:11px; cursor:pointer;}
   .logout-link:hover{color:#fff;}
 
@@ -581,7 +582,9 @@
         }).join('')}</div>
         <div class="side-bottom">
           ${p==='unsupported'?'':`<div class="notify-btn" id="notifyBtn" style="color:${p==='granted'?'#7fe0d9':'#cfd6dd'};">${notifyLabel}</div>`}
-          <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span></div>
+          <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span>
+            <div class="conn-info" title="다른 컴퓨터와 비교할 때 확인하세요">${esc(state.userEmail||'')}<br/>DB ${esc(SUPABASE_URL.replace('https://','').split('.')[0].slice(0,6))} · 계약 ${state.contracts.length} · 고객 ${partnersOf('customer').length}</div>
+          </div>
         </div>
       </div>
       <div class="main">
@@ -795,7 +798,8 @@
   // ---- 카카오톡 공유 (Kakao JavaScript SDK) ----
   const KAKAO_JS_KEY = '9d6e404932d14d6f3801bee6c4457b78';
   const KAKAO_SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.8.3/kakao.min.js';
-  const KAKAO_LINK_URL = 'https://union-kpi.vercel.app';
+  // 직원용 카톡 링크: 지금 접속한 주소 (카카오 [제품 링크 관리]에 등록된 주소여야 함)
+  const KAKAO_LINK_URL = /^https:\/\//.test(location.origin) ? location.origin : 'https://union-clm.vercel.app';
   // 고객사에 보낼 때 카드가 연결될 주소 (회사 홈페이지). 카카오 [제품 링크 관리] 웹 도메인에도 등록해야 합니다.
   const COMPANY_URL = 'https://www.unionsystems.co.kr';
   const COMPANY_NAME = '유니온시스템즈';
