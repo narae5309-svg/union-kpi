@@ -155,6 +155,10 @@
   .dday{font-family:Consolas,monospace; font-weight:800; font-size:12px;}
   .lane.over .dday{color:var(--warn);} .lane.w1 .dday{color:var(--orange);} .lane.m1 .dday{color:var(--gold);}
 
+  .seg{display:flex; border:1px solid var(--grid-strong); border-radius:8px; overflow:hidden;}
+  .seg-btn{flex:1; padding:9px; border:none; background:#fff; font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer;}
+  .seg-btn + .seg-btn{border-left:1px solid var(--grid-strong);}
+  .seg-btn.on{background:var(--accent-dark); color:#fff;}
   .kakao-mini{width:26px; height:26px; border:none; border-radius:7px; background:#fee500; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0;}
   .kakao-mini:hover{background:#f5dc00;}
   .kakao-btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; border:none; border-radius:8px; background:#fee500; color:#191919; font-size:15px; font-weight:800; cursor:pointer;}
@@ -792,6 +796,9 @@
   const KAKAO_JS_KEY = '9d6e404932d14d6f3801bee6c4457b78';
   const KAKAO_SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.8.3/kakao.min.js';
   const KAKAO_LINK_URL = 'https://union-kpi.vercel.app';
+  // 고객사에 보낼 때 카드가 연결될 주소 (회사 홈페이지). 카카오 [제품 링크 관리] 웹 도메인에도 등록해야 합니다.
+  const COMPANY_URL = 'https://www.unionsystems.co.kr';
+  const COMPANY_NAME = '유니온시스템즈';
   let kakaoLoading = null;
   function loadKakao(){
     if(window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) return Promise.resolve(window.Kakao);
@@ -806,45 +813,48 @@
   }
   const clip = (v,n) => { v=String(v==null?'':v); return v.length>n ? v.slice(0,n-1)+'…' : v; };
   function shortWon(n){ const w='₩'+won(n); if(w.length<=11) return w; const man=Math.round(num(n)/10000); const m=man.toLocaleString('ko-KR')+'만원'; return m.length<=11 ? m : Math.round(num(n)/100000000).toLocaleString('ko-KR')+'억원'; }
-  function kakaoCard(kind, id, withAmount){
-    // 카카오 [제품 링크 관리]에 등록한 주소로 고정 (다른 주소로 접속해도 링크 오류가 나지 않게)
-    const url = KAKAO_LINK_URL;
+  function kakaoCard(kind, id, withAmount, to){
+    // 직원용: 시스템 주소 / 고객사용: 회사 홈페이지 (시스템 주소는 보내지 않음)
+    const forCustomer = to==='customer';
+    const url = forCustomer ? COMPANY_URL : KAKAO_LINK_URL;
     const link = {webUrl:url, mobileWebUrl:url};
+    const profile = forCustomer ? COMPANY_NAME : 'UNION 사업관리';
+    const btn = forCustomer ? [{title:`${COMPANY_NAME} 홈페이지`, link}] : [{title:'시스템에서 보기', link}];
     if(kind==='ctr'){
       const c=contractById(id); if(!c) return null;
       const d=daysUntil(c.expiry_date), its=itemsOf(c.id), t=contractTotals(c);
       const endTxt = c.expiry_date ? c.expiry_date+(c.renewed?' 갱신완료':d!=null?' ('+ddayLabel(d)+')':'') : '영구';
       const prod = its.length ? its[0].product+(its.length>1?` 외 ${its.length-1}건`:'') : '';
       const card = {objectType:'feed',
-        content:{title: clip(`[계약] ${c.name}`,60), description: clip(`${custName(c.customer_id)}${prod?' · '+prod:''}`,80), link},
-        itemContent:{profileText:'UNION 사업관리', items:[
+        content:{title: clip(`${forCustomer?'[계약 안내]':'[계약]'} ${c.name}`,60), description: clip(`${custName(c.customer_id)}${prod?' · '+prod:''}`,80), link},
+        itemContent:{profileText:profile, items:[
           {item:'고객사', itemOp:clip(custName(c.customer_id),20)},
           {item:'구분', itemOp:c.deal_type||'신규'},
           {item:'계약일', itemOp:c.contract_date||'-'},
           {item:'만료일', itemOp:clip(endTxt,20)},
-          {item:'영업담당', itemOp:clip(repDisplay(c.sales_rep)||'-',20)},
+          {item:forCustomer?'담당자':'영업담당', itemOp:clip(repDisplay(c.sales_rep)||'-',20)},
         ]},
-        buttons:[{title:'시스템에서 보기', link}]};
+        buttons:btn};
       if(withAmount){ card.itemContent.sum='계약금액'; card.itemContent.sumOp=shortWon(t.sale); }
       return card;
     }
     const m=state.maint.find(x=>x.id===id); if(!m) return null;
     const d=daysUntil(m.end_date);
     const card = {objectType:'feed',
-      content:{title: clip(`[유지보수] ${m.name}`,60), description: clip(`${custName(mtCustomerId(m))} · ${m.billing_cycle||'연납'}`,80), link},
-      itemContent:{profileText:'UNION 사업관리', items:[
+      content:{title: clip(`${forCustomer?'[유지보수 안내]':'[유지보수]'} ${m.name}`,60), description: clip(`${custName(mtCustomerId(m))} · ${m.billing_cycle||'연납'}`,80), link},
+      itemContent:{profileText:profile, items:[
         {item:'고객사', itemOp:clip(custName(mtCustomerId(m)),20)},
         {item:'구분', itemOp:m.deal_type||'신규'},
         {item:'시작일', itemOp:m.start_date||'-'},
         {item:'만료일', itemOp:clip((m.end_date||'-')+(m.end_date && !m.renewed && d!=null?' ('+ddayLabel(d)+')':''),20)},
-        {item:'담당', itemOp:clip(repDisplay(m.sales_rep)||'-',20)},
+        {item:forCustomer?'담당자':'담당', itemOp:clip(repDisplay(m.sales_rep)||'-',20)},
       ]},
-      buttons:[{title:'시스템에서 보기', link}]};
+      buttons:btn};
     if(withAmount){ card.itemContent.sum='금액'; card.itemContent.sumOp=shortWon(m.amount); }
     return card;
   }
   async function sendKakao(){
-    const sh=state.share; const card=kakaoCard(sh.kind, sh.id, sh.withAmount);
+    const sh=state.share; const card=kakaoCard(sh.kind, sh.id, sh.withAmount, sh.to);
     if(!card) return;
     try{
       const K = await loadKakao();
@@ -853,13 +863,18 @@
       alert('카카오톡 공유를 열 수 없습니다.\n\n카카오 개발자 사이트 → 내 애플리케이션 → 앱 설정 → 플랫폼(또는 JavaScript SDK 도메인)에 이 사이트 주소가 등록되어 있는지 확인해주세요:\n'+location.origin+'\n\n('+(e && e.message || e)+')');
     }
   }
-  function openShare(kind,id){ state.share={kind,id,withAmount:true,text:shareText(kind,id,true)}; render(); }
+  function openShare(kind,id){ state.share={kind,id,to:'staff',withAmount:true,text:shareText(kind,id,true)}; render(); }
   function renderShare(){
     const sh=state.share, canShare = isMobile() && !!navigator.share;
     return `<div class="modal-bg" id="shareBg" style="z-index:350;"><div class="modal" style="width:480px;">
       <div class="modal-head"><h3>💬 카톡으로 보내기</h3><button class="modal-close" id="shareClose">&times;</button></div>
       <div class="modal-body">
-        <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="shareAmt" ${sh.withAmount?'checked':''}/> 금액 포함 (고객에게 보낼 땐 빼세요 · 매입·이익은 항상 빠집니다)</label>
+        <div class="seg" style="margin-bottom:10px;">
+          <button class="seg-btn ${sh.to!=='customer'?'on':''}" data-to="staff">👥 우리 직원에게</button>
+          <button class="seg-btn ${sh.to==='customer'?'on':''}" data-to="customer">🏢 고객사에게</button>
+        </div>
+        <div class="hint" style="margin:-4px 0 10px;">${sh.to==='customer'?`카드를 누르면 <b>회사 홈페이지</b>로 연결돼요. 시스템 주소는 보내지지 않아요.`:'카드의 "시스템에서 보기"를 누르면 이 시스템으로 들어와요. (로그인 필요)'}</div>
+        <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="shareAmt" ${sh.withAmount?'checked':''}/> 금액 포함 (매입·이익은 항상 빠집니다)</label>
         <button class="kakao-btn" id="shareKakao"><span class="kakao-ico">💬</span> 카카오톡으로 보내기</button>
         <div class="hint" style="margin:6px 0 14px;">누르면 카카오톡이 열리고, 받을 친구나 대화방을 고르면 계약 카드가 바로 전송됩니다.${isMobile()?'':' (PC에서는 카카오 로그인 창이 먼저 뜰 수 있어요)'}</div>
         <details class="share-more"><summary>문자·메일 등에 붙여넣을 텍스트</summary>
@@ -884,6 +899,7 @@
     const close=()=>{ state.share=null; render(); };
     document.getElementById('shareClose').onclick=close; document.getElementById('shareCancel').onclick=close;
     const ta=document.getElementById('shareText'); ta.addEventListener('input',()=>{ state.share.text=ta.value; });
+    document.querySelectorAll('.seg-btn[data-to]').forEach(b=>b.onclick=()=>{ const to=b.dataset.to; if(state.share.to===to) return; state.share.to=to; state.share.withAmount = to!=='customer'; state.share.text=shareText(state.share.kind,state.share.id,state.share.withAmount); render(); });
     document.getElementById('shareAmt').onchange=e=>{ state.share.withAmount=e.target.checked; state.share.text=shareText(state.share.kind,state.share.id,e.target.checked); render(); };
     document.getElementById('shareCopy').onclick=async ()=>{ const ok=await copyText(state.share.text); state.share=null; showToast(ok?'복사했어요. 카톡 대화방에 붙여넣기(Ctrl+V) 하세요.':'복사에 실패했어요. 내용을 직접 선택해 복사해주세요.'); };
     document.getElementById('shareKakao').onclick=()=>sendKakao();
