@@ -153,6 +153,9 @@
   .dday{font-family:Consolas,monospace; font-weight:800; font-size:12px;}
   .lane.over .dday{color:var(--warn);} .lane.w1 .dday{color:var(--orange);} .lane.m1 .dday{color:var(--gold);}
 
+  .kakao-btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; border:none; border-radius:8px; background:#fee500; color:#191919; font-size:15px; font-weight:800; cursor:pointer;}
+  .kakao-btn:hover{background:#f5dc00;}
+  .share-more summary{cursor:pointer; font-size:12.5px; color:var(--ink-soft); user-select:none;}
   /* calendar */
   .cal-nav{display:inline-flex; align-items:center; gap:6px; text-transform:none; letter-spacing:0;}
   .cal-nav b{font-size:14px; color:var(--ink); min-width:96px; text-align:center;}
@@ -766,20 +769,88 @@
     return L.join('\n');
   }
   const isMobile = () => /Android|iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+  // ---- 카카오톡 공유 (Kakao JavaScript SDK) ----
+  const KAKAO_JS_KEY = '9d6e404932d14d6f3801bee6c4457b78';
+  const KAKAO_SDK = 'https://t1.kakaocdn.net/kakao_js_sdk/2.8.3/kakao.min.js';
+  let kakaoLoading = null;
+  function loadKakao(){
+    if(window.Kakao && window.Kakao.isInitialized && window.Kakao.isInitialized()) return Promise.resolve(window.Kakao);
+    if(kakaoLoading) return kakaoLoading;
+    kakaoLoading = new Promise((resolve, reject)=>{
+      const done=()=>{ try{ if(!window.Kakao.isInitialized()) window.Kakao.init(KAKAO_JS_KEY); resolve(window.Kakao); }catch(e){ reject(e); } };
+      if(window.Kakao) return done();
+      const sc=document.createElement('script'); sc.src=KAKAO_SDK; sc.crossOrigin='anonymous'; sc.onload=done; sc.onerror=()=>{ kakaoLoading=null; reject(new Error('카카오 SDK를 불러오지 못했습니다')); };
+      document.head.appendChild(sc);
+    });
+    return kakaoLoading;
+  }
+  const clip = (v,n) => { v=String(v==null?'':v); return v.length>n ? v.slice(0,n-1)+'…' : v; };
+  function shortWon(n){ const w='₩'+won(n); if(w.length<=11) return w; const man=Math.round(num(n)/10000); const m=man.toLocaleString('ko-KR')+'만원'; return m.length<=11 ? m : Math.round(num(n)/100000000).toLocaleString('ko-KR')+'억원'; }
+  function kakaoCard(kind, id, withAmount){
+    const url = location.origin + location.pathname;
+    const link = {webUrl:url, mobileWebUrl:url};
+    if(kind==='ctr'){
+      const c=contractById(id); if(!c) return null;
+      const d=daysUntil(c.expiry_date), its=itemsOf(c.id), t=contractTotals(c);
+      const endTxt = c.expiry_date ? c.expiry_date+(c.renewed?' 갱신완료':d!=null?' ('+ddayLabel(d)+')':'') : '영구';
+      const prod = its.length ? its[0].product+(its.length>1?` 외 ${its.length-1}건`:'') : '';
+      const card = {objectType:'feed',
+        content:{title: clip(`[계약] ${c.name}`,60), description: clip(`${custName(c.customer_id)}${prod?' · '+prod:''}`,80), link},
+        itemContent:{profileText:'UNION 사업관리', items:[
+          {item:'고객사', itemOp:clip(custName(c.customer_id),20)},
+          {item:'구분', itemOp:c.deal_type||'신규'},
+          {item:'계약일', itemOp:c.contract_date||'-'},
+          {item:'만료일', itemOp:clip(endTxt,20)},
+          {item:'영업담당', itemOp:clip(repDisplay(c.sales_rep)||'-',20)},
+        ]},
+        buttons:[{title:'시스템에서 보기', link}]};
+      if(withAmount){ card.itemContent.sum='계약금액'; card.itemContent.sumOp=shortWon(t.sale); }
+      return card;
+    }
+    const m=state.maint.find(x=>x.id===id); if(!m) return null;
+    const d=daysUntil(m.end_date);
+    const card = {objectType:'feed',
+      content:{title: clip(`[유지보수] ${m.name}`,60), description: clip(`${custName(mtCustomerId(m))} · ${m.billing_cycle||'연납'}`,80), link},
+      itemContent:{profileText:'UNION 사업관리', items:[
+        {item:'고객사', itemOp:clip(custName(mtCustomerId(m)),20)},
+        {item:'구분', itemOp:m.deal_type||'신규'},
+        {item:'시작일', itemOp:m.start_date||'-'},
+        {item:'만료일', itemOp:clip((m.end_date||'-')+(m.end_date && !m.renewed && d!=null?' ('+ddayLabel(d)+')':''),20)},
+        {item:'담당', itemOp:clip(repDisplay(m.sales_rep)||'-',20)},
+      ]},
+      buttons:[{title:'시스템에서 보기', link}]};
+    if(withAmount){ card.itemContent.sum='금액'; card.itemContent.sumOp=shortWon(m.amount); }
+    return card;
+  }
+  async function sendKakao(){
+    const sh=state.share; const card=kakaoCard(sh.kind, sh.id, sh.withAmount);
+    if(!card) return;
+    try{
+      const K = await loadKakao();
+      K.Share.sendDefault(card);
+    }catch(e){
+      alert('카카오톡 공유를 열 수 없습니다.\n\n카카오 개발자 사이트 → 내 애플리케이션 → 앱 설정 → 플랫폼(또는 JavaScript SDK 도메인)에 이 사이트 주소가 등록되어 있는지 확인해주세요:\n'+location.origin+'\n\n('+(e && e.message || e)+')');
+    }
+  }
   function openShare(kind,id){ state.share={kind,id,withAmount:true,text:shareText(kind,id,true)}; render(); }
   function renderShare(){
     const sh=state.share, canShare = isMobile() && !!navigator.share;
     return `<div class="modal-bg" id="shareBg" style="z-index:350;"><div class="modal" style="width:480px;">
       <div class="modal-head"><h3>💬 카톡으로 보내기</h3><button class="modal-close" id="shareClose">&times;</button></div>
       <div class="modal-body">
-        <label class="chk" style="margin-bottom:8px;"><input type="checkbox" id="shareAmt" ${sh.withAmount?'checked':''}/> 금액 포함 (고객에게 보낼 땐 빼세요 · 매입·이익은 항상 빠집니다)</label>
-        <textarea id="shareText" class="cell-in" style="height:260px; font-size:13px; line-height:1.6;">${esc(sh.text)}</textarea>
-        <div class="hint">${canShare?'<b>보내기</b>를 누르고 카카오톡을 고르면 원하는 대화방으로 보낼 수 있어요.':'<b>복사하기</b>를 누른 뒤 카카오톡 대화방에 <b>Ctrl+V</b>로 붙여넣으세요. 보내기 전에 내용을 고쳐도 됩니다.'}</div>
+        <label class="chk" style="margin-bottom:10px;"><input type="checkbox" id="shareAmt" ${sh.withAmount?'checked':''}/> 금액 포함 (고객에게 보낼 땐 빼세요 · 매입·이익은 항상 빠집니다)</label>
+        <button class="kakao-btn" id="shareKakao"><span class="kakao-ico">💬</span> 카카오톡으로 보내기</button>
+        <div class="hint" style="margin:6px 0 14px;">누르면 카카오톡이 열리고, 받을 친구나 대화방을 고르면 계약 카드가 바로 전송됩니다.${isMobile()?'':' (PC에서는 카카오 로그인 창이 먼저 뜰 수 있어요)'}</div>
+        <details class="share-more"><summary>문자·메일 등에 붙여넣을 텍스트</summary>
+          <textarea id="shareText" class="cell-in" style="height:220px; font-size:13px; line-height:1.6; margin-top:8px;">${esc(sh.text)}</textarea>
+          <div style="display:flex; gap:6px; justify-content:flex-end; margin-top:6px;">
+            <button class="btn-sm" id="shareCopy">텍스트 복사</button>
+            ${canShare?`<button class="btn-sm" id="shareSend">다른 앱으로 공유</button>`:''}
+          </div>
+        </details>
       </div>
       <div class="modal-actions">
         <button class="btn-sm ghost" id="shareCancel">닫기</button>
-        <button class="${canShare?'btn-sm':'btn-primary'}" id="shareCopy">복사하기</button>
-        ${canShare?`<button class="btn-primary" id="shareSend" style="background:#fee500; color:#191919;">보내기</button>`:''}
       </div>
     </div></div>`;
   }
@@ -794,6 +865,7 @@
     const ta=document.getElementById('shareText'); ta.addEventListener('input',()=>{ state.share.text=ta.value; });
     document.getElementById('shareAmt').onchange=e=>{ state.share.withAmount=e.target.checked; state.share.text=shareText(state.share.kind,state.share.id,e.target.checked); render(); };
     document.getElementById('shareCopy').onclick=async ()=>{ const ok=await copyText(state.share.text); state.share=null; showToast(ok?'복사했어요. 카톡 대화방에 붙여넣기(Ctrl+V) 하세요.':'복사에 실패했어요. 내용을 직접 선택해 복사해주세요.'); };
+    document.getElementById('shareKakao').onclick=()=>sendKakao();
     const send=document.getElementById('shareSend'); if(send) send.onclick=async ()=>{ try{ await navigator.share({text:state.share.text}); state.share=null; render(); }catch(e){} };
   }
 
