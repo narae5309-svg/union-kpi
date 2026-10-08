@@ -100,6 +100,10 @@ alter table maintenance_contracts add column if not exists supplier text default
 alter table maintenance_contracts add column if not exists purchase_amount numeric;
 alter table maintenance_contracts add column if not exists renewed boolean default false;
 
+-- 거래처 구분: 고객사(customer) / 매입처(supplier)
+alter table customers add column if not exists kind text default 'customer';
+update customers set kind = 'customer' where kind is null;
+
 -- ---------------------------------------------------------------
 -- 3) 새 표: 고객 담당자, 계약 품목, 기술지원
 -- ---------------------------------------------------------------
@@ -125,6 +129,9 @@ create table if not exists contract_items (
   sort int default 0,
   created_at timestamptz default now()
 );
+
+alter table contract_items add column if not exists supplier_id text;
+alter table maintenance_contracts add column if not exists supplier_id text;
 
 create table if not exists support_tickets (
   id text primary key,
@@ -205,6 +212,23 @@ update maintenance_contracts m set customer_id = c.customer_id
 from contracts c where m.customer_id is null and m.contract_id = c.id;
 update maintenance_contracts set purchase_amount = coalesce(amount, 0) - coalesce(profit_amount, 0)
 where purchase_amount is null;
+
+-- 품목·유지보수에 이름만 적혀 있던 매입처 → 매입처로 등록하고 연결
+insert into customers (id, code, name, kind, sales_rep, reg_date)
+select 'sp_mig_' || md5(n.name), 'SP-MIG', n.name, 'supplier', '', current_date
+from (
+  select distinct trim(supplier) as name from contract_items where coalesce(trim(supplier), '') <> ''
+  union
+  select distinct trim(supplier) from maintenance_contracts where coalesce(trim(supplier), '') <> ''
+) n
+where not exists (select 1 from customers c where c.kind = 'supplier' and c.name = n.name);
+
+update contract_items i set supplier_id = c.id
+from customers c
+where i.supplier_id is null and c.kind = 'supplier' and c.name = trim(i.supplier);
+update maintenance_contracts m set supplier_id = c.id
+from customers c
+where m.supplier_id is null and c.kind = 'supplier' and c.name = trim(m.supplier);
 
 -- 7) 사이트가 새 표를 바로 인식하도록 새로고침
 notify pgrst, 'reload schema';
