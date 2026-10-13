@@ -649,7 +649,6 @@
     return `
       <div class="page-head">
         <div><div class="page-title">대시보드</div><div class="page-sub">${todayStr()} 기준 · 갱신 일정과 진행 중인 업무</div></div>
-        <label class="chk"><input type="checkbox" id="dashMine" ${mine?'checked':''}/> 내 담당만 보기</label>
       </div>
       <div class="kpis">
         <div class="kpi ${need?'alert':''}"><div class="lbl">갱신 필요 (30일 이내 + 만료)</div><div class="val">${need}<span style="font-size:13px; font-weight:600;"> 건</span></div><div class="sub">만료 지남 ${lanes.over.length} · 7일 이내 ${lanes.w1.length}</div></div>
