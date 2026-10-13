@@ -1354,9 +1354,9 @@
         <div><span class="muted">기본 만료일</span> ${esc(c.expiry_date||'영구')}</div>
         <div><span class="muted">세금계산서 메일</span> ${esc((customer(c.customer_id)||{}).tax_email||'-')}</div>
       </div>
-      ${its.length?`<table><thead><tr><th class="tl">제품</th><th>만료일</th><th class="num">수량</th><th class="num">매출</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th></tr></thead><tbody>
-        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td></tr>`; }).join('')}
-        <tr class="total"><td colspan="3" class="tl">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td></tr>
+      ${its.length?`<table><thead><tr><th class="tl">제품</th><th class="num">수량</th><th class="num">매출</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th><th>만료일</th></tr></thead><tbody>
+        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td></tr>`; }).join('')}
+        <tr class="total"><td colspan="2" class="tl">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td><td></td></tr>
       </tbody></table>`:'<div class="muted">등록된 품목이 없습니다.</div>'}
       ${c.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(c.remarks)}</div></div>`:''}
     </div>`;
