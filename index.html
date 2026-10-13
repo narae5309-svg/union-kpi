@@ -106,6 +106,19 @@
   tr.row-over > td{background:#fdf1f0;}
   tr.detail > td{background:#fafcfb !important; padding:0;}
   tr.total > td{font-weight:700; background:#f7fbfb;}
+  .date-th{cursor:pointer; user-select:none; padding:2px 6px; border-radius:5px; margin-right:2px;}
+  .date-th:hover{background:#cdeeed;}
+  .date-th.on{background:var(--accent-dark); color:#fff;}
+  .range-chip{display:inline-flex; align-items:center; gap:6px; background:var(--accent-dark); color:#fff; border-radius:14px; padding:5px 6px 5px 12px; font-size:12px; font-weight:600; white-space:nowrap;}
+  .range-chip button{border:none; background:rgba(255,255,255,.25); color:#fff; width:18px; height:18px; border-radius:50%; cursor:pointer; line-height:1; font-size:13px; padding:0;}
+  .date-pop{position:fixed; z-index:260; width:330px; background:#fff; border:1px solid var(--grid-strong); border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,.18); padding:14px;}
+  .dp-title{font-weight:700; font-size:13px; margin-bottom:10px;}
+  .dp-quick{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .dp-quick button{border:1px solid var(--grid-strong); background:#fff; border-radius:14px; padding:4px 10px; font-size:12px; cursor:pointer;}
+  .dp-quick button:hover{border-color:var(--accent); color:var(--accent-dark);}
+  .dp-row{display:flex; align-items:center; gap:6px; margin-bottom:12px;}
+  .dp-row input{flex:1; min-width:0; padding:6px 8px; border:1px solid var(--grid-strong); border-radius:var(--radius); font-family:inherit; font-size:12.5px;}
+  .dp-acts{display:flex; justify-content:flex-end; gap:6px;}
   .sort-th{cursor:pointer; user-select:none; display:inline-flex; align-items:center; gap:4px;}
   .sort-arrow{font-size:8px; color:#c3ccce;}
   .sort-arrow.on{color:var(--accent-dark);}
@@ -319,8 +332,8 @@
   const state = {
     view:'login', user:null, userEmail:null, isAdmin:false, tab:'dashboard', loading:true, setupMissing:[],
     reps:[], customers:[], contacts:[], contracts:[], items:[], maint:[], tickets:[],
-    q:{}, f:{ctrType:'전체', ctrTab:'전체', ctrRep:'전체', mtRep:'전체', mtTab:'전체', tkStatus:'미완료', tkAssignee:'전체', dashMine:false},
-    cal:null, calDay:null, share:null,
+    q:{}, f:{ctrType:'전체', ctrTab:'전체', ctrRep:'전체', mtRep:'전체', endRange:{contracts:{from:'',to:''}, maint:{from:'',to:''}}, mtTab:'전체', tkStatus:'미완료', tkAssignee:'전체', dashMine:false},
+    cal:null, calDay:null, share:null, datePop:null,
     sort:{}, page:{}, sel:{customers:new Set(), suppliers:new Set(), contracts:new Set(), maint:new Set(), support:new Set(), reps:new Set()},
     expanded:null, modal:null, confirm:null, toast:null, attachView:null, attachTarget:null, excelMenu:false,
   };
@@ -619,6 +632,7 @@
     ${state.modal?renderModal():''}
     ${state.attachView?renderAttachView():''}
     ${state.share?renderShare():''}
+    ${state.datePop && state.tab===state.datePop?renderDatePop():''}
     ${state.confirm?renderConfirm():''}
     ${state.toast?`<div class="toast">${esc(state.toast)}</div>`:''}
     <input type="file" id="attachFileInput" style="display:none;" accept=".pdf,.doc,.docx,.hwp,.hwpx,.xlsx,.png,.jpg,.jpeg"/>
@@ -1187,6 +1201,49 @@
     state.contacts.push(x); d[key]=x.id; return true;
   }
 
+  // ---- 만료일 기간 조회 (헤더 클릭) ----
+  function endInRange(key, end){
+    const r=state.f.endRange[key]; if(!r.from && !r.to) return true;
+    if(!end) return false;
+    if(r.from && end<r.from) return false;
+    if(r.to && end>r.to) return false;
+    return true;
+  }
+  const rangeLabel = r => (r.from||'처음')+' ~ '+(r.to||'끝');
+  function endTh(key){
+    const r=state.f.endRange[key], on=!!(r.from||r.to), st=state.sort[key]||{}, sorted=st.col==='end';
+    return `<th style="white-space:nowrap;"><span class="date-th ${on?'on':''}" data-table="${key}" title="눌러서 만료일 기간으로 조회">만료일 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="vertical-align:-1px;"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg></span><span class="sort-th" data-table="${key}" data-col="end" title="정렬"><span class="sort-arrow ${sorted?'on':''}">${sorted?(st.dir==='asc'?'▲':'▼'):'▵'}</span></span></th>`;
+  }
+  function rangeChip(key){
+    const r=state.f.endRange[key]; if(!r.from && !r.to) return '';
+    return `<span class="range-chip">만료일 ${esc(rangeLabel(r))}<button class="rangeClear" data-table="${key}" title="기간 조회 해제">&times;</button></span>`;
+  }
+  function monthRange(offset, months){ const t=todayStr(); const first=addMonths(t.slice(0,7)+'-01', offset); return {from:first, to:addDays(addMonths(first, months||1),-1)}; }
+  function renderDatePop(){
+    const key=state.datePop, r=state.f.endRange[key];
+    const quick=[['이번 달',monthRange(0)],['다음 달',monthRange(1)],['30일 이내',{from:todayStr(),to:addDays(todayStr(),30)}],['3개월 이내',{from:todayStr(),to:addDays(addMonths(todayStr(),3),-1)}],['올해',{from:todayStr().slice(0,4)+'-01-01',to:todayStr().slice(0,4)+'-12-31'}],['내년',{from:(+todayStr().slice(0,4)+1)+'-01-01',to:(+todayStr().slice(0,4)+1)+'-12-31'}]];
+    return `<div class="date-pop" id="datePop">
+      <div class="dp-title">만료일 기간으로 조회</div>
+      <div class="dp-quick">${quick.map(([l,v])=>`<button class="dpQuick" data-from="${v.from}" data-to="${v.to}">${l}</button>`).join('')}</div>
+      <div class="dp-row"><input type="date" id="dpFrom" value="${esc(r.from)}"/><span>~</span><input type="date" id="dpTo" value="${esc(r.to)}"/></div>
+      <div class="dp-acts"><button class="btn-sm ghost" id="dpReset">초기화</button><button class="btn-primary" id="dpApply">조회</button></div>
+    </div>`;
+  }
+  function bindDateFilter(){
+    document.querySelectorAll('.date-th').forEach(el=>el.onclick=e=>{ e.stopPropagation(); state.datePop = state.datePop===el.dataset.table ? null : el.dataset.table; render(); });
+    document.querySelectorAll('.rangeClear').forEach(b=>b.onclick=()=>{ const k=b.dataset.table; state.f.endRange[k]={from:'',to:''}; state.page[k]=1; render(); });
+    const pop=document.getElementById('datePop'); if(!pop) return;
+    const anchor=document.querySelector(`.date-th[data-table="${state.datePop}"]`);
+    if(anchor){ const rc=anchor.getBoundingClientRect(); pop.style.top=(rc.bottom+6)+'px'; pop.style.left=Math.max(8, Math.min(rc.left-120, window.innerWidth-pop.offsetWidth-8))+'px'; }
+    else { pop.style.top='120px'; pop.style.left='50%'; pop.style.transform='translateX(-50%)'; }
+    pop.addEventListener('click',e=>e.stopPropagation());
+    const key=state.datePop;
+    pop.querySelectorAll('.dpQuick').forEach(b=>b.onclick=()=>{ document.getElementById('dpFrom').value=b.dataset.from; document.getElementById('dpTo').value=b.dataset.to; });
+    document.getElementById('dpApply').onclick=()=>{ const f=document.getElementById('dpFrom').value, t=document.getElementById('dpTo').value; if(f && t && t<f) return alert('끝 날짜가 시작 날짜보다 빠릅니다.'); state.f.endRange[key]={from:f,to:t}; state.page[key]=1; state.sel[key].clear(); state.datePop=null; render(); };
+    document.getElementById('dpReset').onclick=()=>{ state.f.endRange[key]={from:'',to:''}; state.page[key]=1; state.datePop=null; render(); };
+    setTimeout(()=>document.addEventListener('click', function h(){ if(state.datePop){ state.datePop=null; render(); } }, {once:true}),0);
+  }
+
   // ================= CONTRACTS =================
   const dealBadge = t => t==='갱신' ? '<span class="badge gold">갱신</span>' : '<span class="badge blue">신규</span>';
   const stageBadge = s => `<span class="badge ${s==='수금완료'?'green':s==='계산서발행'?'gold':'gray'}">${esc(s||'-')}</span>`;
@@ -1195,6 +1252,7 @@
     const f=state.f;
     let list = state.contracts.filter(c=>{
       if(!periodTabMatch(f.ctrTab, c.expiry_date, c.renewed, c.alert_dismissed)) return false;
+      if(!endInRange('contracts', c.expiry_date)) return false;
       if(f.ctrType!=='전체' && (c.deal_type||'신규')!==f.ctrType) return false;
       if(f.ctrRep!=='전체' && repDisplay(c.sales_rep)!==f.ctrRep) return false;
       const its=itemsOf(c.id);
@@ -1212,12 +1270,13 @@
         <span class="spacer"></span>
         ${searchInput('contracts','계약명·고객사·제품·매입처 검색')}
         ${selectFilter('fCtrType','신규/갱신',DEAL_TYPES,f.ctrType)}
+        ${rangeChip('contracts')}
         ${selectFilter('fCtrRep','영업담당',reps,f.ctrRep)}
         ${bulkDelBtn('contracts')}
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('contracts')}${sortTh('구분','contracts','type')}${sortTh('계약명','contracts','name','text-align:left;')}${sortTh('고객사','contracts','cust')}<th>제품</th>${sortTh('계약금액','contracts','sale','text-align:right;')}${sortTh('단계','contracts','stage')}${sortTh('만료일','contracts','end')}${sortTh('영업담당','contracts','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('contracts')}${sortTh('구분','contracts','type')}${sortTh('계약명','contracts','name','text-align:left;')}${sortTh('고객사','contracts','cust')}<th>제품</th>${sortTh('계약금액','contracts','sale','text-align:right;')}${sortTh('단계','contracts','stage')}${endTh('contracts')}${sortTh('영업담당','contracts','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(c=>{
           const t=contractTotals(c), its=itemsOf(c.id), open=state.expanded===c.id;
           const prod = its.length ? esc(its[0].product||'-')+(its.length>1?` <span class="muted small">외 ${its.length-1}</span>`:'') : '<span class="muted">-</span>';
@@ -1383,6 +1442,7 @@
     const f=state.f;
     let list = state.maint.filter(m=>{
       if(!periodTabMatch(f.mtTab, m.end_date, m.renewed, m.alert_dismissed)) return false;
+      if(!endInRange('maint', m.end_date)) return false;
       if(f.mtRep!=='전체' && repDisplay(m.sales_rep)!==f.mtRep) return false;
       return qmatch('maint', m.name, custName(mtCustomerId(m)), supplierLabel(m.supplier_id,m.supplier), (contractById(m.contract_id)||{}).name);
     });
@@ -1397,12 +1457,13 @@
         <button class="btn-primary" id="addMtBtn">+ 유지보수 추가</button>
         <span class="spacer"></span>
         ${searchInput('maint','유지보수명·고객사·매입처 검색')}
+        ${rangeChip('maint')}
         ${selectFilter('fMtRep','담당',reps,f.mtRep)}
         ${bulkDelBtn('maint')}
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 유지보수 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('maint')}${sortTh('구분','maint','type')}${sortTh('유지보수명','maint','name','text-align:left;')}${sortTh('고객사','maint','cust')}<th>결제</th>${sortTh('계약금액','maint','sale','text-align:right;')}${sortTh('만료일','maint','end')}${sortTh('담당','maint','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('maint')}${sortTh('구분','maint','type')}${sortTh('유지보수명','maint','name','text-align:left;')}${sortTh('고객사','maint','cust')}<th>결제</th>${sortTh('계약금액','maint','sale','text-align:right;')}${endTh('maint')}${sortTh('담당','maint','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(m=>{
           const t=mtTotals(m), ctr=contractById(m.contract_id), open=state.expanded===m.id;
           let html=`<tr class="${rowClassFor(m.end_date,m.renewed,m.alert_dismissed)}">${checkTd('maint',m.id)}
@@ -1821,7 +1882,7 @@
 
   // ================= shell binding =================
   function bindShell(){
-    document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.tab; state.expanded=null; state.excelMenu=false; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0,0); });
+    document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.tab; state.expanded=null; state.excelMenu=false; state.datePop=null; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0,0); });
     document.querySelectorAll('.nav-group').forEach(el=>el.onclick=()=>{ const g=el.dataset.group; const open=el.classList.contains('open'); LS.set('union-nav-'+g, open?'0':'1'); if(open && NAV.find(n=>n.group===g).items.some(([k])=>k===state.tab)){ state.tab='dashboard'; } render(); });
     document.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.goto; render(); });
     document.getElementById('logoutBtn').onclick=async ()=>{ await sb.auth.signOut(); state.view='login'; state.user=null; render(); };
@@ -1859,6 +1920,7 @@
     bindAttachments();
     bindModal();
     bindShare();
+    bindDateFilter();
   }
 
   async function init(){
