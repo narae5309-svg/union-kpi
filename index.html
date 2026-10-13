@@ -1402,25 +1402,24 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 유지보수 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('maint')}${sortTh('구분','maint','type')}${sortTh('유지보수명','maint','name','text-align:left;')}${sortTh('고객사','maint','cust')}${sortTh('매입처','maint','supplier')}<th>결제</th>${sortTh('계약금액','maint','sale','text-align:right;')}${sortTh('만료일','maint','end')}${sortTh('담당','maint','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('maint')}${sortTh('구분','maint','type')}${sortTh('유지보수명','maint','name','text-align:left;')}${sortTh('고객사','maint','cust')}<th>결제</th>${sortTh('계약금액','maint','sale','text-align:right;')}${sortTh('만료일','maint','end')}${sortTh('담당','maint','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(m=>{
           const t=mtTotals(m), ctr=contractById(m.contract_id), open=state.expanded===m.id;
           let html=`<tr class="${rowClassFor(m.end_date,m.renewed,m.alert_dismissed)}">${checkTd('maint',m.id)}
             <td>${dealBadge(m.deal_type)}</td>
             <td class="tl"><span class="link toggleRow" data-id="${m.id}" style="font-weight:600;">${esc(m.name)}</span>${ctr?`<div class="muted small">↳ ${esc(ctr.code)}</div>`:''}</td>
             <td>${esc(custName(mtCustomerId(m)))}</td>
-            <td>${esc(supplierLabel(m.supplier_id,m.supplier)||'-')}</td>
             <td class="small">${esc(m.billing_cycle||'-')}</td>
             <td class="num" style="font-weight:600;">${won(t.sale)}</td>
             <td class="nowrap">${esc(m.end_date||'')}<div>${ddayBadge(m.end_date,m.renewed,m.alert_dismissed,m.alert_days)}</div></td>
             <td class="nowrap">${esc(repDisplay(m.sales_rep)||'-')}</td>
             <td style="text-align:center;">${m.attachment_url?`<button class="icon-btn attachView" data-kind="mt" data-id="${m.id}" title="${esc(m.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="mt" data-id="${m.id}" title="계약서 첨부">&#128206;</button>`}</td>
             <td class="nowrap">${m.end_date && !m.renewed?`<button class="btn-sm renewBtn" data-kind="mt" data-id="${m.id}">갱신</button> `:''}<button class="icon-btn shareBtn" data-kind="mt" data-id="${m.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editMt" data-id="${m.id}" title="수정">&#9998;</button></td></tr>`;
-          if(open) html+=`<tr class="detail"><td colspan="11"><div class="detail-box"><div class="detail-grid"><div><span class="muted">기간</span> ${esc(m.start_date||'-')} ~ ${esc(m.end_date||'-')}</div><div><span class="muted">연결 계약</span> ${ctr?esc(ctr.code+' · '+ctr.name):'-'}</div></div>
+          if(open) html+=`<tr class="detail"><td colspan="10"><div class="detail-box"><div class="detail-grid"><div><span class="muted">기간</span> ${esc(m.start_date||'-')} ~ ${esc(m.end_date||'-')}</div><div><span class="muted">연결 계약</span> ${ctr?esc(ctr.code+' · '+ctr.name):'-'}</div></div>
             <table><thead><tr><th class="tl">유지보수명</th><th class="num">계약금액</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th></tr></thead><tbody><tr><td class="tl">${esc(m.name)}</td><td class="num">${won(t.sale)}</td><td>${esc(supplierLabel(m.supplier_id,m.supplier)||'-')}</td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td></tr></tbody></table>${m.remarks?`<div style="white-space:pre-wrap;"><span class="muted">비고</span> ${esc(m.remarks)}</div>`:''}</div></td></tr>`;
           return html;
         }).join('')}
-        <tr class="total"><td colspan="6" style="text-align:right;">합계 · ${list.length}건</td><td class="num">${won(tot.sale)}</td><td colspan="4"></td></tr>
+        <tr class="total"><td colspan="5" style="text-align:right;">합계 · ${list.length}건</td><td class="num">${won(tot.sale)}</td><td colspan="4"></td></tr>
         </tbody></table>${pager('maint',pg,list.length)}`}
       </div>`;
   }
