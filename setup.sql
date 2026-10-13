@@ -133,6 +133,11 @@ create table if not exists contract_items (
 alter table contract_items add column if not exists supplier_id text;
 alter table maintenance_contracts add column if not exists supplier_id text;
 
+-- 품목별 만료일 (비우면 계약 만료일을 따름), 품목 단위 갱신완료/종료
+alter table contract_items add column if not exists end_date date;
+alter table contract_items add column if not exists renewed boolean default false;
+alter table contract_items add column if not exists closed boolean default false;
+
 create table if not exists support_tickets (
   id text primary key,
   code text,
