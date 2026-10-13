@@ -95,8 +95,12 @@
 
   /* tables */
   table{width:100%; border-collapse:separate; border-spacing:0; font-size:12.5px;}
-  th{text-align:left; padding:8px 7px; background:var(--header-fill); border-bottom:1px solid var(--grid); font-weight:700; color:var(--accent-dark); font-size:11.5px; white-space:nowrap;}
-  td{padding:7px; border-bottom:1px solid var(--grid); vertical-align:middle;}
+  th{text-align:center; padding:8px 7px; background:var(--header-fill); border-bottom:1px solid var(--grid); font-weight:700; color:var(--accent-dark); font-size:11.5px; white-space:nowrap;}
+  td{padding:7px; border-bottom:1px solid var(--grid); vertical-align:middle; text-align:center;}
+  th.tl, td.tl{text-align:left;}
+  th.num, td.num{text-align:right;}
+  tr.detail > td{text-align:left;}
+  td .clip{margin:0;}
   tbody tr:hover > td{background:#effaf9;}
   tr.row-warn > td{background:#fff8f0;}
   tr.row-over > td{background:#fdf1f0;}
@@ -679,8 +683,8 @@
       </div>
       <div class="card flush">
         <div class="card-title" style="padding:14px 16px 0;"><span>진행 중 기술지원</span><button class="btn-sm" id="dashAddTk">+ 지원 요청 접수</button></div>
-        ${openTk.length===0?'<div class="empty">진행 중인 기술지원 요청이 없습니다.</div>':`<table style="margin-top:10px;"><thead><tr><th>접수일</th><th>고객사</th><th>제품</th><th>요청 내용</th><th>엔지니어</th><th>상태</th><th></th></tr></thead><tbody>
-          ${openTk.slice(0,10).map(t=>`<tr><td class="nowrap">${esc(t.received_date||'-')} <span class="muted small">${t.received_date?'('+(-daysUntil(t.received_date))+'일째)':''}</span></td><td>${esc(custName(t.customer_id))}</td><td>${esc(t.product||'-')}</td><td><div class="clip link editTk" data-id="${t.id}">${esc(t.request)}</div></td><td>${esc(repDisplay(t.assignee)||'미배정')}</td><td>${tkBadge(t.status)}</td><td><button class="btn-sm editTk" data-id="${t.id}">처리</button></td></tr>`).join('')}
+        ${openTk.length===0?'<div class="empty">진행 중인 기술지원 요청이 없습니다.</div>':`<table style="margin-top:10px;"><thead><tr><th>접수일</th><th>고객사</th><th>제품</th><th class="tl">요청 내용</th><th>엔지니어</th><th>상태</th><th></th></tr></thead><tbody>
+          ${openTk.slice(0,10).map(t=>`<tr><td class="nowrap">${esc(t.received_date||'-')} <span class="muted small">${t.received_date?'('+(-daysUntil(t.received_date))+'일째)':''}</span></td><td>${esc(custName(t.customer_id))}</td><td>${esc(t.product||'-')}</td><td class="tl"><div class="clip link editTk" data-id="${t.id}">${esc(t.request)}</div></td><td>${esc(repDisplay(t.assignee)||'미배정')}</td><td>${tkBadge(t.status)}</td><td><button class="btn-sm editTk" data-id="${t.id}">처리</button></td></tr>`).join('')}
         </tbody></table>${openTk.length>10?`<div class="pager"><span class="link" data-goto="support">전체 ${openTk.length}건 보기 →</span></div>`:''}`}
       </div>`;
   }
@@ -1034,12 +1038,12 @@
       </div>
       <div class="card flush">
         ${list.length===0?`<div class="empty">등록된 ${label}가 없습니다.</div>`:`
-        <table><thead><tr>${checkAllTh(key)}${sortTh('업체명',key,'name')}${sortTh('담당자',key,'contact')}<th>연락처</th><th>담당자 이메일</th>${sortTh('세금계산서 메일',key,'tax')}
+        <table><thead><tr>${checkAllTh(key)}${sortTh('업체명',key,'name','text-align:left;')}${sortTh('담당자',key,'contact')}<th>연락처</th><th>담당자 이메일</th>${sortTh('세금계산서 메일',key,'tax')}
           ${kind==='supplier'?`${sortTh('매입 계약',key,'ctr','text-align:center;')}<th style="text-align:center;">유지보수</th>${sortTh('누적 매입',key,'amount','text-align:right;')}`:`${sortTh('계약',key,'ctr','text-align:center;')}<th style="text-align:center;">유지보수</th><th style="text-align:center;">진행 중 지원</th>`}<th></th></tr></thead><tbody>
         ${pg.items.map(c=>{
           const cs=contactsOf(c.id), first=cs[0]||{}, st=partnerStats(c), open=state.expanded===c.id;
           let html = `<tr>${checkTd(key,c.id)}
-            <td><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span></td>
+            <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span></td>
             <td>${esc(first.name||'-')}${cs.length>1?` <span class="muted small">외 ${cs.length-1}명</span>`:''}</td>
             <td class="nowrap">${esc(first.phone||'-')}</td><td>${esc(first.email||'-')}</td><td>${esc(c.tax_email||'-')}</td>
             <td style="text-align:center;">${st.ctr||'-'}</td><td style="text-align:center;">${st.mt||'-'}</td>
@@ -1052,24 +1056,24 @@
   }
   function contactsTable(c){
     const cs=contactsOf(c.id);
-    return `<b>담당자</b>${cs.length?`<table><thead><tr><th>이름</th><th>부서/직책</th><th>연락처</th><th>이메일</th></tr></thead><tbody>${cs.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.dept||'-')}</td><td>${esc(x.phone||'-')}</td><td>${esc(x.email||'-')}</td></tr>`).join('')}</tbody></table>`:'<div class="muted" style="margin:4px 0 10px;">등록된 담당자가 없습니다.</div>'}`;
+    return `<b>담당자</b>${cs.length?`<table><thead><tr><th class="tl">이름</th><th>부서/직책</th><th>연락처</th><th>이메일</th></tr></thead><tbody>${cs.map(x=>`<tr><td class="tl">${esc(x.name)}</td><td>${esc(x.dept||'-')}</td><td>${esc(x.phone||'-')}</td><td>${esc(x.email||'-')}</td></tr>`).join('')}</tbody></table>`:'<div class="muted" style="margin:4px 0 10px;">등록된 담당자가 없습니다.</div>'}`;
   }
   function customerDetail(c){
     const ctrs=state.contracts.filter(x=>x.customer_id===c.id), mts=state.maint.filter(m=>mtCustomerId(m)===c.id), tks=state.tickets.filter(t=>t.customer_id===c.id).slice(0,10);
     return `<div class="detail-box">
       ${contactsTable(c)}
       <b>계약</b>
-      ${ctrs.length?`<table><thead><tr><th>구분</th><th>계약명</th><th>계약일</th><th>만료일</th><th class="num">매출</th><th class="num">이익</th><th>상태</th></tr></thead><tbody>${ctrs.map(x=>{ const t=contractTotals(x); return `<tr><td>${dealBadge(x.deal_type)}</td><td><span class="link gotoCtr" data-id="${x.id}">${esc(x.name)}</span></td><td class="nowrap">${esc(x.contract_date||'-')}</td><td class="nowrap">${esc(x.expiry_date||'-')}</td><td class="num">${won(t.sale)}</td><td class="num">${won(t.profit)}</td><td>${ddayBadge(x.expiry_date,x.renewed,x.alert_dismissed,x.alert_days)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="muted" style="margin:4px 0 10px;">계약 없음</div>'}
-      ${mts.length?`<b>유지보수</b><table><thead><tr><th>유지보수명</th><th>만료일</th><th class="num">금액</th><th>상태</th></tr></thead><tbody>${mts.map(m=>`<tr><td>${esc(m.name)}</td><td class="nowrap">${esc(m.end_date||'-')}</td><td class="num">${won(m.amount)}</td><td>${ddayBadge(m.end_date,m.renewed,m.alert_dismissed,m.alert_days)}</td></tr>`).join('')}</tbody></table>`:''}
-      ${tks.length?`<b>최근 기술지원</b><table><thead><tr><th>접수일</th><th>제품</th><th>요청</th><th>엔지니어</th><th>상태</th></tr></thead><tbody>${tks.map(t=>`<tr><td>${esc(t.received_date||'-')}</td><td>${esc(t.product||'-')}</td><td><div class="clip">${esc(t.request)}</div></td><td>${esc(repDisplay(t.assignee)||'-')}</td><td>${tkBadge(t.status)}</td></tr>`).join('')}</tbody></table>`:''}
+      ${ctrs.length?`<table><thead><tr><th>구분</th><th class="tl">계약명</th><th>계약일</th><th>만료일</th><th class="num">매출</th><th class="num">이익</th><th>상태</th></tr></thead><tbody>${ctrs.map(x=>{ const t=contractTotals(x); return `<tr><td>${dealBadge(x.deal_type)}</td><td class="tl"><span class="link gotoCtr" data-id="${x.id}">${esc(x.name)}</span></td><td class="nowrap">${esc(x.contract_date||'-')}</td><td class="nowrap">${esc(x.expiry_date||'-')}</td><td class="num">${won(t.sale)}</td><td class="num">${won(t.profit)}</td><td>${ddayBadge(x.expiry_date,x.renewed,x.alert_dismissed,x.alert_days)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="muted" style="margin:4px 0 10px;">계약 없음</div>'}
+      ${mts.length?`<b>유지보수</b><table><thead><tr><th class="tl">유지보수명</th><th>만료일</th><th class="num">금액</th><th>상태</th></tr></thead><tbody>${mts.map(m=>`<tr><td class="tl">${esc(m.name)}</td><td class="nowrap">${esc(m.end_date||'-')}</td><td class="num">${won(m.amount)}</td><td>${ddayBadge(m.end_date,m.renewed,m.alert_dismissed,m.alert_days)}</td></tr>`).join('')}</tbody></table>`:''}
+      ${tks.length?`<b>최근 기술지원</b><table><thead><tr><th>접수일</th><th>제품</th><th class="tl">요청</th><th>엔지니어</th><th>상태</th></tr></thead><tbody>${tks.map(t=>`<tr><td>${esc(t.received_date||'-')}</td><td>${esc(t.product||'-')}</td><td class="tl"><div class="clip">${esc(t.request)}</div></td><td>${esc(repDisplay(t.assignee)||'-')}</td><td>${tkBadge(t.status)}</td></tr>`).join('')}</tbody></table>`:''}
     </div>`;
   }
   function supplierDetail(c, st){
     return `<div class="detail-box">
       ${contactsTable(c)}
       <b>이 매입처에서 산 품목</b>
-      ${st.its.length?`<table><thead><tr><th>계약</th><th>고객사</th><th>제품</th><th>만료일</th><th class="num">매입</th></tr></thead><tbody>${st.its.map(i=>{ const k=contractById(i.contract_id)||{}; return `<tr><td><span class="link gotoCtr" data-id="${k.id||''}">${esc(k.name||'-')}</span></td><td>${esc(custName(k.customer_id))}</td><td>${esc(i.product)}</td><td class="nowrap">${esc(k.expiry_date||'-')}</td><td class="num">${won(i.purchase_amount)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="muted" style="margin:4px 0 10px;">없음</div>'}
-      ${st.mts.length?`<b>유지보수 매입</b><table><thead><tr><th>유지보수명</th><th>고객사</th><th>만료일</th><th class="num">매입</th></tr></thead><tbody>${st.mts.map(m=>`<tr><td>${esc(m.name)}</td><td>${esc(custName(mtCustomerId(m)))}</td><td class="nowrap">${esc(m.end_date||'-')}</td><td class="num">${won(mtTotals(m).purchase)}</td></tr>`).join('')}</tbody></table>`:''}
+      ${st.its.length?`<table><thead><tr><th class="tl">계약</th><th>고객사</th><th>제품</th><th>만료일</th><th class="num">매입</th></tr></thead><tbody>${st.its.map(i=>{ const k=contractById(i.contract_id)||{}; return `<tr><td class="tl"><span class="link gotoCtr" data-id="${k.id||''}">${esc(k.name||'-')}</span></td><td>${esc(custName(k.customer_id))}</td><td>${esc(i.product)}</td><td class="nowrap">${esc(k.expiry_date||'-')}</td><td class="num">${won(i.purchase_amount)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="muted" style="margin:4px 0 10px;">없음</div>'}
+      ${st.mts.length?`<b>유지보수 매입</b><table><thead><tr><th class="tl">유지보수명</th><th>고객사</th><th>만료일</th><th class="num">매입</th></tr></thead><tbody>${st.mts.map(m=>`<tr><td class="tl">${esc(m.name)}</td><td>${esc(custName(mtCustomerId(m)))}</td><td class="nowrap">${esc(m.end_date||'-')}</td><td class="num">${won(mtTotals(m).purchase)}</td></tr>`).join('')}</tbody></table>`:''}
     </div>`;
   }
   function bindPartners(kind){
@@ -1213,14 +1217,14 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('contracts')}${sortTh('구분','contracts','type')}${sortTh('계약명','contracts','name')}${sortTh('고객사','contracts','cust')}<th>제품</th>${sortTh('계약금액','contracts','sale','text-align:right;')}${sortTh('단계','contracts','stage')}${sortTh('만료일','contracts','end')}${sortTh('영업담당','contracts','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('contracts')}${sortTh('구분','contracts','type')}${sortTh('계약명','contracts','name','text-align:left;')}${sortTh('고객사','contracts','cust')}<th>제품</th>${sortTh('계약금액','contracts','sale','text-align:right;')}${sortTh('단계','contracts','stage')}${sortTh('만료일','contracts','end')}${sortTh('영업담당','contracts','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(c=>{
           const t=contractTotals(c), its=itemsOf(c.id), open=state.expanded===c.id;
           const prod = its.length ? esc(its[0].product||'-')+(its.length>1?` <span class="muted small">외 ${its.length-1}</span>`:'') : '<span class="muted">-</span>';
           const canRenew = c.expiry_date && !c.renewed;
           let html = `<tr class="${rowClassFor(c.expiry_date,c.renewed,c.alert_dismissed)}">${checkTd('contracts',c.id)}
             <td>${dealBadge(c.deal_type)}</td>
-            <td><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span><div class="muted small">${esc(c.code||'')}</div></td>
+            <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span><div class="muted small">${esc(c.code||'')}</div></td>
             <td>${esc(custName(c.customer_id))}${c.end_user_name?`<div class="muted small">↳ ${esc(c.end_user_name)}</div>`:''}</td>
             <td>${prod}</td>
             <td class="num" style="font-weight:600;">${won(t.sale)}</td>
@@ -1245,15 +1249,9 @@
         <div><span class="muted">만료일</span> ${esc(c.expiry_date||'영구')}</div>
         <div><span class="muted">세금계산서 메일</span> ${esc((customer(c.customer_id)||{}).tax_email||'-')}</div>
       </div>
-      <div class="money-sum">
-        <div><span>계약금액</span><b>₩${won(t.sale)}</b></div>
-        <div><span>매입</span><b>₩${won(t.purchase)}</b></div>
-        <div><span>이익</span><b style="color:${t.profit<0?'var(--warn)':'#a3620b'};">₩${won(t.profit)}</b></div>
-        <div><span>마진</span><b>${pct(t.margin)}</b></div>
-      </div>
-      ${its.length?`<table><thead><tr><th>제품</th><th class="num">수량</th><th class="num">매출</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th></tr></thead><tbody>
-        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); return `<tr><td>${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td></tr>`; }).join('')}
-        <tr class="total"><td colspan="2">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td></tr>
+      ${its.length?`<table><thead><tr><th class="tl">제품</th><th class="num">수량</th><th class="num">매출</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th></tr></thead><tbody>
+        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td></tr>`; }).join('')}
+        <tr class="total"><td colspan="2" class="tl">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td></tr>
       </tbody></table>`:'<div class="muted">등록된 품목이 없습니다.</div>'}
       ${c.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(c.remarks)}</div></div>`:''}
     </div>`;
@@ -1404,12 +1402,12 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 유지보수 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('maint')}${sortTh('구분','maint','type')}${sortTh('유지보수명','maint','name')}${sortTh('고객사','maint','cust')}${sortTh('매입처','maint','supplier')}<th>결제</th>${sortTh('계약금액','maint','sale','text-align:right;')}${sortTh('만료일','maint','end')}${sortTh('담당','maint','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('maint')}${sortTh('구분','maint','type')}${sortTh('유지보수명','maint','name','text-align:left;')}${sortTh('고객사','maint','cust')}${sortTh('매입처','maint','supplier')}<th>결제</th>${sortTh('계약금액','maint','sale','text-align:right;')}${sortTh('만료일','maint','end')}${sortTh('담당','maint','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(m=>{
           const t=mtTotals(m), ctr=contractById(m.contract_id), open=state.expanded===m.id;
           let html=`<tr class="${rowClassFor(m.end_date,m.renewed,m.alert_dismissed)}">${checkTd('maint',m.id)}
             <td>${dealBadge(m.deal_type)}</td>
-            <td><span class="link toggleRow" data-id="${m.id}" style="font-weight:600;">${esc(m.name)}</span>${ctr?`<div class="muted small">↳ ${esc(ctr.code)}</div>`:''}</td>
+            <td class="tl"><span class="link toggleRow" data-id="${m.id}" style="font-weight:600;">${esc(m.name)}</span>${ctr?`<div class="muted small">↳ ${esc(ctr.code)}</div>`:''}</td>
             <td>${esc(custName(mtCustomerId(m)))}</td>
             <td>${esc(supplierLabel(m.supplier_id,m.supplier)||'-')}</td>
             <td class="small">${esc(m.billing_cycle||'-')}</td>
@@ -1418,8 +1416,8 @@
             <td class="nowrap">${esc(repDisplay(m.sales_rep)||'-')}</td>
             <td style="text-align:center;">${m.attachment_url?`<button class="icon-btn attachView" data-kind="mt" data-id="${m.id}" title="${esc(m.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="mt" data-id="${m.id}" title="계약서 첨부">&#128206;</button>`}</td>
             <td class="nowrap">${m.end_date && !m.renewed?`<button class="btn-sm renewBtn" data-kind="mt" data-id="${m.id}">갱신</button> `:''}<button class="icon-btn shareBtn" data-kind="mt" data-id="${m.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editMt" data-id="${m.id}" title="수정">&#9998;</button></td></tr>`;
-          if(open) html+=`<tr class="detail"><td colspan="11"><div class="detail-box"><div class="detail-grid"><div><span class="muted">기간</span> ${esc(m.start_date||'-')} ~ ${esc(m.end_date||'-')}</div><div><span class="muted">연결 계약</span> ${ctr?esc(ctr.code+' · '+ctr.name):'-'}</div><div><span class="muted">매입처</span> ${esc(supplierLabel(m.supplier_id,m.supplier)||'-')}</div></div>
-            <div class="money-sum"><div><span>계약금액</span><b>₩${won(t.sale)}</b></div><div><span>매입</span><b>₩${won(t.purchase)}</b></div><div><span>이익</span><b style="color:${t.profit<0?'var(--warn)':'#a3620b'};">₩${won(t.profit)}</b></div><div><span>마진</span><b>${pct(t.margin)}</b></div></div>${m.remarks?`<div style="white-space:pre-wrap;"><span class="muted">비고</span> ${esc(m.remarks)}</div>`:''}</div></td></tr>`;
+          if(open) html+=`<tr class="detail"><td colspan="11"><div class="detail-box"><div class="detail-grid"><div><span class="muted">기간</span> ${esc(m.start_date||'-')} ~ ${esc(m.end_date||'-')}</div><div><span class="muted">연결 계약</span> ${ctr?esc(ctr.code+' · '+ctr.name):'-'}</div></div>
+            <table><thead><tr><th class="tl">유지보수명</th><th class="num">계약금액</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th></tr></thead><tbody><tr><td class="tl">${esc(m.name)}</td><td class="num">${won(t.sale)}</td><td>${esc(supplierLabel(m.supplier_id,m.supplier)||'-')}</td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td></tr></tbody></table>${m.remarks?`<div style="white-space:pre-wrap;"><span class="muted">비고</span> ${esc(m.remarks)}</div>`:''}</div></td></tr>`;
           return html;
         }).join('')}
         <tr class="total"><td colspan="6" style="text-align:right;">합계 · ${list.length}건</td><td class="num">${won(tot.sale)}</td><td colspan="4"></td></tr>
@@ -1533,11 +1531,11 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">해당하는 기술지원 요청이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('support')}${sortTh('접수일','support','date')}${sortTh('고객사','support','cust')}<th>고객 담당자</th>${sortTh('지원 제품','support','product')}<th>요청 내용</th>${sortTh('엔지니어','support','assignee')}${sortTh('방식','support','method')}${sortTh('상태','support','status')}${sortTh('완료일','support','done')}<th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('support')}${sortTh('접수일','support','date')}${sortTh('고객사','support','cust')}<th>고객 담당자</th>${sortTh('지원 제품','support','product')}<th class="tl">요청 내용</th>${sortTh('엔지니어','support','assignee')}${sortTh('방식','support','method')}${sortTh('상태','support','status')}${sortTh('완료일','support','done')}<th></th></tr></thead><tbody>
         ${pg.items.map(t=>{ const ct=contact(t.contact_id), open=state.expanded===t.id; let h=`<tr>${checkTd('support',t.id)}
           <td class="nowrap">${esc(t.received_date||'-')}<div class="muted small">${esc(t.code||'')}</div></td>
           <td>${esc(custName(t.customer_id))}</td><td>${ct?esc(ct.name):'-'}</td><td>${esc(t.product||'-')}</td>
-          <td><div class="clip link toggleRow" data-id="${t.id}">${esc(t.request||'-')}</div></td>
+          <td class="tl"><div class="clip link toggleRow" data-id="${t.id}">${esc(t.request||'-')}</div></td>
           <td>${t.assignee?esc(repDisplay(t.assignee)):'<span class="badge warn">미배정</span>'}</td><td>${esc(t.method||'-')}</td><td>${tkBadge(t.status)}</td><td class="nowrap">${esc(t.done_date||'-')}</td>
           <td class="nowrap">${t.status!=='완료'?`<button class="btn-sm editTk" data-id="${t.id}">처리</button>`:`<button class="icon-btn editTk" data-id="${t.id}" title="수정">&#9998;</button>`}</td></tr>`;
           if(open) h+=`<tr class="detail"><td colspan="11"><div class="detail-box"><div><span class="muted">요청 내용</span><div style="white-space:pre-wrap; margin-bottom:8px;">${esc(t.request||'-')}</div></div><div><span class="muted">지원 내용</span><div style="white-space:pre-wrap;">${esc(t.action||'아직 입력되지 않았습니다.')}</div></div>${ct?`<div class="muted small" style="margin-top:6px;">고객 연락처: ${esc(ct.phone||'-')} · ${esc(ct.email||'-')}</div>`:''}</div></td></tr>`;
@@ -1623,8 +1621,8 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">등록된 담당자가 없습니다.</div>':`
-        <table><thead><tr>${state.isAdmin?checkAllTh('reps'):''}${sortTh('이름','reps','name')}${sortTh('부서','reps','dept')}<th>연락처</th>${sortTh('이메일 (로그인 계정)','reps','email')}<th style="text-align:center;">관리자</th><th style="text-align:center;">진행 중 지원</th><th></th></tr></thead><tbody>
-        ${list.map(r=>`<tr>${state.isAdmin?checkTd('reps',r.id):''}<td style="font-weight:600;">${esc(r.name)}${r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase()?' <span class="badge blue">나</span>':''}</td><td>${esc(r.dept||'-')}</td><td>${esc(r.phone||'-')}</td><td>${esc(r.email||'-')}</td><td style="text-align:center;">${r.is_admin?'<span class="badge green">관리자</span>':'-'}</td><td style="text-align:center;">${state.tickets.filter(t=>repDisplay(t.assignee)===r.name && t.status!=='완료').length||'-'}</td><td>${state.isAdmin?`<button class="icon-btn editRep" data-id="${r.id}" title="수정">&#9998;</button>`:''}</td></tr>`).join('')}
+        <table><thead><tr>${state.isAdmin?checkAllTh('reps'):''}${sortTh('이름','reps','name','text-align:left;')}${sortTh('부서','reps','dept')}<th>연락처</th>${sortTh('이메일 (로그인 계정)','reps','email')}<th style="text-align:center;">관리자</th><th style="text-align:center;">진행 중 지원</th><th></th></tr></thead><tbody>
+        ${list.map(r=>`<tr>${state.isAdmin?checkTd('reps',r.id):''}<td class="tl" style="font-weight:600;">${esc(r.name)}${r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase()?' <span class="badge blue">나</span>':''}</td><td>${esc(r.dept||'-')}</td><td>${esc(r.phone||'-')}</td><td>${esc(r.email||'-')}</td><td style="text-align:center;">${r.is_admin?'<span class="badge green">관리자</span>':'-'}</td><td style="text-align:center;">${state.tickets.filter(t=>repDisplay(t.assignee)===r.name && t.status!=='완료').length||'-'}</td><td>${state.isAdmin?`<button class="icon-btn editRep" data-id="${r.id}" title="수정">&#9998;</button>`:''}</td></tr>`).join('')}
         </tbody></table>`}
       </div>`;
   }
