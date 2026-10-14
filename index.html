@@ -268,6 +268,10 @@
   .sugg{display:none; position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid var(--grid-strong); max-height:200px; overflow-y:auto; z-index:50; border-radius:0 0 var(--radius) var(--radius); box-shadow:0 6px 14px rgba(0,0,0,.12);}
   .sugg div{padding:8px 10px; cursor:pointer; font-size:12.5px; border-bottom:1px solid var(--grid);}
   .sugg div:hover{background:var(--header-fill);}
+  .sugg-float{position:fixed; z-index:500; background:#fff; border:1px solid var(--grid-strong); max-height:220px; overflow-y:auto; border-radius:0 0 var(--radius) var(--radius); box-shadow:0 6px 14px rgba(0,0,0,.12);}
+  .sugg-float div{padding:8px 10px; cursor:pointer; font-size:12.5px; border-bottom:1px solid var(--grid);}
+  .sugg-float div:hover, .sugg-float div.on{background:var(--header-fill);}
+  .sugg-float div.none{cursor:default; color:var(--ink-soft);}
   .hint{font-size:11px; color:var(--ink-soft); margin-top:5px; line-height:1.5;}
   .info-line{background:var(--header-fill); padding:8px 10px; border-radius:var(--radius); margin-bottom:14px; font-size:12px;}
   .contact-row{display:grid; grid-template-columns:1.1fr 1fr 1.1fr 1.4fr 30px; gap:6px; margin-bottom:6px; align-items:center;}
@@ -576,6 +580,7 @@
   function render(){
     const a=document.activeElement; let rid=null, s1=null, s2=null;
     if(a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT') && (a.id || a.dataset.bind)){ rid = a.id ? '#'+a.id : `#modalBg [data-bind="${a.dataset.bind}"]`; try{ s1=a.selectionStart; s2=a.selectionEnd; }catch(e){} }
+    document.querySelectorAll('.sugg-float').forEach(x=>x.remove());
     if(state.view==='login'){ root.innerHTML=renderLogin(); bindLogin(); return; }
     root.innerHTML = renderShell();
     if(!state.loading) bindShell();
@@ -1441,7 +1446,7 @@
           <td><input class="cell-in n" id="it_${i}_qty" data-item="${i}" data-f="qty" value="${esc(it.qty)}" inputmode="numeric"/></td>
           <td><input class="cell-in n" id="it_${i}_price" data-item="${i}" data-f="unit_price" value="${won(it.unit_price)}" inputmode="numeric"/></td>
           <td class="num" id="it_${i}_sale" style="font-weight:600;">${won(it.sale_amount)}</td>
-          <td><input class="cell-in supIn" id="it_${i}_supplier" data-item="${i}" data-f="supplier" value="${esc(it.supplier||'')}" list="supplierList" placeholder="입력하면 검색" autocomplete="off"/><div class="sup-new small" id="it_${i}_supnew" style="${isNewSup?'':'display:none;'}">새 매입처로 등록돼요</div></td>
+          <td><input class="cell-in supIn" id="it_${i}_supplier" data-item="${i}" data-f="supplier" value="${esc(it.supplier||'')}" placeholder="입력하면 검색" autocomplete="off"/><div class="sup-new small" id="it_${i}_supnew" style="${isNewSup?'':'display:none;'}">새 매입처로 등록돼요</div></td>
           <td><input class="cell-in n" id="it_${i}_purchase" data-item="${i}" data-f="purchase_amount" value="${won(it.purchase_amount)}" inputmode="numeric"/></td>
           <td class="num" id="it_${i}_profit">${won(p)}</td>
           <td class="num small" id="it_${i}_margin">${pct(num(it.sale_amount)?p/num(it.sale_amount)*100:0)}</td>
@@ -1466,6 +1471,30 @@
     el.addEventListener('change',()=>{ onSet(el.value); check(); });
     el.addEventListener('blur',check);
   }
+  // 고객사 입력창과 같은 방식의 자동완성 목록 (표 안에서도 잘리지 않게 화면 위에 띄움)
+  function attachSuggest(input, getNames, onPick, emptyText){
+    let box=null, idx=-1;
+    const close=()=>{ if(box){ box.remove(); box=null; } idx=-1; };
+    const pick=v=>{ input.value=v; onPick(v); close(); };
+    const show=()=>{
+      const q=input.value.trim().toLowerCase(); if(!q){ close(); return; }
+      const hits=getNames().filter(n=>n.toLowerCase().includes(q)).slice(0,10);
+      if(!box){ box=document.createElement('div'); box.className='sugg-float'; document.body.appendChild(box); }
+      box.innerHTML = hits.length ? hits.map(n=>`<div data-v="${esc(n)}">${esc(n)}</div>`).join('') : `<div class="none">${esc(emptyText||'일치하는 항목이 없습니다')}</div>`;
+      const r=input.getBoundingClientRect(); box.style.left=r.left+'px'; box.style.top=(r.bottom+2)+'px'; box.style.width=Math.max(r.width,220)+'px';
+      box.querySelectorAll('[data-v]').forEach(it=>it.addEventListener('mousedown',e=>{ e.preventDefault(); pick(it.dataset.v); }));
+      idx=-1;
+    };
+    input.addEventListener('input',show);
+    input.addEventListener('focus',show);
+    input.addEventListener('blur',()=>setTimeout(close,150));
+    input.addEventListener('keydown',e=>{
+      if(!box) return; const items=[...box.querySelectorAll('[data-v]')]; if(!items.length) return;
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){ e.preventDefault(); idx=(idx+(e.key==='ArrowDown'?1:-1)+items.length)%items.length; items.forEach((x,k)=>x.classList.toggle('on',k===idx)); }
+      else if(e.key==='Enter' && idx>=0){ e.preventDefault(); pick(items[idx].dataset.v); }
+      else if(e.key==='Escape') close();
+    });
+  }
   // 처음 보는 매입처 이름은 매입처관리에 자동 등록
   async function ensureSuppliers(names){
     const fresh=[...new Set(names.map(n=>String(n||'').trim()).filter(n=>n && !supplierByName(n)))];
@@ -1481,7 +1510,13 @@
     bindContactSelect(d,'contact_id');
     document.querySelectorAll('[data-item]').forEach(el=>{
       const it=d._items[+el.dataset.item], f=el.dataset.f;
-      if(f==='supplier'){ bindSupplierInput(el, v=>{ it.supplier=v; const sp=supplierByName(v); it.supplier_id = sp?sp.id:null; }, document.getElementById(`it_${el.dataset.item}_supnew`)); return; }
+      if(f==='supplier'){
+        const note=document.getElementById(`it_${el.dataset.item}_supnew`);
+        const set=v=>{ it.supplier=v; const sp=supplierByName(v); it.supplier_id = sp?sp.id:null; if(note) note.style.display = (v.trim() && !sp)?'':'none'; };
+        bindSupplierInput(el, set, note);
+        attachSuggest(el, ()=>sortedSuppliers().map(c=>c.name), set, '일치하는 매입처가 없습니다 · 저장하면 새로 등록됩니다');
+        return;
+      }
       el.addEventListener('input',()=>{ it[f] = ['unit_price','purchase_amount','qty'].includes(f) ? num(el.value) : el.value; updateItemTotals(d); });
       if(['unit_price','purchase_amount'].includes(f)){
         el.addEventListener('focus',()=>{ el.value = num(el.value) ? String(num(el.value)) : ''; });
