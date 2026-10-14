@@ -235,5 +235,46 @@ update maintenance_contracts m set supplier_id = c.id
 from customers c
 where m.supplier_id is null and c.kind = 'supplier' and c.name = trim(m.supplier);
 
+-- =====================================================================
+-- 8) 단가, 결제주기, 단계 정리, 유지보수 → 계약(분류: 유지보수)으로 통합
+-- =====================================================================
+alter table contract_items add column if not exists unit_price numeric;
+update contract_items
+   set unit_price = case when coalesce(qty,0) > 0 then round(coalesce(sale_amount,0) / qty) else coalesce(sale_amount,0) end
+ where unit_price is null;
+
+alter table contracts add column if not exists billing_cycle text;
+
+-- 단계: 진행중 / 계약완료 두 가지로
+update contracts set stage = '계약완료' where stage in ('계산서발행','수금완료','청구완료','유지보수');
+update contracts set stage = '진행중'   where stage is null or stage not in ('진행중','계약완료');
+
+-- 기존 유지보수관리 자료를 "유지보수" 분류 계약으로 옮기기 (원래 표는 그대로 둠, 한 번만 옮김)
+insert into contracts (id, code, name, customer_id, deal_type, stage, contract_date, start_date, expiry_date,
+                       alert_days, alert_dismissed, renewed, amount, profit_amount, billing_cycle, sales_rep, remarks,
+                       attachment_url, attachment_name, attachment_path, reg_date)
+select 'mtc_' || m.id,
+       'MT' || to_char(coalesce(m.reg_date, current_date), 'YYMMDD') || '-' || substr(md5(m.id), 1, 4),
+       m.name,
+       coalesce(m.customer_id, c.customer_id),
+       '유지보수', '진행중',
+       m.start_date, m.start_date, m.end_date,
+       coalesce(m.alert_days, 30), coalesce(m.alert_dismissed, false), coalesce(m.renewed, false),
+       coalesce(m.amount, 0),
+       coalesce(m.amount, 0) - coalesce(m.purchase_amount, coalesce(m.amount, 0) - coalesce(m.profit_amount, 0)),
+       coalesce(m.billing_cycle, '연납'), coalesce(m.sales_rep, ''), coalesce(m.remarks, ''),
+       m.attachment_url, m.attachment_name, m.attachment_path, m.reg_date
+from maintenance_contracts m
+left join contracts c on c.id = m.contract_id
+where not exists (select 1 from contracts x where x.id = 'mtc_' || m.id);
+
+insert into contract_items (id, contract_id, product, qty, unit_price, sale_amount, supplier_id, supplier, purchase_amount, sort)
+select 'mti_' || m.id, 'mtc_' || m.id, m.name, 1, coalesce(m.amount, 0), coalesce(m.amount, 0),
+       m.supplier_id, coalesce(m.supplier, ''),
+       coalesce(m.purchase_amount, coalesce(m.amount, 0) - coalesce(m.profit_amount, 0)), 0
+from maintenance_contracts m
+where exists (select 1 from contracts x where x.id = 'mtc_' || m.id)
+  and not exists (select 1 from contract_items i where i.id = 'mti_' || m.id);
+
 -- 7) 사이트가 새 표를 바로 인식하도록 새로고침
 notify pgrst, 'reload schema';

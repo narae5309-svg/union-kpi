@@ -130,6 +130,7 @@
   .detail-box{padding:14px 18px; font-size:12.5px; line-height:1.6;}
   .detail-box table{border:1px solid var(--grid); margin:6px 0 10px; background:#fff;}
   .detail-box th{background:#f2f7f7;}
+  .sup-new{color:var(--accent-dark); margin-top:2px; font-size:10.5px;}
   .money-sum{display:flex; gap:10px; flex-wrap:wrap; margin:6px 0 10px;}
   .money-sum > div{background:#fff; border:1px solid var(--grid); border-radius:var(--radius); padding:7px 12px; min-width:130px;}
   .money-sum span{display:block; font-size:11px; color:var(--ink-soft);}
@@ -240,7 +241,7 @@
   /* forms & modal */
   .modal-bg{position:fixed; inset:0; background:rgba(20,25,30,.55); display:flex; align-items:flex-start; justify-content:center; z-index:200; overflow-y:auto; padding:30px 12px;}
   .modal{background:#fff; width:680px; max-width:100%; border-radius:var(--radius); position:relative;}
-  .modal.wide{width:1040px;}
+  .modal.wide{width:1140px;}
   .modal-head{display:flex; justify-content:space-between; align-items:center; padding:14px 20px; border-bottom:1px solid var(--grid); background:var(--header-fill); border-radius:var(--radius) var(--radius) 0 0;}
   .modal-head h3{font-size:14px;}
   .modal-close{cursor:pointer; font-size:20px; color:var(--ink-soft); background:none; border:none; line-height:1;}
@@ -318,8 +319,8 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:authStorage } });
   const root = document.getElementById('app');
 
-  const STAGES = ['계약','발주완료','납품완료','계산서발행','수금완료'];
-  const DEAL_TYPES = ['신규','갱신'];
+  const STAGES = ['진행중','계약완료'];
+  const DEAL_TYPES = ['신규','갱신','유지보수'];
   const TK_STATUS = ['접수','처리중','완료'];
   const METHODS = ['방문','원격','전화'];
   const BILLING = ['연납','분기납','월납','일시납'];
@@ -480,8 +481,8 @@
   const dn = v => v ? v : null;
   function custRow(c){ return {id:c.id, code:c.code, name:c.name, kind:c.kind||'customer', tax_email:c.tax_email||'', biz_reg_no:c.biz_reg_no||'', sales_rep:c.sales_rep||state.user, reg_date:dn(c.reg_date)}; }
   function contactRow(x){ return {id:x.id, customer_id:x.customer_id, name:x.name||'', dept:x.dept||'', phone:x.phone||'', email:x.email||''}; }
-  function ctrRow(c){ return {id:c.id, code:c.code, name:c.name, customer_id:c.customer_id||null, contact_id:c.contact_id||null, end_user_name:c.end_user_name||'', deal_type:c.deal_type||'신규', stage:c.stage||STAGES[0], request:c.request||'없음', contract_date:dn(c.contract_date), start_date:dn(c.start_date), expiry_date:dn(c.expiry_date), alert_days:num(c.alert_days)||30, alert_dismissed:!!c.alert_dismissed, renewed:!!c.renewed, amount:num(c.amount), profit_amount:num(c.profit_amount), biz_type:c.biz_type||'', invoice_date:dn(c.invoice_date), sales_rep:c.sales_rep||state.user, remarks:c.remarks||'', attachment_url:c.attachment_url||null, attachment_name:c.attachment_name||null, attachment_path:c.attachment_path||null, reg_date:dn(c.reg_date)}; }
-  function itemRow(i){ return {id:i.id, contract_id:i.contract_id, product:i.product||'', vendor:i.vendor||'', qty:num(i.qty)||1, sale_amount:num(i.sale_amount), supplier_id:i.supplier_id||null, supplier:i.supplier||'', purchase_amount:num(i.purchase_amount), sort:num(i.sort), end_date:dn(i.end_date), renewed:!!i.renewed, closed:!!i.closed}; }
+  function ctrRow(c){ return {id:c.id, code:c.code, name:c.name, customer_id:c.customer_id||null, contact_id:c.contact_id||null, end_user_name:c.end_user_name||'', deal_type:c.deal_type||'신규', stage:c.stage||STAGES[0], request:c.request||'없음', contract_date:dn(c.contract_date), start_date:dn(c.start_date), expiry_date:dn(c.expiry_date), alert_days:num(c.alert_days)||30, alert_dismissed:!!c.alert_dismissed, renewed:!!c.renewed, amount:num(c.amount), profit_amount:num(c.profit_amount), biz_type:c.biz_type||'', invoice_date:dn(c.invoice_date), billing_cycle:c.deal_type==='유지보수'?(c.billing_cycle||BILLING[0]):null, sales_rep:c.sales_rep||state.user, remarks:c.remarks||'', attachment_url:c.attachment_url||null, attachment_name:c.attachment_name||null, attachment_path:c.attachment_path||null, reg_date:dn(c.reg_date)}; }
+  function itemRow(i){ return {id:i.id, contract_id:i.contract_id, product:i.product||'', vendor:i.vendor||'', qty:num(i.qty)||1, sale_amount:num(i.sale_amount), supplier_id:i.supplier_id||null, supplier:i.supplier||'', purchase_amount:num(i.purchase_amount), sort:num(i.sort), end_date:dn(i.end_date), renewed:!!i.renewed, closed:!!i.closed, unit_price:num(i.unit_price)}; }
   function mtRow(m){ const t=mtTotals(m); return {id:m.id, name:m.name, contract_id:m.contract_id||null, customer_id:m.customer_id||null, deal_type:m.deal_type||'신규', start_date:dn(m.start_date), end_date:dn(m.end_date), billing_cycle:m.billing_cycle||BILLING[0], amount:num(m.amount), supplier_id:m.supplier_id||null, supplier:m.supplier||'', purchase_amount:t.purchase, profit_amount:t.profit, renewal_type:m.renewal_type||'수동갱신', sales_rep:m.sales_rep||state.user, alert_days:num(m.alert_days)||30, alert_dismissed:!!m.alert_dismissed, renewed:!!m.renewed, remarks:m.remarks||'', attachment_url:m.attachment_url||null, attachment_name:m.attachment_name||null, attachment_path:m.attachment_path||null, reg_date:dn(m.reg_date)}; }
   function tkRow(t){ return {id:t.id, code:t.code, customer_id:t.customer_id||null, contact_id:t.contact_id||null, contract_id:t.contract_id||null, product:t.product||'', request:t.request||'', received_date:dn(t.received_date), assignee:t.assignee||'', status:t.status||'접수', method:t.method||'', action:t.action||'', done_date:dn(t.done_date), created_by:t.created_by||state.user}; }
   function repRow(r){ return {id:r.id, name:r.name, phone:r.phone||'', email:r.email||'', dept:r.dept||'', is_admin:!!r.is_admin}; }
@@ -489,7 +490,7 @@
   // ================= data =================
   async function loadAll(){
     state.loading=true; render();
-    const tables = [['reps','reps'],['customers','customers'],['contacts','customer_contacts'],['contracts','contracts'],['items','contract_items'],['maint','maintenance_contracts'],['tickets','support_tickets']];
+    const tables = [['reps','reps'],['customers','customers'],['contacts','customer_contacts'],['contracts','contracts'],['items','contract_items'],['tickets','support_tickets']];
     const res = await Promise.all(tables.map(([,t])=>sb.from(t).select('*').order('created_at',{ascending:false})));
     state.setupMissing = [];
     res.forEach((r,i)=>{
@@ -497,9 +498,12 @@
       if(r.error){ state[key]=[]; state.setupMissing.push(t+': '+r.error.message); }
       else state[key]=r.data||[];
     });
+    state.maint = [];
     if(!state.setupMissing.some(x=>x.startsWith('contract_items'))){
-      const probe = await sb.from('contract_items').select('end_date,renewed,closed').limit(1);
-      if(probe.error) state.setupMissing.push('contract_items: 품목별 만료일 칸이 없습니다 (setup.sql 다시 실행 필요)');
+      const probe = await sb.from('contract_items').select('end_date,renewed,closed,unit_price').limit(1);
+      if(probe.error) state.setupMissing.push('contract_items: 품목 단가·만료일 칸이 없습니다 (setup.sql 다시 실행 필요)');
+      const probe2 = await sb.from('contracts').select('billing_cycle').limit(1);
+      if(probe2.error) state.setupMissing.push('contracts: 결제주기 칸이 없고 기존 유지보수 자료가 아직 옮겨지지 않았습니다 (setup.sql 다시 실행 필요)');
     }
     let me = state.reps.find(r=>r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase());
     if(!me && state.userEmail && !state.setupMissing.some(s=>s.startsWith('reps'))){
@@ -629,7 +633,7 @@
     const renewN = renewalBadgeCount(), tkN = openTicketsCount(false);
     const p = notifyPerm();
     const notifyLabel = p==='granted'?'🔔 갱신 알림 켜짐':p==='denied'?'🔕 알림 차단됨':'🔔 갱신 알림 켜기';
-    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:renderMaint, support:renderSupport, reps:renderReps};
+    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), support:renderSupport, reps:renderReps};
     return `<div class="shell">
       <div class="sidebar">
         <div class="brand"><h2>UNION</h2><div class="who">${esc(state.user)} 님${state.isAdmin?' · 관리자':''}</div></div>
@@ -716,7 +720,7 @@
             <div class="lane-head"><span>${title}${sub?` <span class="muted small" style="font-weight:400;">${sub}</span>`:''}</span><span class="count">${lanes[k].length}</span></div>
             <div class="lane-list">${lanes[k].length===0?'<div class="muted small" style="padding:6px 4px;">없음</div>':lanes[k].map(x=>`
               <div class="rcard">
-                <div class="row"><span class="badge ${x.kind==='ctr'?'blue':'purple'}">${x.kind==='ctr'?'제품':'유지보수'}</span><span class="dday">${ddayLabel(x.d)}</span></div>
+                <div class="row">${(x.kind==='mt'||(x.rec&&x.rec.deal_type==='유지보수'))?'<span class="badge purple">유지보수</span>':'<span class="badge blue">제품</span>'}<span class="dday">${ddayLabel(x.d)}</span></div>
                 <div class="t link openRenewal" data-kind="${x.kind}" data-id="${x.id}">${esc(x.name)}</div>${x.sub?`<div class="s" style="color:var(--ink);">└ ${esc(x.sub)}</div>`:''}
                 <div class="s">${esc(custName(x.customerId))} · ₩${won(x.amount)}</div>
                 <div class="s">만료 ${esc(x.end)} · ${esc(repDisplay(x.rep)||'-')}</div>
@@ -780,7 +784,8 @@
     state.contracts.forEach(c=>{
       if(mine && !isMine(c.sales_rep)) return;
       if(c.contract_date) ev.push({date:c.contract_date, type:'sign', kind:'ctr', id:c.id, name:c.name, cust:custName(c.customer_id), label:'계약'});
-      ctrGroups(c).forEach(g=>{ const sub=groupLabel(c,g); ev.push({date:g.end, end:g.end, type:g.done?'done':'end', kind:'ctr', id:c.id, name:c.name+(sub?' · '+sub:''), cust:custName(c.customer_id), label:g.done?(g.renewed?'갱신완료':'종료'):'만료'}); });
+      const isMtC = c.deal_type==='유지보수';
+      ctrGroups(c).forEach(g=>{ const sub=groupLabel(c,g); ev.push({date:g.end, end:g.end, type:g.done?'done':(isMtC?'mtend':'end'), kind:'ctr', id:c.id, name:c.name+(sub?' · '+sub:''), cust:custName(c.customer_id), label:g.done?(g.renewed?'갱신완료':'종료'):(isMtC?'유지보수 만료':'만료')}); });
     });
     state.maint.forEach(m=>{
       if(mine && !isMine(m.sales_rep)) return;
@@ -850,7 +855,7 @@
     if(kind==='ctr'){
       const c=contractById(id); if(!c) return '';
       const ct=contact(c.contact_id), its=itemsOf(c.id), t=contractTotals(c), d=daysUntil(c.expiry_date);
-      L.push('[UNION 계약 안내]');
+      L.push(c.deal_type==='유지보수'?'[UNION 유지보수 안내]':'[UNION 계약 안내]');
       L.push(`■ 계약명: ${c.name}`);
       L.push(`■ 고객사: ${custName(c.customer_id)}${c.end_user_name?' (사용처: '+c.end_user_name+')':''}`);
       if(ct) L.push(`■ 고객 담당자: ${ct.name}${ct.phone?' '+ct.phone:''}`);
@@ -912,7 +917,7 @@
       const endTxt = cst.end ? cst.end+(cst.renewed?' 갱신완료':dd!=null?' ('+ddayLabel(dd)+')':'') : '영구';
       const prod = its.length ? its[0].product+(its.length>1?` 외 ${its.length-1}건`:'') : '';
       const card = {objectType:'feed',
-        content:{title: clip(`${forCustomer?'[계약 안내]':'[계약]'} ${c.name}`,60), description: clip(`${custName(c.customer_id)}${prod?' · '+prod:''}`,80), link},
+        content:{title: clip(`${c.deal_type==='유지보수'?(forCustomer?'[유지보수 안내]':'[유지보수]'):(forCustomer?'[계약 안내]':'[계약]')} ${c.name}`,60), description: clip(`${custName(c.customer_id)}${prod?' · '+prod:''}`,80), link},
         itemContent:{profileText:profile, items:[
           {item:'고객사', itemOp:clip(custName(c.customer_id),20)},
           {item:'구분', itemOp:c.deal_type||'신규'},
@@ -1078,7 +1083,7 @@
       const mts = state.maint.filter(m=>m.supplier_id===c.id || (!m.supplier_id && m.supplier && m.supplier===c.name));
       return {ctr:ctrIds.size, mt:mts.length, amount: its.reduce((s,i)=>s+num(i.purchase_amount),0) + mts.reduce((s,m)=>s+mtTotals(m).purchase,0), tk:0, its, mts};
     }
-    return {ctr: state.contracts.filter(x=>x.customer_id===c.id).length, mt: state.maint.filter(m=>mtCustomerId(m)===c.id).length, tk: state.tickets.filter(t=>t.customer_id===c.id && t.status!=='완료').length};
+    return {ctr: state.contracts.filter(x=>x.customer_id===c.id && x.deal_type!=='유지보수').length, mt: state.contracts.filter(x=>x.customer_id===c.id && x.deal_type==='유지보수').length, tk: state.tickets.filter(t=>t.customer_id===c.id && t.status!=='완료').length};
   }
   function renderPartners(kind){
     const key = kind==='supplier'?'suppliers':'customers', label = kind==='supplier'?'매입처':'고객사';
@@ -1290,59 +1295,65 @@
   }
 
   // ================= CONTRACTS =================
-  const dealBadge = t => t==='갱신' ? '<span class="badge gold">갱신</span>' : '<span class="badge blue">신규</span>';
-  const stageBadge = s => `<span class="badge ${s==='수금완료'?'green':s==='계산서발행'?'gold':'gray'}">${esc(s||'-')}</span>`;
+  const dealBadge = t => t==='갱신' ? '<span class="badge gold">갱신</span>' : t==='유지보수' ? '<span class="badge purple">유지보수</span>' : '<span class="badge blue">신규</span>';
+  const normStage = s => STAGES.includes(s) ? s : (['계산서발행','수금완료','청구완료','유지보수'].includes(s) ? '계약완료' : '진행중');
+  const stageBadge = s => { const v=normStage(s); return `<span class="badge ${v==='계약완료'?'green':'blue'}">${esc(v)}</span>`; };
   function supplierDatalist(){ return `<datalist id="supplierList">${sortedSuppliers().map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>`; }
-  function renderContracts(){
-    const f=state.f;
-    let list = state.contracts.filter(c=>{
+  // key: 'contracts' = 모든 계약, 'maint' = 분류가 유지보수인 계약만
+  function renderContracts(key){
+    key = key || 'contracts';
+    const isMt = key==='maint', f=state.f;
+    const tabKey = isMt?'mtTab':'ctrTab', repKey = isMt?'mtRep':'ctrRep';
+    const base = isMt ? state.contracts.filter(c=>c.deal_type==='유지보수') : state.contracts;
+    let list = base.filter(c=>{
       const st=ctrState(c);
-      if(!periodTabMatch(f.ctrTab, st.end, st.renewed, st.dismissed)) return false;
-      if(!st.groups.some(g=>endInRange('contracts', g.end)) && !(st.groups.length===0 && endInRange('contracts',''))) return false;
-      if(f.ctrType!=='전체' && (c.deal_type||'신규')!==f.ctrType) return false;
-      if(f.ctrRep!=='전체' && repDisplay(c.sales_rep)!==f.ctrRep) return false;
+      if(!periodTabMatch(f[tabKey], st.end, st.renewed, st.dismissed)) return false;
+      if(!st.groups.some(g=>endInRange(key, g.end)) && !(st.groups.length===0 && endInRange(key,''))) return false;
+      if(!isMt && f.ctrType!=='전체' && (c.deal_type||'신규')!==f.ctrType) return false;
+      if(f[repKey]!=='전체' && repDisplay(c.sales_rep)!==f[repKey]) return false;
       const its=itemsOf(c.id);
-      return qmatch('contracts', c.name, c.code, custName(c.customer_id), c.end_user_name, ...its.map(i=>i.product), ...its.map(i=>supplierLabel(i.supplier_id,i.supplier)));
+      return qmatch(key, c.name, c.code, custName(c.customer_id), c.end_user_name, ...its.map(i=>i.product), ...its.map(i=>supplierLabel(i.supplier_id,i.supplier)));
     });
-    list = applySort(list,'contracts',{type:c=>c.deal_type, name:c=>c.name, cust:c=>custName(c.customer_id), sale:c=>contractTotals(c).sale, purchase:c=>contractTotals(c).purchase, profit:c=>contractTotals(c).profit, margin:c=>contractTotals(c).margin, stage:c=>STAGES.indexOf(c.stage), date:c=>c.contract_date, end:c=>ctrState(c).end||'9999', rep:c=>repDisplay(c.sales_rep)});
-    const tot = list.reduce((s,c)=>{ const t=contractTotals(c); s.sale+=t.sale; s.purchase+=t.purchase; s.profit+=t.profit; return s; },{sale:0,purchase:0,profit:0});
-    const pg = paginate(list,'contracts');
-    const reps=[...new Set(state.contracts.map(c=>repDisplay(c.sales_rep)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
+    list = applySort(list,key,{type:c=>c.deal_type, name:c=>c.name, cust:c=>custName(c.customer_id), sale:c=>contractTotals(c).sale, stage:c=>STAGES.indexOf(normStage(c.stage)), date:c=>c.contract_date, end:c=>ctrState(c).end||'9999', rep:c=>repDisplay(c.sales_rep)});
+    const tot = list.reduce((s,c)=>s+contractTotals(c).sale,0);
+    const pg = paginate(list,key);
+    const reps=[...new Set(base.map(c=>repDisplay(c.sales_rep)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
     return `
-      <div class="page-head"><div><div class="page-title">계약관리</div><div class="page-sub">제품 판매 계약 · 품목별 매출과 매입, 이익, 만료일</div></div></div>
-      ${periodTabsHTML(state.contracts,ctrState,f.ctrTab,'ctrTab')}
+      <div class="page-head"><div><div class="page-title">${isMt?'유지보수관리':'계약관리'}</div><div class="page-sub">${isMt?'분류가 "유지보수"인 계약만 모아 봅니다 · 등록·수정은 계약과 같은 방식':'모든 계약 · 분류(신규/갱신/유지보수), 품목별 매출·매입, 만료일'}</div></div></div>
+      ${periodTabsHTML(base,ctrState,f[tabKey],'ctrTab')}
       <div class="toolbar">
-        <button class="btn-primary" id="addCtrBtn">+ 계약 추가</button>
+        <button class="btn-primary" id="addCtrBtn">+ ${isMt?'유지보수 계약 추가':'계약 추가'}</button>
         <span class="spacer"></span>
-        ${searchInput('contracts','계약명·고객사·제품·매입처 검색')}
-        ${selectFilter('fCtrType','신규/갱신',DEAL_TYPES,f.ctrType)}
-        ${rangeChip('contracts')}
-        ${selectFilter('fCtrRep','영업담당',reps,f.ctrRep)}
-        ${bulkDelBtn('contracts')}
+        ${searchInput(key,'계약명·고객사·제품·매입처 검색')}
+        ${isMt?'':selectFilter('fCtrType','분류',DEAL_TYPES,f.ctrType)}
+        ${rangeChip(key)}
+        ${selectFilter('fCtrRep','영업담당',reps,f[repKey])}
+        ${bulkDelBtn(key)}
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('contracts')}${sortTh('구분','contracts','type')}${sortTh('계약명','contracts','name','text-align:left;')}${sortTh('고객사','contracts','cust')}<th>제품</th>${sortTh('계약금액','contracts','sale','text-align:right;')}${sortTh('단계','contracts','stage')}${endTh('contracts')}${sortTh('영업담당','contracts','rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh(key)}${sortTh('분류',key,'type')}${sortTh('계약명',key,'name','text-align:left;')}${sortTh('고객사',key,'cust')}<th>제품</th>${isMt?'<th>결제</th>':''}${sortTh('계약금액',key,'sale','text-align:right;')}${sortTh('단계',key,'stage')}${endTh(key)}${sortTh('영업담당',key,'rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(c=>{
           const t=contractTotals(c), its=itemsOf(c.id), open=state.expanded===c.id;
           const prod = its.length ? esc(its[0].product||'-')+(its.length>1?` <span class="muted small">외 ${its.length-1}</span>`:'') : '<span class="muted">-</span>';
           const cs = ctrState(c), canRenew = cs.groups.some(g=>!g.done);
-          let html = `<tr class="${rowClassFor(cs.end,cs.renewed,cs.dismissed)}">${checkTd('contracts',c.id)}
+          let html = `<tr class="${rowClassFor(cs.end,cs.renewed,cs.dismissed)}">${checkTd(key,c.id)}
             <td>${dealBadge(c.deal_type)}</td>
             <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span><div class="muted small">${esc(c.code||'')}</div></td>
             <td>${esc(custName(c.customer_id))}${c.end_user_name?`<div class="muted small">↳ ${esc(c.end_user_name)}</div>`:''}</td>
             <td>${prod}</td>
+            ${isMt?`<td class="small">${esc(c.billing_cycle||'-')}</td>`:''}
             <td class="num" style="font-weight:600;">${won(t.sale)}</td>
             <td>${stageBadge(c.stage)}</td>
             <td class="nowrap">${cs.end?esc(cs.end):''}<div>${ddayBadge(cs.end,cs.renewed,cs.dismissed,c.alert_days)}${cs.extra?` <span class="badge gray" title="${esc(cs.groups.filter(g=>!g.done).slice(1).map(g=>g.end).join(', '))}">외 ${cs.extra}개 일정</span>`:''}</div></td>
             <td class="nowrap">${esc(repDisplay(c.sales_rep)||'-')}</td>
             <td style="text-align:center;">${c.attachment_url?`<button class="icon-btn attachView" data-kind="ctr" data-id="${c.id}" title="${esc(c.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="ctr" data-id="${c.id}" title="계약서 첨부">&#128206;</button>`}</td>
             <td class="nowrap">${canRenew?`<button class="btn-sm renewBtn" data-kind="ctr" data-id="${c.id}" title="다음 기간 계약 만들기">갱신</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
-          if(open) html += `<tr class="detail"><td colspan="11">${contractDetail(c)}</td></tr>`;
+          if(open) html += `<tr class="detail"><td colspan="${isMt?12:11}">${contractDetail(c)}</td></tr>`;
           return html;
         }).join('')}
-        <tr class="total"><td colspan="5" style="text-align:right;">합계 · ${list.length}건</td><td class="num">${won(tot.sale)}</td><td colspan="5"></td></tr>
-        </tbody></table>${pager('contracts',pg,list.length)}`}
+        <tr class="total"><td colspan="${isMt?6:5}" style="text-align:right;">합계 · ${list.length}건</td><td class="num">${won(tot)}</td><td colspan="5"></td></tr>
+        </tbody></table>${pager(key,pg,list.length)}`}
       </div>`;
   }
   function contractDetail(c){
@@ -1354,17 +1365,18 @@
         <div><span class="muted">기본 만료일</span> ${esc(c.expiry_date||'영구')}</div>
         <div><span class="muted">세금계산서 메일</span> ${esc((customer(c.customer_id)||{}).tax_email||'-')}</div>
       </div>
-      ${its.length?`<table><thead><tr><th class="tl">제품</th><th class="num">수량</th><th class="num">매출</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th><th>만료일</th></tr></thead><tbody>
-        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td></tr>`; }).join('')}
-        <tr class="total"><td colspan="2" class="tl">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td><td></td></tr>
+      ${its.length?`<table><thead><tr><th class="tl">제품</th><th class="num">수량</th><th class="num">단가</th><th class="num">매출</th><th>매입처</th><th class="num">매입</th><th class="num">이익</th><th class="num">마진</th><th>만료일</th></tr></thead><tbody>
+        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(num(i.unit_price)||(num(i.qty)?num(i.sale_amount)/num(i.qty):0))}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td></tr>`; }).join('')}
+        <tr class="total"><td colspan="3" class="tl">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td><td></td></tr>
       </tbody></table>`:'<div class="muted">등록된 품목이 없습니다.</div>'}
       ${c.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(c.remarks)}</div></div>`:''}
     </div>`;
   }
-  function bindContracts(){
-    document.getElementById('addCtrBtn').onclick=()=>openContractModal(null);
-    document.querySelectorAll('.ctrTab').forEach(el=>el.onclick=()=>{ state.f.ctrTab=el.dataset.t; state.page.contracts=1; state.sel.contracts.clear(); render(); });
-    [['fCtrType','ctrType'],['fCtrRep','ctrRep']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ state.f[k]=el.value; state.page.contracts=1; state.sel.contracts.clear(); render(); }; });
+  function bindContracts(key){
+    key = key || 'contracts'; const isMt = key==='maint';
+    document.getElementById('addCtrBtn').onclick=()=>openContractModal(null, isMt?{dealType:'유지보수'}:{});
+    document.querySelectorAll('.ctrTab').forEach(el=>el.onclick=()=>{ state.f[isMt?'mtTab':'ctrTab']=el.dataset.t; state.page[key]=1; state.sel[key].clear(); render(); });
+    [['fCtrType','ctrType'],['fCtrRep',isMt?'mtRep':'ctrRep']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ state.f[k]=el.value; state.page[key]=1; state.sel[key].clear(); render(); }; });
     document.querySelectorAll('.editCtr').forEach(b=>b.onclick=()=>openContractModal(contractById(b.dataset.id)));
     document.querySelectorAll('.renewBtn').forEach(b=>b.onclick=()=>startRenewal(b.dataset.kind,b.dataset.id,b.dataset.end));
   }
@@ -1378,7 +1390,7 @@
       const target=(opts.end ? open.filter(g=>g.end===opts.end) : open);
       const src=target.flatMap(g=>g.items);
       const basePer=periodRenewal(o.contract_date||o.start_date, (target[0]&&target[0].end)||o.expiry_date);
-      data={...o, id:uid('cr'), code:nextCode('CR',state.contracts), deal_type:'갱신', stage:STAGES[0], contract_date:basePer.start, start_date:basePer.start, expiry_date:basePer.end, sales_rep:repDisplay(o.sales_rep), renewed:false, alert_dismissed:false, invoice_date:'', remarks:'', attachment_url:null, attachment_name:null, attachment_path:null, reg_date:todayStr(), _renewFromId:o.id};
+      data={...o, id:uid('cr'), code:nextCode('CR',state.contracts), deal_type:o.deal_type==='유지보수'?'유지보수':'갱신', stage:STAGES[0], contract_date:basePer.start, start_date:basePer.start, expiry_date:basePer.end, sales_rep:repDisplay(o.sales_rep), renewed:false, alert_dismissed:false, invoice_date:'', remarks:'', attachment_url:null, attachment_name:null, attachment_path:null, reg_date:todayStr(), _renewFromId:o.id};
       if(src.length){
         items=src.map(i=>{ const ie=itemEnd(i,o); const per = i.end_date ? periodRenewal(addMonths(addDays(ie,1),-12), ie) : periodRenewal(o.contract_date||o.start_date, ie); return {...i, id:uid('it'), contract_id:data.id, supplier:supplierLabel(i.supplier_id,i.supplier), end_date:per.end, renewed:false, closed:false, _srcId:i.id}; });
         const starts=src.map(i=>addDays(itemEnd(i,o),1)).sort(), ends=items.map(i=>i.end_date).sort();
@@ -1389,21 +1401,23 @@
       opts._srcNames = src.map(i=>i.product);
       opts._leftNames = itemsOf(o.id).filter(i=>!itemDone(i,o) && !src.includes(i)).map(i=>i.product);
     } else {
-      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:'', customer_id:'', contact_id:'', end_user_name:'', deal_type:'신규', stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:state.user, remarks:'', reg_date:todayStr()};
+      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:'', customer_id:'', contact_id:'', end_user_name:'', deal_type:opts.dealType||'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:state.user, remarks:'', reg_date:todayStr()};
       items=[]; title='계약 추가';
     }
-    if(items.length===0) items.push({id:uid('it'), contract_id:data.id, product:'', qty:1, sale_amount:0, supplier:'', supplier_id:null, purchase_amount:0});
+    if(items.length===0) items.push({id:uid('it'), contract_id:data.id, product:'', qty:1, unit_price:0, sale_amount:0, supplier:'', supplier_id:null, purchase_amount:0});
+    items.forEach(i=>{ if(i.unit_price==null || (num(i.unit_price)===0 && num(i.sale_amount))){ const q=num(i.qty)||1; i.qty=q; i.unit_price = Math.round(num(i.sale_amount)/q); } });
+    data.stage = normStage(data.stage);
     data._items=items; data._removedItems=[];
     state.modal={type:'contract', isNew:!c, data, title, wide:true,
       info: opts.renewFrom ? `기존 계약 ${opts.renewFrom.code}의 다음 기간 계약입니다. 아래 품목이 갱신되며, 이번에 갱신하지 않을 품목은 × 로 빼세요(빠진 품목은 기존 계약에 남아 알림이 계속 옵니다). 저장하면 갱신한 품목만 "갱신완료"로 바뀝니다.${opts._leftNames&&opts._leftNames.length?' · 기존 계약에 남는 품목: '+opts._leftNames.join(', '):''}` : ''};
     render();
   }
   function renderContractForm(d){
-    const noSup = partnersOf('supplier').length===0;
+    const isMtD = d.deal_type==='유지보수';
     return `
       <div class="grid3">
         <div class="field" style="grid-column:span 2;"><label>계약명 <span class="req">*</span></label><input id="f_name" data-bind="name" value="${esc(d.name)}" placeholder="예) 2026 ○○ 라이선스 공급"/></div>
-        <div class="field"><label>신규/갱신</label><select data-bind="deal_type">${DEAL_TYPES.map(o=>`<option ${d.deal_type===o?'selected':''}>${o}</option>`).join('')}</select></div>
+        <div class="field"><label>분류</label><select id="f_dealtype" data-bind="deal_type">${DEAL_TYPES.map(o=>`<option ${d.deal_type===o?'selected':''}>${o}</option>`).join('')}</select></div>
       </div>
       <div class="grid3">
         ${customerSearchHTML(d)}
@@ -1413,20 +1427,21 @@
       <div class="grid3">
         <div class="field"><label>계약일</label><input type="date" id="f_cdate" data-bind="contract_date" value="${esc(d.contract_date||'')}"/></div>
         <div class="field"><label>만료일 (기본) <span class="muted" style="font-weight:400;">· 품목마다 다르면 아래에서 따로</span></label><input type="date" id="f_edate" data-bind="expiry_date" value="${esc(d.expiry_date||'')}"/></div>
-        <div class="field"><label>진행 단계</label><select data-bind="stage">${STAGES.map(o=>`<option ${d.stage===o?'selected':''}>${o}</option>`).join('')}${d.stage && !STAGES.includes(d.stage)?`<option selected>${esc(d.stage)}</option>`:''}</select></div>
+        <div class="field"><label>단계</label><select data-bind="stage">${STAGES.map(o=>`<option ${normStage(d.stage)===o?'selected':''}>${o}</option>`).join('')}</select></div>
       </div>
       <div class="grid3">
         <div class="field"><label>영업담당</label><select data-bind="sales_rep" ${state.isAdmin?'':'disabled'}>${repOptions(d.sales_rep)}</select></div>
+        ${isMtD?`<div class="field"><label>결제주기 <span class="muted" style="font-weight:400;">(유지보수)</span></label><select data-bind="billing_cycle">${BILLING.map(o=>`<option ${(d.billing_cycle||BILLING[0])===o?'selected':''}>${o}</option>`).join('')}</select></div>`:''}
       </div>
       <div class="section-title"><span>품목 · 매출 / 매입</span><button class="btn-sm" id="addItemRow">+ 품목 추가</button></div>
-      ${noSup?`<div class="info-line" style="background:var(--gold-bg);">등록된 매입처가 없습니다. <span class="link" id="goSuppliers">설정 → 매입처관리</span>에서 먼저 등록하면 여기서 고를 수 있어요.</div>`:''}
-      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:180px;">제품명</th><th style="min-width:130px;">만료일 <span class="muted" style="font-weight:400;">(비우면 기본)</span></th><th style="width:64px;">수량</th><th style="min-width:120px;">매출금액</th><th style="min-width:150px;">매입처</th><th style="min-width:120px;">매입금액</th><th class="num" style="min-width:90px;">이익</th><th class="num" style="width:60px;">마진</th><th style="width:34px;"></th></tr></thead><tbody>
-        ${d._items.map((it,i)=>{ const p=num(it.sale_amount)-num(it.purchase_amount); const bad = it.supplier && !supplierByName(it.supplier); return `<tr>
+      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:180px;">제품명</th><th style="min-width:130px;">만료일 <span class="muted" style="font-weight:400;">(비우면 기본)</span></th><th style="width:64px;">수량</th><th style="min-width:110px;">단가</th><th class="num" style="min-width:110px;">매출금액</th><th style="min-width:150px;">매입처</th><th style="min-width:120px;">매입금액</th><th class="num" style="min-width:90px;">이익</th><th class="num" style="width:60px;">마진</th><th style="width:34px;"></th></tr></thead><tbody>
+        ${d._items.map((it,i)=>{ const p=num(it.sale_amount)-num(it.purchase_amount); const isNewSup = it.supplier && !supplierByName(it.supplier); return `<tr>
           <td><input class="cell-in" id="it_${i}_product" data-item="${i}" data-f="product" value="${esc(it.product)}"/></td>
           <td><input class="cell-in" type="date" id="it_${i}_end" data-item="${i}" data-f="end_date" value="${esc(it.end_date||'')}" title="비워두면 위의 만료일(기본)을 따릅니다"/></td>
           <td><input class="cell-in n" id="it_${i}_qty" data-item="${i}" data-f="qty" value="${esc(it.qty)}" inputmode="numeric"/></td>
-          <td><input class="cell-in n" id="it_${i}_sale" data-item="${i}" data-f="sale_amount" value="${won(it.sale_amount)}" inputmode="numeric"/></td>
-          <td><input class="cell-in supIn" id="it_${i}_supplier" data-item="${i}" data-f="supplier" value="${esc(it.supplier||'')}" list="supplierList" placeholder="등록된 매입처 선택" autocomplete="off" style="${bad?'border-color:var(--warn);':''}"/></td>
+          <td><input class="cell-in n" id="it_${i}_price" data-item="${i}" data-f="unit_price" value="${won(it.unit_price)}" inputmode="numeric"/></td>
+          <td class="num" id="it_${i}_sale" style="font-weight:600;">${won(it.sale_amount)}</td>
+          <td><input class="cell-in supIn" id="it_${i}_supplier" data-item="${i}" data-f="supplier" value="${esc(it.supplier||'')}" list="supplierList" placeholder="입력하면 검색" autocomplete="off"/><div class="sup-new small" id="it_${i}_supnew" style="${isNewSup?'':'display:none;'}">새 매입처로 등록돼요</div></td>
           <td><input class="cell-in n" id="it_${i}_purchase" data-item="${i}" data-f="purchase_amount" value="${won(it.purchase_amount)}" inputmode="numeric"/></td>
           <td class="num" id="it_${i}_profit">${won(p)}</td>
           <td class="num small" id="it_${i}_margin">${pct(num(it.sale_amount)?p/num(it.sale_amount)*100:0)}</td>
@@ -1440,34 +1455,41 @@
       </div>`;
   }
   function updateItemTotals(d){
-    let s=0,p=0; d._items.forEach((it,i)=>{ const sa=num(it.sale_amount), pu=num(it.purchase_amount); s+=sa; p+=pu;
+    let s=0,p=0; d._items.forEach((it,i)=>{ it.sale_amount = Math.round(num(it.qty)*num(it.unit_price)); const sa=num(it.sale_amount), pu=num(it.purchase_amount); s+=sa; p+=pu;
+      const e0=document.getElementById(`it_${i}_sale`); if(e0) e0.textContent=won(sa);
       const e1=document.getElementById(`it_${i}_profit`), e2=document.getElementById(`it_${i}_margin`); if(e1) e1.textContent=won(sa-pu); if(e2) e2.textContent=pct(sa?(sa-pu)/sa*100:0); });
     const el=document.getElementById('itemTotals'); if(el) el.innerHTML=`<span>매출 합계 <b>₩${won(s)}</b></span><span>매입 합계 <b>₩${won(p)}</b></span><span>이익 <b style="color:${s-p<0?'var(--warn)':'#a3620b'};">₩${won(s-p)}</b></span><span>마진 <b>${pct(s?(s-p)/s*100:0)}</b></span>`;
   }
-  function bindSupplierInput(el, onSet){
-    const check=()=>{ const v=el.value.trim(); const ok=!v || !!supplierByName(v); el.style.borderColor = ok?'':'var(--warn)'; el.title = ok?'':'등록되지 않은 매입처입니다. 매입처관리에서 먼저 등록하세요.'; };
+  function bindSupplierInput(el, onSet, noteEl){
+    const check=()=>{ const v=el.value.trim(); const isNew=!!v && !supplierByName(v); if(noteEl) noteEl.style.display = isNew?'':'none'; };
     el.addEventListener('input',()=>{ onSet(el.value); check(); });
     el.addEventListener('change',()=>{ onSet(el.value); check(); });
     el.addEventListener('blur',check);
   }
-  function validateSuppliers(names){
-    const bad=[...new Set(names.map(n=>String(n||'').trim()).filter(n=>n && !supplierByName(n)))];
-    if(bad.length){ alert(`등록되지 않은 매입처가 있습니다: ${bad.join(', ')}\n\n설정 → 매입처관리에서 먼저 등록한 뒤 목록에서 골라주세요.`); return false; }
-    return true;
+  // 처음 보는 매입처 이름은 매입처관리에 자동 등록
+  async function ensureSuppliers(names){
+    const fresh=[...new Set(names.map(n=>String(n||'').trim()).filter(n=>n && !supplierByName(n)))];
+    if(!fresh.length) return true;
+    const base=partnersOf('supplier'), rows=[];
+    fresh.forEach(n=>rows.push({id:uid('sp'), code:nextCode('SP',[...base,...rows]), name:n, kind:'supplier', tax_email:'', biz_reg_no:'', sales_rep:state.user, reg_date:todayStr()}));
+    const err=await dbUpsert('customers', rows.map(custRow)); if(err){ fail('매입처 자동 등록 실패',err); return false; }
+    state.customers.push(...rows); return true;
   }
+  function validateSuppliers(names){ return true; }
   function bindContractForm(d){
     bindCustomerSearch(d, ()=>{ d.contact_id=''; });
     bindContactSelect(d,'contact_id');
     document.querySelectorAll('[data-item]').forEach(el=>{
       const it=d._items[+el.dataset.item], f=el.dataset.f;
-      if(f==='supplier'){ bindSupplierInput(el, v=>{ it.supplier=v; const sp=supplierByName(v); it.supplier_id = sp?sp.id:null; }); return; }
-      el.addEventListener('input',()=>{ it[f] = ['sale_amount','purchase_amount','qty'].includes(f) ? num(el.value) : el.value; updateItemTotals(d); });
-      if(['sale_amount','purchase_amount'].includes(f)){
+      if(f==='supplier'){ bindSupplierInput(el, v=>{ it.supplier=v; const sp=supplierByName(v); it.supplier_id = sp?sp.id:null; }, document.getElementById(`it_${el.dataset.item}_supnew`)); return; }
+      el.addEventListener('input',()=>{ it[f] = ['unit_price','purchase_amount','qty'].includes(f) ? num(el.value) : el.value; updateItemTotals(d); });
+      if(['unit_price','purchase_amount'].includes(f)){
         el.addEventListener('focus',()=>{ el.value = num(el.value) ? String(num(el.value)) : ''; });
         el.addEventListener('blur',()=>{ el.value = won(el.value); });
       }
     });
-    document.getElementById('addItemRow').onclick=()=>{ d._items.push({id:uid('it'), contract_id:d.id, product:'', qty:1, sale_amount:0, supplier:'', supplier_id:null, purchase_amount:0}); render(); };
+    document.getElementById('addItemRow').onclick=()=>{ d._items.push({id:uid('it'), contract_id:d.id, product:'', qty:1, unit_price:0, sale_amount:0, supplier:'', supplier_id:null, purchase_amount:0}); render(); };
+    const dt=document.getElementById('f_dealtype'); if(dt) dt.addEventListener('change',()=>{ d.deal_type=dt.value; render(); });
     document.querySelectorAll('.delItem').forEach(b=>b.onclick=()=>{ const [x]=d._items.splice(+b.dataset.i,1); if(x && state.items.some(i=>i.id===x.id)) d._removedItems.push(x.id); render(); });
     const gs=document.getElementById('goSuppliers'); if(gs) gs.onclick=()=>{ state.modal=null; state.tab='suppliers'; render(); };
     updateItemTotals(d);
@@ -1476,7 +1498,9 @@
     const d=m.data; d.name=String(d.name||'').trim();
     if(!d.name) return alert('계약명을 입력하세요.');
     const items = d._items.filter(i=>String(i.product||'').trim()||num(i.sale_amount)||num(i.purchase_amount)).map((i,idx)=>{ const sp=supplierByName(i.supplier); return {...i, contract_id:d.id, sort:idx, supplier_id: sp?sp.id:null, supplier: sp?sp.name:String(i.supplier||'').trim()}; });
-    if(!validateSuppliers(items.map(i=>i.supplier))) return;
+    items.forEach(i=>{ i.qty=num(i.qty)||1; i.sale_amount=Math.round(i.qty*num(i.unit_price)); });
+    if(!(await ensureSuppliers(items.map(i=>i.supplier)))) return;
+    items.forEach(i=>{ const sp=supplierByName(i.supplier); i.supplier_id=sp?sp.id:null; if(sp) i.supplier=sp.name; });
     if(d.contract_date && d.expiry_date && d.expiry_date<d.contract_date) return alert('만료일이 계약일보다 빠릅니다.');
     const badEnd = items.find(i=>i.end_date && d.contract_date && i.end_date<d.contract_date);
     if(badEnd) return alert(`"${badEnd.product}" 품목의 만료일이 계약일보다 빠릅니다.`);
@@ -1843,7 +1867,7 @@
   }
 
   // ================= delete =================
-  const TABLES = {customers:['customers','customers','고객사'], suppliers:['customers','customers','매입처'], contracts:['contracts','contracts','계약'], maint:['maintenance_contracts','maint','유지보수'], support:['support_tickets','tickets','기술지원'], reps:['reps','reps','담당자']};
+  const TABLES = {customers:['customers','customers','고객사'], suppliers:['customers','customers','매입처'], contracts:['contracts','contracts','계약'], maint:['contracts','contracts','유지보수 계약'], support:['support_tickets','tickets','기술지원'], reps:['reps','reps','담당자']};
   function deleteRecords(key, ids, after){
     const [table, field, label] = TABLES[key];
     if(key==='customers'){
@@ -1854,9 +1878,9 @@
       const used = ids.filter(id=>{ const c=customer(id); return c && partnerStats(c).its.length + partnerStats(c).mts.length > 0; });
       if(used.length) return alert(`계약 품목이나 유지보수에 쓰인 매입처 ${used.length}곳은 삭제할 수 없습니다.`);
     }
-    askConfirm(`${label} ${ids.length}건을 삭제할까요?${key==='contracts'?'\n품목 정보도 함께 삭제됩니다.':''}`, async ()=>{
+    askConfirm(`${label} ${ids.length}건을 삭제할까요?${key==='contracts'||key==='maint'?'\n품목 정보도 함께 삭제됩니다.':''}`, async ()=>{
       let err=await dbDelete(table, ids); if(err) return fail('삭제 실패',err);
-      if(key==='contracts'){ const itIds=state.items.filter(i=>ids.includes(i.contract_id)).map(i=>i.id); await dbDelete('contract_items',itIds); state.items=state.items.filter(i=>!ids.includes(i.contract_id)); }
+      if(key==='contracts'||key==='maint'){ const itIds=state.items.filter(i=>ids.includes(i.contract_id)).map(i=>i.id); await dbDelete('contract_items',itIds); state.items=state.items.filter(i=>!ids.includes(i.contract_id)); }
       if(key==='customers'||key==='suppliers'){ const cIds=state.contacts.filter(x=>ids.includes(x.customer_id)).map(x=>x.id); await dbDelete('customer_contacts',cIds); state.contacts=state.contacts.filter(x=>!ids.includes(x.customer_id)); }
       state[field]=state[field].filter(x=>!ids.includes(x.id));
       ids.forEach(id=>state.sel[key].delete(id));
@@ -1906,8 +1930,8 @@
   function exportExcel(){
     let rows=[], name='';
     if(state.tab==='customers'||state.tab==='suppliers'){ const kind=state.tab==='suppliers'?'supplier':'customer'; name=kind==='supplier'?'매입처':'고객사'; partnersOf(kind).forEach(c=>{ const cs=contactsOf(c.id); (cs.length?cs:[{}]).forEach(x=>rows.push({'업체명':c.name,'사업자번호':c.biz_reg_no||'','세금계산서메일':c.tax_email||'','담당자명':x.name||'','부서':x.dept||'','연락처':x.phone||'','이메일':x.email||''})); }); }
-    if(state.tab==='contracts'){ name='계약관리'; state.contracts.forEach(c=>{ const its=itemsOf(c.id); const ct=contact(c.contact_id); (its.length?its:[{}]).forEach(i=>rows.push({'계약코드':c.code,'구분':c.deal_type||'신규','계약명':c.name,'고객사':custName(c.customer_id),'고객담당자':ct?ct.name:'','앤드유저':c.end_user_name||'','제품':i.product||'','수량':i.qty||'','매출':num(i.sale_amount),'매입처':supplierLabel(i.supplier_id,i.supplier),'매입':num(i.purchase_amount),'이익':num(i.sale_amount)-num(i.purchase_amount),'단계':c.stage,'계약일':c.contract_date||'','만료일':(i.id?itemEnd(i,c):c.expiry_date)||'','품목상태':i.renewed?'갱신완료':i.closed?'종료':'','영업담당':repDisplay(c.sales_rep),'갱신완료':c.renewed?'Y':''})); }); }
-    if(state.tab==='maint'){ name='유지보수관리'; state.maint.forEach(m=>{ const t=mtTotals(m); rows.push({'구분':m.deal_type||'신규','유지보수명':m.name,'고객사':custName(mtCustomerId(m)),'결제주기':m.billing_cycle||'','시작일':m.start_date||'','만료일':m.end_date||'','매출':t.sale,'매입처':supplierLabel(m.supplier_id,m.supplier),'매입':t.purchase,'이익':t.profit,'담당':repDisplay(m.sales_rep),'갱신완료':m.renewed?'Y':''}); }); }
+    if(state.tab==='contracts'||state.tab==='maint'){ name=state.tab==='maint'?'유지보수관리':'계약관리'; state.contracts.filter(c=>state.tab!=='maint'||c.deal_type==='유지보수').forEach(c=>{ const its=itemsOf(c.id); const ct=contact(c.contact_id); (its.length?its:[{}]).forEach(i=>rows.push({'계약코드':c.code,'구분':c.deal_type||'신규','계약명':c.name,'고객사':custName(c.customer_id),'고객담당자':ct?ct.name:'','앤드유저':c.end_user_name||'','제품':i.product||'','수량':i.qty||'','단가':num(i.unit_price)||'','매출':num(i.sale_amount),'매입처':supplierLabel(i.supplier_id,i.supplier),'매입':num(i.purchase_amount),'이익':num(i.sale_amount)-num(i.purchase_amount),'단계':normStage(c.stage),'결제주기':c.billing_cycle||'','계약일':c.contract_date||'','만료일':(i.id?itemEnd(i,c):c.expiry_date)||'','품목상태':i.renewed?'갱신완료':i.closed?'종료':'','영업담당':repDisplay(c.sales_rep),'갱신완료':c.renewed?'Y':''})); }); }
+    if(false){ state.maint.forEach(m=>{ const t=mtTotals(m); rows.push({'구분':m.deal_type||'신규','유지보수명':m.name,'고객사':custName(mtCustomerId(m)),'결제주기':m.billing_cycle||'','시작일':m.start_date||'','만료일':m.end_date||'','매출':t.sale,'매입처':supplierLabel(m.supplier_id,m.supplier),'매입':t.purchase,'이익':t.profit,'담당':repDisplay(m.sales_rep),'갱신완료':m.renewed?'Y':''}); }); }
     if(state.tab==='support'){ name='기술지원'; state.tickets.forEach(t=>{ const ct=contact(t.contact_id); rows.push({'번호':t.code,'접수일':t.received_date||'','고객사':custName(t.customer_id),'고객담당자':ct?ct.name:'','제품':t.product||'','요청내용':t.request||'','엔지니어':repDisplay(t.assignee),'방식':t.method||'','지원내용':t.action||'','상태':t.status||'','완료일':t.done_date||''}); }); }
     if(!rows.length) return alert('내보낼 데이터가 없습니다.');
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name); XLSX.writeFile(wb, `${name}_${todayStr()}.xlsx`);
@@ -1983,7 +2007,7 @@
     if(state.excelMenu) setTimeout(()=>document.addEventListener('click', function h(e){ if(!e.target.closest('.excel-wrap')){ state.excelMenu=false; render(); } }, {once:true}),0);
     // confirm
     if(state.confirm){ document.getElementById('cfNo').onclick=()=>{ state.confirm=null; render(); }; document.getElementById('cfYes').onclick=()=>{ const fn=state.confirm.onYes; state.confirm=null; render(); fn&&fn(); }; }
-    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:bindContracts, maint:bindMaint, support:bindSupport, reps:bindReps})[state.tab]();
+    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), support:bindSupport, reps:bindReps})[state.tab]();
     bindAttachments();
     bindModal();
     bindShare();
