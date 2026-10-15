@@ -1217,7 +1217,7 @@
     const rows=(q.items||[]).map(it=>{
       if(it.type==='group') return `<tr class="q-group"><td colspan="7">${esc(it.name)}</td></tr>`;
       const k=qItemCalc(it);
-      return `<tr><td class="l">${esc(it.name)}${licText(it)?`<div class="q-lic">라이선스 기간 : ${esc(licText(it))}</div>`:''}</td><td class="l">${esc(it.spec||'')}</td><td class="c">${num(it.qty)}</td><td class="r">${num(it.list_price)?won(it.list_price):''}</td><td class="c">${num(it.list_price)?pct(k.dc*100):''}</td><td class="r">${won(it.unit_price)}</td><td class="r">${won(k.line)}</td></tr>`;
+      return `<tr><td class="l">${esc(it.name)}${licText(it)?`<div class="q-lic">기간 : ${esc(licText(it))}</div>`:''}</td><td class="l">${esc(it.spec||'')}</td><td class="c">${num(it.qty)}</td><td class="r">${num(it.list_price)?won(it.list_price):''}</td><td class="c">${num(it.list_price)?pct(k.dc*100):''}</td><td class="r">${won(it.unit_price)}</td><td class="r">${won(k.line)}</td></tr>`;
     }).join('');
     const year = String(q.quote_date||todayStr()).slice(0,4);
     const dt = q.quote_date ? (()=>{ const [y,m,d]=q.quote_date.split('-'); return `${y}년 ${+m}월 ${+d}일`; })() : '-';
@@ -1396,7 +1396,7 @@
         <div><span class="muted">견적유효</span> 견적일로부터 ${esc(q.valid_days||'15')}일</div>
         <div><span class="muted">예상납기</span> ${esc(q.delivery||'-')}</div>
       </div>
-      ${its.filter(i=>i.type!=='group').length?`<table><thead><tr><th class="tl">품명</th><th class="tl">규격</th><th>라이선스 기간</th><th>수량</th><th class="num">소비자가</th><th>DC율</th><th class="num">공급단가</th><th class="num">공급가액</th><th class="num">매입단가</th><th class="num">매입금액</th><th class="num">마진</th><th>마진율</th></tr></thead><tbody>
+      ${its.filter(i=>i.type!=='group').length?`<table><thead><tr><th class="tl">품명</th><th class="tl">규격</th><th>기간</th><th>수량</th><th class="num">소비자가</th><th>DC율</th><th class="num">공급단가</th><th class="num">공급가액</th><th class="num">매입단가</th><th class="num">매입금액</th><th class="num">마진</th><th>마진율</th></tr></thead><tbody>
         ${its.map(row).join('')}
         <tr class="total"><td class="tl" colspan="7">합계${q.tax_applied?` <span class="muted small">(공급가 기준)</span>`:''}</td><td class="num">${won(t.subtotal)}</td><td></td><td class="num">${won(t.cost_total)}</td><td class="num" style="color:${t.margin<0?'var(--red,#c0392b)':'inherit'};">${won(t.margin)}</td><td>${pct(t.mrate*100)}</td></tr>
       </tbody></table>`:'<div class="muted">입력한 품목이 없습니다.</div>'}
@@ -1446,8 +1446,8 @@
         <div class="field"><label>담당자 연락처</label><input id="f_qrepp" data-bind="sales_phone" value="${esc(d.sales_phone||'')}"/></div>
         <div class="field"><label>담당자 이메일</label><input id="f_qrepe" data-bind="sales_email" value="${esc(d.sales_email||'')}"/></div>
       </div>
-      <div class="section-title"><span>품목 <span class="muted" style="font-weight:400;">· 노란 칸(매입단가·마진)은 내부용이라 견적서에 나오지 않아요</span></span><span><button class="btn-sm ghost" id="licAll" title="첫 품목의 라이선스 기간을 모든 품목에 똑같이 넣어요">기간 전체 적용</button> <button class="btn-sm ghost" id="addQGroup">+ 그룹 제목</button> <button class="btn-sm" id="addQItem">+ 품목 추가</button></span></div>
-      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:170px;">품명</th><th style="min-width:90px;">규격</th><th style="min-width:128px;">라이선스 기간</th><th style="width:56px;">수량</th><th style="min-width:100px;">소비자가격</th><th class="num" style="width:54px;">DC율</th><th style="min-width:100px;">공급단가</th><th class="num" style="min-width:96px;">공급가액</th><th class="int" style="min-width:96px;">매입단가</th><th class="int num" style="min-width:86px;">마진</th><th class="int num" style="width:56px;">마진율</th><th style="width:34px;"></th></tr></thead><tbody>
+      <div class="section-title"><span>품목 <span class="muted" style="font-weight:400;">· 노란 칸(매입단가·마진)은 내부용이라 견적서에 나오지 않아요</span></span><span><button class="btn-sm ghost" id="licAll" title="첫 품목의 기간을 모든 품목에 똑같이 넣어요">기간 전체 적용</button> <button class="btn-sm ghost" id="addQGroup">+ 그룹 제목</button> <button class="btn-sm" id="addQItem">+ 품목 추가</button></span></div>
+      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:170px;">품명</th><th style="min-width:90px;">규격</th><th style="min-width:128px;">기간</th><th style="width:56px;">수량</th><th style="min-width:100px;">소비자가격</th><th class="num" style="width:54px;">DC율</th><th style="min-width:100px;">공급단가</th><th class="num" style="min-width:96px;">공급가액</th><th class="int" style="min-width:96px;">매입단가</th><th class="int num" style="min-width:86px;">마진</th><th class="int num" style="width:56px;">마진율</th><th style="width:34px;"></th></tr></thead><tbody>
         ${d.items.map((it,i)=> it.type==='group'
           ? `<tr class="grp-row"><td colspan="11"><input class="cell-in" id="qi_${i}_name" data-qi="${i}" data-f="name" value="${esc(it.name)}" placeholder="그룹 제목 (예: 보안 솔루션)" style="font-weight:700;"/></td><td><button class="icon-btn danger delQItem" data-i="${i}">&times;</button></td></tr>`
           : (()=>{ const k=qItemCalc(it); return `<tr>
@@ -1495,7 +1495,7 @@
     });
     bindMoneyInputs(document.getElementById('modalBg'));
     document.getElementById('addQItem').onclick=()=>{ const prev=[...d.items].reverse().find(x=>x.type!=='group'); const n=newQuoteItem(); if(prev){ n.lic_start=prev.lic_start||''; n.lic_end=prev.lic_end||''; } d.items.push(n); render(); };
-    document.getElementById('licAll').onclick=()=>{ const first=d.items.find(x=>x.type!=='group' && (x.lic_start||x.lic_end)); if(!first) return alert('먼저 한 품목에 라이선스 기간을 넣어주세요.'); d.items.forEach(x=>{ if(x.type!=='group'){ x.lic_start=first.lic_start||''; x.lic_end=first.lic_end||''; } }); render(); };
+    document.getElementById('licAll').onclick=()=>{ const first=d.items.find(x=>x.type!=='group' && (x.lic_start||x.lic_end)); if(!first) return alert('먼저 한 품목에 기간을 넣어주세요.'); d.items.forEach(x=>{ if(x.type!=='group'){ x.lic_start=first.lic_start||''; x.lic_end=first.lic_end||''; } }); render(); };
     document.getElementById('addQGroup').onclick=()=>{ d.items.push(newQuoteItem('group')); render(); };
     document.querySelectorAll('.delQItem').forEach(b=>b.onclick=()=>{ d.items.splice(+b.dataset.i,1); render(); });
     const tax=document.getElementById('f_qtax'); if(tax) tax.onchange=()=>{ d.tax_applied=tax.checked; updateQuoteCalc(d); };
