@@ -733,8 +733,7 @@
       <input id="loginPassword" type="password" placeholder="비밀번호" autocomplete="current-password"/>
       <label class="chk keep-login" id="keepWrap"><input type="checkbox" id="keepLogin" ${keepLogin()?'checked':''}/> 자동로그인</label>
       <button class="btn-primary block" id="loginBtn">로그인</button>
-      <p style="font-size:12px; color:var(--ink-soft); margin-top:14px;"><a href="#" id="toggleReset" style="color:var(--accent-dark); font-weight:600;">비밀번호를 잊으셨나요?</a></p>
-      <p class="muted" style="font-size:11.5px; margin-top:4px;">계정은 관리자가 만들어 드려요. 계정이 없으면 관리자에게 요청하세요.</p>
+      <p class="muted" style="font-size:12px; margin-top:14px;">계정 발급·비밀번호 분실은 관리자에게 요청하세요.</p>
       <p id="loginError" style="color:var(--warn); font-size:12px; margin-top:6px; min-height:16px;">${LINK_ERROR?'링크가 만료됐거나 이미 사용됐어요. 비밀번호 재설정 메일을 다시 받아 주세요.':''}</p>
     </div></div>`;
   }
@@ -776,7 +775,7 @@
       <div class="field"><label>이메일 (로그인 아이디)</label><input data-bind="email" value="${esc(d.email||'')}" ${d.lockEmail?'disabled':''}/></div>
       <div class="field"><label>이름</label><input data-bind="name" value="${esc(d.name||'')}" ${d.lockEmail?'disabled':''}/></div>
     </div>
-    <div class="field"><label>${d.mode==='reset'?'새 임시 비밀번호':'임시 비밀번호'} (8자 이상 · 직원에게 알려주고, 로그인 후 "비밀번호 변경"에서 바꾸게 하세요)</label><div style="display:flex; gap:8px;"><input data-bind="password" id="acctPw" value="${esc(d.password||'')}" style="font-family:monospace;"/><button class="btn-sm ghost" id="acctGen" type="button">새로 만들기</button></div></div>`;
+    <div class="field"><label>${d.mode==='reset'?'새 비밀번호':'비밀번호'} (8자 이상 · 직접 정해도 되고, "새로 만들기"로 자동 생성해도 돼요)</label><div style="display:flex; gap:8px;"><input data-bind="password" id="acctPw" value="${esc(d.password||'')}" style="font-family:monospace;"/><button class="btn-sm ghost" id="acctGen" type="button">새로 만들기</button></div></div>`;
   }
   const tempPw = () => { const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let s=''; const r=crypto.getRandomValues(new Uint32Array(10)); r.forEach(x=>s+=c[x%c.length]); return s+'!'; };
   function bindAcctForm(d){ const g=document.getElementById('acctGen'); if(g) g.onclick=()=>{ d.password=tempPw(); document.getElementById('acctPw').value=d.password; }; }
@@ -795,7 +794,7 @@
   async function saveAcct(m){
     const d=m.data, email=String(d.email||'').trim().toLowerCase();
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return alert('이메일을 정확히 입력하세요.');
-    if(String(d.password||'').length<8) return alert('임시 비밀번호는 8자 이상이어야 해요.');
+    if(String(d.password||'').length<8) return alert('비밀번호는 8자 이상이어야 해요.');
     try{
       if(d.mode==='reset') await adminUsers({action:'set_password', id:d.id, password:d.password});
       else {
@@ -808,13 +807,13 @@
     }catch(e){ return alert(e.message); }
     state.modal=null;
     const pw=d.password; render();
-    alert(`${d.mode==='reset'?'비밀번호를 초기화했어요.':'계정을 만들었어요.'}\n\n아이디: ${email}\n임시 비밀번호: ${pw}\n\n직원에게 알려주고, 로그인 후 왼쪽 아래 "비밀번호 변경"에서 바꾸게 하세요.`);
+    alert(`${d.mode==='reset'?'비밀번호를 바꿨어요.':'계정을 만들었어요.'}\n\n아이디: ${email}\n비밀번호: ${pw}\n\n직원에게 이 아이디와 비밀번호를 알려주세요.`);
     loadAccounts();
   }
   function bindLogin(){
     let mode='login';
     const $=id=>document.getElementById(id);
-    $('toggleReset').onclick=e=>{ e.preventDefault(); mode=mode==='login'?'reset':'login'; const r=mode==='reset';
+    if($('toggleReset')) $('toggleReset').onclick=e=>{ e.preventDefault(); mode=mode==='login'?'reset':'login'; const r=mode==='reset';
       $('loginPassword').style.display=r?'none':''; $('keepWrap').style.display=r?'none':'';
       $('loginSub').textContent=r?'가입한 이메일을 입력하면 비밀번호 재설정 메일을 보내드려요':'이메일과 비밀번호로 로그인하세요';
       $('loginBtn').textContent=r?'재설정 메일 받기':'로그인'; $('toggleReset').textContent=r?'로그인으로 돌아가기':'비밀번호를 잊으셨나요?'; $('loginError').textContent=''; $('loginError').style.color=''; };
@@ -2787,7 +2786,7 @@
     if(A.error) return '<span class="muted small">-</span>';
     const u=acctByEmail(r.email);
     if(u && (u.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()) return '<span class="badge green">있음</span> <span class="muted small">내 계정</span>';
-    if(u) return `<span class="badge green" title="마지막 로그인 ${esc(u.last_sign_in_at?String(u.last_sign_in_at).slice(0,10):'없음')}">있음</span> <button class="btn-sm ghost acctReset" data-id="${u.id}" data-email="${esc(u.email)}">비밀번호 초기화</button> ${(u.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()?'':`<button class="btn-sm danger acctDel" data-id="${u.id}" data-email="${esc(u.email)}">계정 삭제</button>`}`;
+    if(u) return `<span class="badge green" title="마지막 로그인 ${esc(u.last_sign_in_at?String(u.last_sign_in_at).slice(0,10):'없음')}">있음</span> <button class="btn-sm ghost acctReset" data-id="${u.id}" data-email="${esc(u.email)}">비밀번호 변경</button> ${(u.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()?'':`<button class="btn-sm danger acctDel" data-id="${u.id}" data-email="${esc(u.email)}">계정 삭제</button>`}`;
     return r.email ? `<span class="muted small">없음</span> <button class="btn-sm acctMake" data-email="${esc(r.email)}" data-name="${esc(r.name)}">계정 만들기</button>` : '<span class="muted small">이메일 없음</span>';
   }
   function acctExtraHTML(){
@@ -2798,7 +2797,7 @@
     if(!orphan.length) return '';
     return `<div class="card flush" style="margin-top:14px;"><div class="card-title" style="padding:14px 16px 0;"><span>담당자로 등록 안 된 로그인 계정 ${orphan.length}개</span><span class="muted small" style="font-weight:400;">예전 회원가입·테스트 계정이면 삭제하세요</span></div>
       <table style="margin-top:8px;"><thead><tr><th class="tl">이메일</th><th>이름</th><th>만든 날</th><th>마지막 로그인</th><th></th></tr></thead><tbody>
-      ${orphan.map(x=>`<tr><td class="tl">${esc(x.email)}</td><td>${esc(x.name||'-')}</td><td>${esc(String(x.created_at||'').slice(0,10)||'-')}</td><td>${esc(x.last_sign_in_at?String(x.last_sign_in_at).slice(0,10):'없음')}</td><td class="nowrap"><button class="btn-sm ghost acctReset" data-id="${x.id}" data-email="${esc(x.email)}">비밀번호 초기화</button> ${(x.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()?'':`<button class="btn-sm danger acctDel" data-id="${x.id}" data-email="${esc(x.email)}">계정 삭제</button>`}</td></tr>`).join('')}
+      ${orphan.map(x=>`<tr><td class="tl">${esc(x.email)}</td><td>${esc(x.name||'-')}</td><td>${esc(String(x.created_at||'').slice(0,10)||'-')}</td><td>${esc(x.last_sign_in_at?String(x.last_sign_in_at).slice(0,10):'없음')}</td><td class="nowrap"><button class="btn-sm ghost acctReset" data-id="${x.id}" data-email="${esc(x.email)}">비밀번호 변경</button> ${(x.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()?'':`<button class="btn-sm danger acctDel" data-id="${x.id}" data-email="${esc(x.email)}">계정 삭제</button>`}</td></tr>`).join('')}
       </tbody></table></div>`;
   }
   function bindReps(){
@@ -2806,7 +2805,7 @@
     if(state.isAdmin && !state.accounts) setTimeout(loadAccounts,0);
     const mk=document.getElementById('addAcctBtn'); if(mk) mk.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'create', email:'', name:'', password:tempPw()}, title:'로그인 계정 만들기', info:'계정을 만들면 바로 로그인할 수 있어요. 이름을 넣으면 담당자 목록에도 추가돼요.'}; render(); };
     document.querySelectorAll('.acctMake').forEach(b=>b.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'create', email:b.dataset.email, name:b.dataset.name, password:tempPw(), lockEmail:true}, title:'로그인 계정 만들기'}; render(); });
-    document.querySelectorAll('.acctReset').forEach(b=>b.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'reset', id:b.dataset.id, email:b.dataset.email, password:tempPw(), lockEmail:true}, title:'비밀번호 초기화', info:'임시 비밀번호로 바꿔요. 직원에게 알려주고 로그인 후 바꾸게 하세요.'}; render(); });
+    document.querySelectorAll('.acctReset').forEach(b=>b.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'reset', id:b.dataset.id, email:b.dataset.email, password:tempPw(), lockEmail:true}, title:'비밀번호 변경', info:'이 직원의 비밀번호를 새로 정해요. 바꾼 비밀번호를 직원에게 알려주세요.'}; render(); });
     document.querySelectorAll('.acctDel').forEach(b=>b.onclick=()=>askConfirm(`${b.dataset.email} 계정을 삭제할까요?\n이 계정으로는 더 이상 로그인할 수 없어요.\n(계약·견적 등 데이터와 담당자 정보는 그대로 남아요)`, async ()=>{
       try{ await adminUsers({action:'delete', id:b.dataset.id}); showToast('계정을 삭제했어요.'); }catch(e){ alert(e.message); }
       loadAccounts();
