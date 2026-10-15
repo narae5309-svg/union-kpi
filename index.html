@@ -428,7 +428,7 @@
   const DEPTS = ['영업팀','기술지원팀','경영지원','기타'];
   const PAGE_SIZE = 50;
   const SEND_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;"><path fill="currentColor" d="M21.6 2.4a1 1 0 0 0-1.06-.22L3.04 9.1a1 1 0 0 0 .02 1.88l6.9 2.4 2.4 6.9a1 1 0 0 0 1.88.02l6.92-17.5a1 1 0 0 0-.56-1.4z"/><path d="M10.2 13.8 20.6 3.4" stroke="#1b6fb0" stroke-width="1.7" stroke-linecap="round" opacity=".45"/></svg>';
-  const NAV = [['dashboard','대시보드'],['quotes','견적'],{group:'계약', open:true, items:[['contracts','계약관리'],['maint','유지보수']]},['support','기술지원'],{group:'설정', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리'],['company','회사정보']]}];
+  const NAV = [['dashboard','대시보드'],['quotes','견적'],{group:'계약', open:false, items:[['contracts','계약관리'],['maint','유지보수']]},['support','기술지원'],{group:'설정', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리'],['company','회사정보']]}];
 
   const state = {
     view:'login', user:null, userEmail:null, isAdmin:false, tab:'dashboard', loading:true, setupMissing:[],
