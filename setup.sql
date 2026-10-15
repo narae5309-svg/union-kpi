@@ -288,6 +288,11 @@ create table if not exists company_info (
   updated_at timestamptz default now()
 );
 insert into company_info (id) values ('main') on conflict (id) do nothing;
+alter table company_info add column if not exists quote_agree text;
+alter table company_info add column if not exists quote_notice text;
+alter table company_info add column if not exists quote_footer text;
+alter table company_info add column if not exists quote_banner_url text;
+alter table company_info add column if not exists quote_banner_path text;
 
 create table if not exists quotes (
   id text primary key,
