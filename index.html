@@ -1375,9 +1375,9 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">견적서가 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('quotes')}${sortTh('견적번호','quotes','no')}${endTh('quotes')}${sortTh('고객사','quotes','cust')}${sortTh('건명','quotes','title','text-align:left;')}${sortTh('합계(VAT)','quotes','total','text-align:right;')}${sortTh('마진','quotes','margin','text-align:right;')}${sortTh('마진율','quotes','mrate')}${sortTh('영업담당','quotes','rep')}${sortTh('상태','quotes','status')}<th>발송</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('quotes')}${sortTh('견적번호','quotes','no')}${endTh('quotes')}${sortTh('고객사','quotes','cust','text-align:left;')}${sortTh('건명','quotes','title','text-align:left;')}${sortTh('합계(VAT)','quotes','total','text-align:right;')}${sortTh('마진','quotes','margin','text-align:right;')}${sortTh('마진율','quotes','mrate')}${sortTh('영업담당','quotes','rep')}${sortTh('상태','quotes','status')}<th>발송</th><th></th></tr></thead><tbody>
         ${pg.items.map(q=>`<tr class="${state.expanded===q.id?'open-row':''}">${checkTd('quotes',q.id)}
-          <td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td><span class="link toggleRow" data-id="${q.id}" style="font-weight:600;" title="품목·마진 보기">${esc(custName(q.customer_id))}</span></td>
+          <td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl"><span class="link toggleRow" data-id="${q.id}" style="font-weight:600;" title="품목·마진 보기">${esc(custName(q.customer_id))}</span></td>
           <td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}" style="font-weight:600;">${esc(q.title||'(건명 없음)')}</span></td>
           <td class="num" style="font-weight:600;">${won(q.total)}</td>${(()=>{ const m=qCalc(q); return `<td class="num" style="${m.margin<0?'color:#c0392b;':''}">${won(m.margin)}</td><td>${m.subtotal?pct(m.mrate*100):'-'}</td>`; })()}<td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td>
           <td class="small nowrap">${q.sent_at?esc(String(q.sent_at).slice(0,10)):'-'}</td>
@@ -2127,7 +2127,7 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">조건에 맞는 계약이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh(key)}${sortTh('분류',key,'type')}${sortTh('계약명',key,'name','text-align:left;')}${sortTh('고객사',key,'cust')}<th>제품</th>${isMt?'<th>결제</th>':''}${sortTh('계약금액',key,'sale','text-align:right;')}${sortTh('단계',key,'stage')}${endTh(key)}${sortTh('영업담당',key,'rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh(key)}${sortTh('분류',key,'type')}${sortTh('계약명',key,'name','text-align:left;')}${sortTh('고객사',key,'cust','text-align:left;')}<th class="tl">제품</th>${isMt?'<th>결제</th>':''}${sortTh('계약금액',key,'sale','text-align:right;')}${sortTh('단계',key,'stage')}${endTh(key)}${sortTh('영업담당',key,'rep')}<th style="text-align:center;">첨부</th><th></th></tr></thead><tbody>
         ${pg.items.map(c=>{
           const t=contractTotals(c), its=itemsOf(c.id), open=state.expanded===c.id;
           const prod = its.length ? esc(its[0].product||'-')+(its.length>1?` <span class="muted small">외 ${its.length-1}</span>`:'') : '<span class="muted">-</span>';
@@ -2135,8 +2135,8 @@
           let html = `<tr class="${rowClassFor(cs.end,cs.renewed,cs.dismissed)}">${checkTd(key,c.id)}
             <td>${dealBadge(c.deal_type)}</td>
             <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span><div class="muted small">${esc(c.code||'')}</div></td>
-            <td>${esc(custName(c.customer_id))}${c.end_user_name?`<div class="muted small">↳ ${esc(c.end_user_name)}</div>`:''}</td>
-            <td>${prod}</td>
+            <td class="tl">${esc(custName(c.customer_id))}${c.end_user_name?`<div class="muted small">↳ ${esc(c.end_user_name)}</div>`:''}</td>
+            <td class="tl">${prod}</td>
             ${isMt?`<td class="small">${esc(c.billing_cycle||'-')}</td>`:''}
             <td class="num" style="font-weight:600;">${won(t.sale)}</td>
             <td>${stageBadge(c.stage)}</td>
