@@ -691,7 +691,12 @@
   const TAB_LABELS = (()=>{ const o={}; NAV.forEach(n=>{ if(n.group) n.items.forEach(([k,l])=>o[k]=l); else o[n[0]]=n[1]; }); return o; })();
   function loadWTabs(){ try{ const v=JSON.parse(localStorage.getItem('clm_tabs')||'[]'); return Array.isArray(v)?v.filter(k=>TAB_LABELS[k] && k!=='dashboard'):[]; }catch(e){ return []; } }
   function saveWTabs(){ try{ localStorage.setItem('clm_tabs', JSON.stringify(state.openTabs)); }catch(e){} }
-  function goTab(k){ state.tab=k; state.expanded=null; state.excelMenu=false; state.datePop=null; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0,0); }
+  function goTab(k){
+    state.tabMem=state.tabMem||{};
+    state.tabMem[state.tab]={expanded:state.expanded, y:window.scrollY};
+    const mem=state.tabMem[k]||{};
+    state.tab=k; state.expanded=mem.expanded||null; state.excelMenu=false; state.datePop=null; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0, mem.y||0);
+  }
   function closeWTab(k){
     const i=state.openTabs.indexOf(k); if(i<0) return;
     state.openTabs.splice(i,1); saveWTabs();
@@ -2888,7 +2893,7 @@
 
   // ================= shell binding =================
   function bindShell(){
-    document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.tab; state.expanded=null; state.excelMenu=false; state.datePop=null; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0,0); });
+    document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>goTab(el.dataset.tab));
     document.querySelectorAll('.nav-group').forEach(el=>el.onclick=()=>{ const g=el.dataset.group; const open=el.classList.contains('open'); state.navOpen=state.navOpen||{}; state.navOpen[g]=!open; if(open && NAV.find(n=>n.group===g).items.some(([k])=>k===state.tab)){ state.tab='dashboard'; } render(); });
     document.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.goto; render(); });
     document.getElementById('logoutBtn').onclick=async ()=>{ await sb.auth.signOut(); state.view='login'; state.user=null; render(); };
