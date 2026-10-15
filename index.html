@@ -130,6 +130,17 @@
   .detail-box{padding:14px 18px; font-size:12.5px; line-height:1.6;}
   .detail-box table{border:1px solid var(--grid); margin:6px 0 10px; background:#fff;}
   .detail-box th{background:#f2f7f7;}
+  .plus-menu{position:fixed; z-index:400; background:#fff; border:1px solid var(--grid-strong); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:5px; min-width:220px;}
+  .plus-menu button{display:flex; flex-direction:column; align-items:flex-start; gap:1px; width:100%; border:none; background:none; padding:8px 10px; border-radius:7px; cursor:pointer; text-align:left; font-family:inherit;}
+  .plus-menu button:hover{background:#eef7f6;}
+  .plus-menu b{font-size:13px; color:var(--ink);} .plus-menu span{font-size:11.5px; color:var(--ink-soft);}
+  .icon-btn.plusBtn{font-size:17px; font-weight:700; line-height:1; color:var(--accent-dark);}
+  .wtabs{display:flex; gap:4px; flex-wrap:wrap; margin:-6px 0 16px; padding-bottom:0; border-bottom:1px solid var(--grid-strong);}
+  .wtab{display:flex; align-items:center; gap:6px; padding:7px 8px 7px 14px; font-size:12.5px; color:var(--ink-soft); background:#eef2f3; border:1px solid var(--grid-strong); border-bottom:none; border-radius:8px 8px 0 0; cursor:pointer; margin-bottom:-1px; user-select:none;}
+  .wtab:hover{background:#f6f9f9; color:var(--ink);}
+  .wtab.active{background:#fff; color:var(--accent-dark); font-weight:700; box-shadow:inset 0 2px 0 var(--accent);}
+  .wtab-x{border:none; background:none; color:#9aa5ad; font-size:15px; line-height:1; width:18px; height:18px; border-radius:4px; cursor:pointer; padding:0;}
+  .wtab-x:hover{background:#dde4e6; color:var(--ink);}
   .detail-box td.cs{background:#f5f9ff !important;} .detail-box th.cs, .detail-box tr.total td.cs{background:#ecf4fe !important;}
   .detail-box td.cb{background:#fffaf3 !important;} .detail-box th.cb, .detail-box tr.total td.cb{background:#fdf2e4 !important;}
   .detail-box td.cp{color:#d0312d !important;}
@@ -677,7 +688,22 @@
   const qmatch = (key, ...fields) => { const q=(state.q[key]||'').trim().toLowerCase(); if(!q) return true; return fields.some(f=>String(f||'').toLowerCase().includes(q)); };
 
   // ================= render root =================
+  const TAB_LABELS = (()=>{ const o={}; NAV.forEach(n=>{ if(n.group) n.items.forEach(([k,l])=>o[k]=l); else o[n[0]]=n[1]; }); return o; })();
+  function loadWTabs(){ try{ const v=JSON.parse(localStorage.getItem('clm_tabs')||'[]'); return Array.isArray(v)?v.filter(k=>TAB_LABELS[k] && k!=='dashboard'):[]; }catch(e){ return []; } }
+  function saveWTabs(){ try{ localStorage.setItem('clm_tabs', JSON.stringify(state.openTabs)); }catch(e){} }
+  function goTab(k){ state.tab=k; state.expanded=null; state.excelMenu=false; state.datePop=null; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0,0); }
+  function closeWTab(k){
+    const i=state.openTabs.indexOf(k); if(i<0) return;
+    state.openTabs.splice(i,1); saveWTabs();
+    if(state.tab===k) goTab(state.openTabs[i] || state.openTabs[i-1] || 'dashboard'); else render();
+  }
+  function wtabsHTML(){
+    if(state.tab==='dashboard' || !state.openTabs.length) return '';
+    return `<div class="wtabs">${state.openTabs.map(k=>`<div class="wtab ${state.tab===k?'active':''}" data-tab="${k}"><span>${esc(TAB_LABELS[k])}</span><button class="wtab-x" data-tab="${k}" title="탭 닫기">&times;</button></div>`).join('')}</div>`;
+  }
   function render(){
+    if(!state.openTabs) state.openTabs=loadWTabs();
+    if(state.tab && state.tab!=='dashboard' && TAB_LABELS[state.tab] && !state.openTabs.includes(state.tab)){ state.openTabs.push(state.tab); saveWTabs(); }
     const a=document.activeElement; let rid=null, s1=null, s2=null;
     if(a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT') && (a.id || a.dataset.bind)){ rid = a.id ? '#'+a.id : `#modalBg [data-bind="${a.dataset.bind}"]`; try{ s1=a.selectionStart; s2=a.selectionEnd; }catch(e){} }
     document.querySelectorAll('.sugg-float').forEach(x=>x.remove());
@@ -765,6 +791,7 @@
         </div>
       </div>
       <div class="main">
+        ${wtabsHTML()}
         ${state.setupMissing.length?`<div class="setup-banner"><b>데이터베이스 설정이 필요합니다.</b> Supabase → SQL Editor에서 <b>setup.sql</b> 내용을 한 번 실행해 주세요. 실행 전에는 일부 화면이 비어 보이거나 저장되지 않습니다.<div class="small muted" style="margin-top:4px;">${state.setupMissing.map(esc).join('<br/>')}</div></div>`:''}
         ${pages[state.tab]()}
       </div>
@@ -1427,6 +1454,19 @@
     state.tab='quotes';
     state.modal={type:'quote', isNew:true, data, title:'갱신 견적 작성', wide:true, info:`"${c.name}"의 다음 기간 견적이에요. 지금 계약의 품목·단가·매입가${srcQ?`와 지난 견적(${srcQ.quote_no})의 소비자가·비고`:''}를 복사했고, 기간은 만료일 다음 날부터 1년으로 넣었어요. 금액을 확인하고 저장하세요. 수주되면 "계약 등록"을 누르면 기존 계약이 갱신완료로 바뀌어요.`};
     render();
+  }
+  function showPlusMenu(btn){
+    const old=document.getElementById('plusMenu'); if(old){ const same=old.dataset.for===btn.dataset.id; old.remove(); if(same) return; }
+    const rq=renewQuoteOf(btn.dataset.id, btn.dataset.end);
+    const m=document.createElement('div'); m.id='plusMenu'; m.className='plus-menu'; m.dataset.for=btn.dataset.id;
+    m.innerHTML=`<button data-a="quote"><b>견적</b><span>${rq?`갱신 견적 열기 · ${esc(rq.quote_no)} (${esc(rq.status||'작성중')})`:'다음 기간 갱신 견적 만들기'}</span></button><button data-a="renew"><b>갱신</b><span>다음 기간 계약 바로 등록</span></button>`;
+    document.body.appendChild(m);
+    const rc=btn.getBoundingClientRect();
+    m.style.top=(rc.bottom+4)+'px'; m.style.left=Math.max(8, Math.min(rc.right-m.offsetWidth, window.innerWidth-m.offsetWidth-8))+'px';
+    if(rc.bottom+4+m.offsetHeight>window.innerHeight) m.style.top=(rc.top-4-m.offsetHeight)+'px';
+    m.querySelector('[data-a="quote"]').onclick=()=>{ m.remove(); openRenewalQuote(btn.dataset.id, btn.dataset.end); };
+    m.querySelector('[data-a="renew"]').onclick=()=>{ m.remove(); startRenewal('ctr', btn.dataset.id, btn.dataset.end); };
+    setTimeout(()=>document.addEventListener('click', function h(ev){ if(!m.contains(ev.target)){ m.remove(); } else document.addEventListener('click', h, {once:true}); }, {once:true}),0);
   }
   function bindQuotes(){
     document.getElementById('addQuoteBtn').onclick=()=>openQuoteModal(null);
@@ -2175,7 +2215,7 @@
             <td class="nowrap">${cs.end?esc(cs.end):''}<div>${ddayBadge(cs.end,cs.renewed,cs.dismissed,c.alert_days)}${cs.extra?` <span class="badge gray" title="${esc(cs.groups.filter(g=>!g.done).slice(1).map(g=>g.end).join(', '))}">외 ${cs.extra}개 일정</span>`:''}</div></td>
             <td class="nowrap">${esc(repDisplay(c.sales_rep)||'-')}</td>
             <td style="text-align:center;">${c.attachment_url?`<button class="icon-btn attachView" data-kind="ctr" data-id="${c.id}" title="${esc(c.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="ctr" data-id="${c.id}" title="계약서 첨부">&#128206;</button>`}</td>
-            <td class="nowrap">${canRenew?`<button class="btn-sm ghost renewQuote" data-id="${c.id}" data-end="${cs.end||''}" title="다음 기간 갱신 견적 만들기">견적</button> <button class="btn-sm renewBtn" data-kind="ctr" data-id="${c.id}" title="다음 기간 계약 만들기">갱신</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
+            <td class="nowrap">${canRenew?`<button class="icon-btn plusBtn" data-id="${c.id}" data-end="${cs.end||''}" title="견적 · 갱신">+</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
           if(open) html += `<tr class="detail"><td colspan="${isMt?12:11}">${contractDetail(c)}</td></tr>`;
           return html;
         }).join('')}
@@ -2778,12 +2818,12 @@
     fileInput.onchange=async ()=>{
       const file=fileInput.files[0]; if(!file||!state.attachTarget) return;
       const {kind,id}=state.attachTarget, table=kind==='ctr'?'contracts':'maintenance_contracts';
-      const safe=file.name.replace(/[^\w.\-가-힣]/g,'_'); const path=`${kind}/${id}/${Date.now()}_${safe}`;
-      const up=await sb.storage.from('attachments').upload(path,file,{upsert:true}); if(up.error){ fileInput.value=''; return fail('업로드 실패',up.error); }
+      const ext=((file.name.split('.').pop()||'').toLowerCase().replace(/[^a-z0-9]/g,''))||'bin'; const path=`${kind}/${id}/${Date.now()}.${ext}`;
+      const up=await sb.storage.from('attachments').upload(path,file,{upsert:true, contentType:file.type||undefined}); if(up.error){ fileInput.value=''; return fail('업로드 실패',up.error); }
       const url=sb.storage.from('attachments').getPublicUrl(path).data.publicUrl;
       const { error } = await sb.from(table).update({attachment_url:url, attachment_name:file.name, attachment_path:path}).eq('id',id); if(error){ fileInput.value=''; return fail('저장 실패',error); }
       const rec=(kind==='ctr'?state.contracts:state.maint).find(x=>x.id===id); if(rec){ rec.attachment_url=url; rec.attachment_name=file.name; rec.attachment_path=path; }
-      fileInput.value=''; showToast('첨부되었습니다.');
+      fileInput.value=''; showToast('첨부되었습니다.'); render();
     };
     const bg=document.getElementById('attBg');
     if(bg){
@@ -2888,6 +2928,9 @@
     bindShare();
     bindDateFilter();
     document.querySelectorAll('.renewQuote').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openRenewalQuote(b.dataset.id, b.dataset.end); });
+    document.querySelectorAll('.plusBtn').forEach(b=>b.onclick=e=>{ e.stopPropagation(); showPlusMenu(b); });
+    document.querySelectorAll('.wtab').forEach(el=>el.onclick=()=>{ goTab(el.dataset.tab); });
+    document.querySelectorAll('.wtab-x').forEach(el=>el.onclick=e=>{ e.stopPropagation(); closeWTab(el.dataset.tab); });
     bindDocView(); bindDocMail();
     document.querySelectorAll('.docView').forEach(b=>b.onclick=()=>{ state.docView={kind:b.dataset.kind, id:b.dataset.id}; render(); });
     document.querySelectorAll('.docMail').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openDocMail(b.dataset.kind, b.dataset.id); });
