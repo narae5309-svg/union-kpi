@@ -202,6 +202,54 @@
   .kakao-btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; padding:13px; border:none; border-radius:8px; background:#fee500; color:#191919; font-size:15px; font-weight:800; cursor:pointer;}
   .kakao-btn:hover{background:#f5dc00;}
   .share-more summary{cursor:pointer; font-size:12.5px; color:var(--ink-soft); user-select:none;}
+  /* documents (견적서·발주서 A4) */
+  .doc-page{background:#fff; width:794px; max-width:100%; margin:0 auto; padding:30px 34px; box-shadow:0 2px 10px rgba(0,0,0,.08);}
+  #docBg .doc-page{max-width:none;}
+  .doc th{color:#222 !important;}
+  .pdf-render .doc-page{box-shadow:none; padding:18px 22px;}
+  .doc{font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif; color:#111; font-size:12px; line-height:1.45;}
+  .doc-title{text-align:center; font-size:26px; font-weight:800; letter-spacing:6px; padding:4px 0 2px; border-bottom:3px double #333; margin-bottom:4px;}
+  .doc-no{text-align:right; font-size:11px; color:#555; margin-bottom:10px;}
+  .doc-head{width:100%; border-collapse:collapse; margin-bottom:10px;}
+  .doc-head > tbody > tr > td{vertical-align:top; border:none; padding:0;}
+  .doc-to-cell{width:46%; padding-right:12px !important;}
+  .doc-to{font-size:18px; font-weight:800; border-bottom:1.5px solid #333; padding-bottom:4px; margin-bottom:6px;}
+  .doc-to span{font-size:13px; font-weight:600;}
+  .doc-kv{width:100%; border-collapse:collapse;}
+  .doc-kv th, .doc-kv td{border:1px solid #888; padding:4px 6px; font-size:11px; text-align:left;}
+  .doc-kv th{background:#f1f3f4; font-weight:700; width:68px; white-space:nowrap; color:#222;}
+  .doc-from th.vert{width:22px; text-align:center; background:#e6ecee; line-height:1.6;}
+  .seal-cell{position:relative;}
+  .seal-cell .in{color:#888; margin-left:6px;}
+  .doc-seal{position:absolute; left:46px; top:-12px; width:52px; height:52px; object-fit:contain; opacity:.9;}
+  .doc-lead{font-size:12px; margin:6px 0;}
+  .doc-sum{display:flex; justify-content:space-between; align-items:center; border:1.5px solid #333; padding:7px 12px; margin-bottom:10px; background:#f7f9f9;}
+  .doc-sum b{font-size:16px;}
+  .doc-table{width:100%; border-collapse:collapse; margin-bottom:8px;}
+  .doc-table th{border:1px solid #888; background:#e9eef0; padding:5px 4px; font-size:11px; text-align:center; color:#222;}
+  .doc-table td{border:1px solid #aaa; padding:5px 6px; font-size:11px; text-align:left;}
+  .doc-table td.r{text-align:right; white-space:nowrap;} .doc-table td.c{text-align:center;}
+  .doc-group td{background:#f5f5ef; font-weight:700;}
+  .doc-totals{width:300px; margin-left:auto; border-collapse:collapse; margin-bottom:10px;}
+  .doc-totals th, .doc-totals td{border:1px solid #888; padding:5px 10px; font-size:11.5px;}
+  .doc-totals th{background:#f1f3f4; text-align:left; width:90px;}
+  .doc-totals td{text-align:right;}
+  .doc-totals tr.grand th, .doc-totals tr.grand td{font-weight:800; background:#e8f1ef; font-size:12.5px;}
+  .doc-terms{margin-bottom:10px;}
+  .doc-remarks{border:1px solid #888; padding:8px 10px; font-size:11px; margin-bottom:10px;}
+  .doc-remarks div{white-space:pre-wrap; margin-top:3px;}
+  .doc-foot{font-size:11px; margin-bottom:6px;}
+  .doc-company{border-top:1px solid #bbb; padding-top:6px; font-size:10.5px; color:#555; text-align:center; margin-top:14px;}
+  .items-table th.int, .items-table td.int{background:#fff8e6;}
+  .items-table th.int{color:#8a6d1f;}
+  .grp-row td{background:#f3f6f6;}
+  .int-txt{color:#8a6d1f;}
+  .attach-chip{display:inline-block; background:#f2f6f7; border:1px solid var(--grid); border-radius:14px; padding:5px 12px; font-size:12px; margin-top:2px;}
+  .mail-err{margin-top:10px; background:var(--warn-bg); border:1px solid #f0b5b0; color:#7a1d16; border-radius:var(--radius); padding:10px 12px; font-size:12.5px;}
+  .seal-preview{width:70px; height:70px; border:1px dashed var(--grid-strong); border-radius:8px; display:flex; align-items:center; justify-content:center; background:#fafafa;}
+  .seal-preview img{max-width:64px; max-height:64px;}
+  .po-links{margin:2px 0 10px; display:flex; flex-wrap:wrap; gap:6px; align-items:center;}
+  .icon-btn.docPdf{font-size:9px; font-weight:800; width:30px;}
   /* calendar */
   .cal-nav{display:inline-flex; align-items:center; gap:6px; text-transform:none; letter-spacing:0;}
   .cal-nav b{font-size:14px; color:var(--ink); min-width:96px; text-align:center;}
@@ -253,6 +301,8 @@
   .field{margin-bottom:12px; position:relative;}
   .field label{display:block; font-size:11px; color:var(--ink-soft); margin-bottom:4px; font-weight:600;}
   .field input, .field select, .field textarea, .cell-in{width:100%; padding:7px 9px; border:1px solid var(--grid-strong); font-size:13px; border-radius:var(--radius); font-family:inherit; background:#fff;}
+  .field label.chk{display:inline-flex; font-size:12.5px; font-weight:500; margin:6px 0 0; color:var(--ink);}
+  .field input[type=checkbox]{width:auto; padding:0; margin:0;}
   .field input:focus, .field select:focus, .field textarea:focus, .cell-in:focus{outline:none; border-color:var(--accent);}
   .field input:disabled, .field select:disabled{background:#f2f4f4; color:var(--ink-soft);}
   .field textarea{resize:vertical; min-height:64px;}
@@ -332,14 +382,14 @@
   const DEPTS = ['영업팀','기술지원팀','경영지원','기타'];
   const PAGE_SIZE = 50;
   const SEND_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;"><path fill="currentColor" d="M21.6 2.4a1 1 0 0 0-1.06-.22L3.04 9.1a1 1 0 0 0 .02 1.88l6.9 2.4 2.4 6.9a1 1 0 0 0 1.88.02l6.92-17.5a1 1 0 0 0-.56-1.4z"/><path d="M10.2 13.8 20.6 3.4" stroke="#1b6fb0" stroke-width="1.7" stroke-linecap="round" opacity=".45"/></svg>';
-  const NAV = [['dashboard','대시보드'],{group:'계약', open:true, items:[['contracts','계약관리'],['maint','유지보수']]},['support','기술지원'],{group:'등록', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리']]}];
+  const NAV = [['dashboard','대시보드'],{group:'계약', open:true, items:[['contracts','계약관리'],['maint','유지보수']]},['quotes','견적'],['pos','발주'],['support','기술지원'],{group:'등록', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리'],['company','회사정보']]}];
 
   const state = {
     view:'login', user:null, userEmail:null, isAdmin:false, tab:'dashboard', loading:true, setupMissing:[],
     reps:[], customers:[], contacts:[], contracts:[], items:[], maint:[], tickets:[],
     q:{}, f:{ctrType:'전체', ctrTab:'전체', ctrRep:'전체', mtRep:'전체', endRange:{contracts:{from:'',to:''}, maint:{from:'',to:''}}, mtTab:'전체', tkStatus:'미완료', tkAssignee:'전체', dashMine:false},
-    cal:null, calDay:null, share:null, datePop:null,
-    sort:{}, page:{}, sel:{customers:new Set(), suppliers:new Set(), contracts:new Set(), maint:new Set(), support:new Set(), reps:new Set()},
+    cal:null, calDay:null, share:null, datePop:null, quotes:[], pos:[], company:null, companyDraft:null, docView:null, docMail:null,
+    sort:{}, page:{}, sel:{customers:new Set(), suppliers:new Set(), contracts:new Set(), maint:new Set(), support:new Set(), reps:new Set(), quotes:new Set(), pos:new Set()},
     expanded:null, modal:null, confirm:null, toast:null, attachView:null, attachTarget:null, excelMenu:false,
   };
 
@@ -494,7 +544,7 @@
   // ================= data =================
   async function loadAll(){
     state.loading=true; render();
-    const tables = [['reps','reps'],['customers','customers'],['contacts','customer_contacts'],['contracts','contracts'],['items','contract_items'],['tickets','support_tickets']];
+    const tables = [['reps','reps'],['customers','customers'],['contacts','customer_contacts'],['contracts','contracts'],['items','contract_items'],['tickets','support_tickets'],['quotes','quotes'],['pos','purchase_orders'],['companyRows','company_info']];
     const res = await Promise.all(tables.map(([,t])=>sb.from(t).select('*').order('created_at',{ascending:false})));
     state.setupMissing = [];
     res.forEach((r,i)=>{
@@ -503,6 +553,7 @@
       else state[key]=r.data||[];
     });
     state.maint = [];
+    state.company = (state.companyRows||[]).find(r=>r.id==='main') || {};
     if(!state.setupMissing.some(x=>x.startsWith('contract_items'))){
       const probe = await sb.from('contract_items').select('end_date,renewed,closed,unit_price').limit(1);
       if(probe.error) state.setupMissing.push('contract_items: 품목 단가·만료일 칸이 없습니다 (setup.sql 다시 실행 필요)');
@@ -638,7 +689,7 @@
     const renewN = renewalBadgeCount(), tkN = openTicketsCount(false);
     const p = notifyPerm();
     const notifyLabel = p==='granted'?'🔔 갱신 알림 켜짐':p==='denied'?'🔕 알림 차단됨':'🔔 갱신 알림 켜기';
-    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), support:renderSupport, reps:renderReps};
+    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), support:renderSupport, reps:renderReps, quotes:renderQuotes, pos:renderPOs, company:renderCompany};
     return `<div class="shell">
       <div class="sidebar">
         <div class="brand"><h2>UNION</h2><div class="who">${esc(state.user)} 님${state.isAdmin?' · 관리자':''}</div></div>
@@ -672,12 +723,14 @@
     ${state.modal?renderModal():''}
     ${state.attachView?renderAttachView():''}
     ${state.share?renderShare():''}
+    ${state.docView?renderDocView():''}
+    ${state.docMail?renderDocMail():''}
     ${state.datePop && state.tab===state.datePop?renderDatePop():''}
     ${state.confirm?renderConfirm():''}
     ${state.toast?`<div class="toast">${esc(state.toast)}</div>`:''}
     <input type="file" id="attachFileInput" style="display:none;" accept=".pdf,.doc,.docx,.hwp,.hwpx,.xlsx,.png,.jpg,.jpeg"/>
     <input type="file" id="importFileInput" style="display:none;" accept=".xlsx,.xls,.csv"/>
-    ${['customers','suppliers','contracts','maint','support'].includes(state.tab)?`<div class="excel-wrap">
+    ${['customers','suppliers','contracts','maint','support','quotes','pos'].includes(state.tab)?`<div class="excel-wrap">
       ${state.excelMenu?`<div class="excel-menu" id="excelMenu">
         ${['customers','suppliers'].includes(state.tab)?`<button data-x="import">📥 ${state.tab==='customers'?'고객사':'매입처'} 가져오기</button><button data-x="template">📄 가져오기 양식</button>`:''}
         <button data-x="export">📤 엑셀로 내보내기</button>
@@ -1081,6 +1134,608 @@
     }
   }
 
+  // ================= 견적 / 발주 / 회사정보 =================
+  const HTML2PDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+  let pdfLibLoading = null;
+  function loadPdfLib(){
+    if(window.html2pdf) return Promise.resolve(window.html2pdf);
+    if(pdfLibLoading) return pdfLibLoading;
+    pdfLibLoading = new Promise((res,rej)=>{ const sc=document.createElement('script'); sc.src=HTML2PDF_URL; sc.onload=()=>res(window.html2pdf); sc.onerror=()=>{ pdfLibLoading=null; rej(new Error('PDF 도구를 불러오지 못했습니다')); }; document.head.appendChild(sc); });
+    return pdfLibLoading;
+  }
+  const company = () => state.company || {};
+  const companyName = () => company().name || COMPANY_NAME;
+  function myRep(){ return state.reps.find(r=>r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase()) || {}; }
+  function repByName(n){ return state.reps.find(r=>r.name===n) || {}; }
+  function docNo(prefix, list, field, date){ const compact=String(date||todayStr()).replace(/-/g,'').slice(2); const n=list.filter(x=>String(x[field]||'').startsWith(prefix+compact)).length+1; return prefix+compact+'-'+String(n).padStart(3,'0'); }
+  const docStatusBadge = s => `<span class="badge ${s==='발송'?'blue':(s==='계약전환'||s==='입고완료')?'green':'gray'}">${esc(s||'작성중')}</span>`;
+  const dash = v => (v===''||v==null)?'-':v;
+
+  // ---- 계산 ----
+  function qItemCalc(it){ const qty=num(it.qty), list=num(it.list_price), unit=num(it.unit_price), cost=num(it.cost_price); const line=qty*unit, costT=qty*cost; return {dc: list>0?(1-unit/list):0, line, costT, margin:line-costT, mrate: line?(line-costT)/line:0}; }
+  function qCalc(q){ let sub=0,cost=0; (q.items||[]).forEach(it=>{ if(it.type==='group') return; const c=qItemCalc(it); sub+=c.line; cost+=c.costT; }); const tax=q.tax_applied?Math.round(sub*0.1):0; return {subtotal:sub, tax, total:sub+tax, cost_total:cost, margin:sub-cost, mrate: sub?(sub-cost)/sub:0}; }
+  function poCalc(p){ let sub=0; (p.items||[]).forEach(it=>{ if(it.type==='group') return; sub+=num(it.qty)*num(it.unit_price); }); const tax=p.tax_applied?Math.round(sub*0.1):0; return {subtotal:sub, tax, total:sub+tax}; }
+
+  // ---- 문서(A4) ----
+  function sealImg(){ const c=company(); return c.seal_url ? `<img class="doc-seal" src="${esc(c.seal_url)}" crossorigin="anonymous" alt=""/>` : ''; }
+  function quoteDocHTML(q){
+    const c=company(), t=qCalc(q);
+    let no=0;
+    const rows=(q.items||[]).map(it=>{
+      if(it.type==='group') return `<tr class="doc-group"><td colspan="8">${esc(it.name)}</td></tr>`;
+      const k=qItemCalc(it); no++;
+      return `<tr><td class="c">${no}</td><td>${esc(it.name)}</td><td>${esc(it.spec)}</td><td class="r">${num(it.qty)}</td><td class="r">${num(it.list_price)?won(it.list_price):''}</td><td class="r">${num(it.list_price)?pct(k.dc*100):''}</td><td class="r">${won(it.unit_price)}</td><td class="r">${won(k.line)}</td></tr>`;
+    }).join('');
+    return `<div class="doc">
+      <div class="doc-title">견 &nbsp;적 &nbsp;서</div>
+      <div class="doc-no">No. ${esc(q.quote_no||'')}</div>
+      <table class="doc-head"><tr>
+        <td class="doc-to-cell">
+          <div class="doc-to">${esc(custName(q.customer_id))} <span>귀중</span></div>
+          <table class="doc-kv">
+            <tr><th>건 명</th><td>${esc(dash(q.title))}</td></tr>
+            <tr><th>참 조</th><td>${esc(dash(q.ref_contact))}${q.ref_contact?' 님':''}</td></tr>
+            <tr><th>연락처</th><td>${esc(dash(q.ref_phone))}</td></tr>
+            <tr><th>E-mail</th><td>${esc(dash(q.ref_email))}</td></tr>
+            <tr><th>견적일자</th><td>${esc(dash(q.quote_date))}</td></tr>
+            <tr><th>견적유효</th><td>견적일로부터 ${esc(q.valid_days||'15')}일</td></tr>
+            <tr><th>예상납기</th><td>${esc(dash(q.delivery))}</td></tr>
+          </table>
+        </td>
+        <td class="doc-from-cell">
+          <table class="doc-kv doc-from">
+            <tr><th rowspan="7" class="vert">공<br/>급<br/>자</th><th>사업자번호</th><td>${esc(dash(c.biz_no))}</td></tr>
+            <tr><th>상 호</th><td>${esc(companyName())}</td></tr>
+            <tr><th>대표자</th><td class="seal-cell">${esc(dash(c.ceo))} <span class="in">(인)</span>${sealImg()}</td></tr>
+            <tr><th>주 소</th><td>${esc(dash(c.address))}</td></tr>
+            <tr><th>업태/종목</th><td>${esc(dash(c.biz_type))}${c.biz_item?' / '+esc(c.biz_item):''}</td></tr>
+            <tr><th>담당자</th><td>${esc(dash(q.sales_rep))}</td></tr>
+            <tr><th>연락처</th><td>${esc(dash(q.sales_phone))}${q.sales_email?'<br/>'+esc(q.sales_email):''}</td></tr>
+          </table>
+        </td>
+      </tr></table>
+      <div class="doc-lead">아래와 같이 견적합니다.</div>
+      <div class="doc-sum"><span>합계금액${q.tax_applied?' (부가세 포함)':' (부가세 별도)'}</span><b>₩${won(t.total)}</b></div>
+      <table class="doc-table">
+        <thead><tr><th style="width:30px;">No</th><th>품 명</th><th>규 격</th><th style="width:44px;">수량</th><th>소비자가격</th><th style="width:50px;">DC율</th><th>공급단가</th><th>공급가액</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <table class="doc-totals">
+        <tr><th>공급가액</th><td>₩${won(t.subtotal)}</td></tr>
+        <tr><th>부가세</th><td>₩${won(t.tax)}</td></tr>
+        <tr class="grand"><th>합 계</th><td>₩${won(t.total)}</td></tr>
+      </table>
+      ${q.remarks?`<div class="doc-remarks"><b>비고</b><div>${esc(q.remarks)}</div></div>`:''}
+      ${c.bank?`<div class="doc-foot">입금계좌 : ${esc(c.bank)}</div>`:''}
+      <div class="doc-company">${esc(companyName())}${c.phone?` · Tel ${esc(c.phone)}`:''}${c.fax?` · Fax ${esc(c.fax)}`:''}${c.email?` · ${esc(c.email)}`:''}</div>
+    </div>`;
+  }
+  function poDocHTML(p){
+    const c=company(), t=poCalc(p), ctr=contractById(p.contract_id);
+    let no=0;
+    const rows=(p.items||[]).map(it=>{
+      if(it.type==='group') return `<tr class="doc-group"><td colspan="6">${esc(it.name)}</td></tr>`;
+      no++; return `<tr><td class="c">${no}</td><td>${esc(it.name)}</td><td>${esc(it.spec)}</td><td class="r">${num(it.qty)}</td><td class="r">${won(it.unit_price)}</td><td class="r">${won(num(it.qty)*num(it.unit_price))}</td></tr>`;
+    }).join('');
+    return `<div class="doc">
+      <div class="doc-title">발 &nbsp;주 &nbsp;서</div>
+      <div class="doc-no">No. ${esc(p.po_no||'')}</div>
+      <table class="doc-head"><tr>
+        <td class="doc-to-cell">
+          <div class="doc-to">${esc(custName(p.supplier_id))} <span>귀중</span></div>
+          <table class="doc-kv">
+            <tr><th>건 명</th><td>${esc(dash(p.title))}</td></tr>
+            <tr><th>참 조</th><td>${esc(dash(p.ref_contact))}${p.ref_contact?' 님':''}</td></tr>
+            <tr><th>연락처</th><td>${esc(dash(p.ref_phone))}</td></tr>
+            <tr><th>E-mail</th><td>${esc(dash(p.ref_email))}</td></tr>
+            <tr><th>발주일자</th><td>${esc(dash(p.po_date))}</td></tr>
+            <tr><th>납기일</th><td>${esc(dash(p.delivery_date))}</td></tr>
+          </table>
+        </td>
+        <td class="doc-from-cell">
+          <table class="doc-kv doc-from">
+            <tr><th rowspan="7" class="vert">발<br/>주<br/>처</th><th>사업자번호</th><td>${esc(dash(c.biz_no))}</td></tr>
+            <tr><th>상 호</th><td>${esc(companyName())}</td></tr>
+            <tr><th>대표자</th><td class="seal-cell">${esc(dash(c.ceo))} <span class="in">(인)</span>${sealImg()}</td></tr>
+            <tr><th>주 소</th><td>${esc(dash(c.address))}</td></tr>
+            <tr><th>업태/종목</th><td>${esc(dash(c.biz_type))}${c.biz_item?' / '+esc(c.biz_item):''}</td></tr>
+            <tr><th>담당자</th><td>${esc(dash(p.sales_rep))}</td></tr>
+            <tr><th>연락처</th><td>${esc(dash(p.sales_phone))}${p.sales_email?'<br/>'+esc(p.sales_email):''}</td></tr>
+          </table>
+        </td>
+      </tr></table>
+      <div class="doc-lead">아래와 같이 발주합니다.</div>
+      <div class="doc-sum"><span>발주금액${p.tax_applied?' (부가세 포함)':' (부가세 별도)'}</span><b>₩${won(t.total)}</b></div>
+      <table class="doc-table">
+        <thead><tr><th style="width:30px;">No</th><th>품 명</th><th>규 격</th><th style="width:50px;">수량</th><th>단 가</th><th>금 액</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <table class="doc-totals">
+        <tr><th>공급가액</th><td>₩${won(t.subtotal)}</td></tr>
+        <tr><th>부가세</th><td>₩${won(t.tax)}</td></tr>
+        <tr class="grand"><th>합 계</th><td>₩${won(t.total)}</td></tr>
+      </table>
+      <table class="doc-kv doc-terms">
+        <tr><th>납품장소</th><td>${esc(dash(p.delivery_place))}</td><th>결제조건</th><td>${esc(dash(p.payment_terms))}</td></tr>
+        ${ctr?`<tr><th>최종사용처</th><td colspan="3">${esc(custName(ctr.customer_id))}${ctr.end_user_name?' ('+esc(ctr.end_user_name)+')':''}</td></tr>`:''}
+      </table>
+      ${p.remarks?`<div class="doc-remarks"><b>비고</b><div>${esc(p.remarks)}</div></div>`:''}
+      <div class="doc-company">${esc(companyName())}${c.phone?` · Tel ${esc(c.phone)}`:''}${c.fax?` · Fax ${esc(c.fax)}`:''}${c.email?` · ${esc(c.email)}`:''}</div>
+    </div>`;
+  }
+  function docRecord(kind,id){ return kind==='quote' ? state.quotes.find(x=>x.id===id) : state.pos.find(x=>x.id===id); }
+  function docHTML(kind,rec){ return kind==='quote' ? quoteDocHTML(rec) : poDocHTML(rec); }
+  function docFileName(kind,rec){
+    const who = kind==='quote' ? custName(rec.customer_id) : custName(rec.supplier_id);
+    return `${kind==='quote'?'견적서':'발주서'}_${(kind==='quote'?rec.quote_no:rec.po_no)||''}_${who}.pdf`.replace(/[\\/:*?"<>|]/g,'_');
+  }
+  async function makePdf(kind, rec, mode){
+    const lib = await loadPdfLib();
+    const holder=document.createElement('div');
+    holder.className='pdf-render';
+    holder.style.cssText='position:fixed; left:-10000px; top:0; width:794px; background:#fff; z-index:-1;';
+    holder.innerHTML=`<div class="doc-page">${docHTML(kind,rec)}</div>`;
+    document.body.appendChild(holder);
+    try{
+      await Promise.all([...holder.querySelectorAll('img')].map(img=>img.complete?null:new Promise(r=>{ img.onload=img.onerror=r; })));
+      const worker = lib().set({ margin:[8,8,10,8], filename:docFileName(kind,rec), image:{type:'jpeg', quality:0.96}, html2canvas:{scale:2, useCORS:true, backgroundColor:'#ffffff'}, jsPDF:{unit:'mm', format:'a4', orientation:'portrait'}, pagebreak:{mode:['css','legacy'], avoid:['tr','.doc-totals','.doc-remarks']} }).from(holder.firstElementChild);
+      if(mode==='save'){ await worker.save(); return null; }
+      const uri = await worker.outputPdf('datauristring');
+      return String(uri).split(',')[1];
+    } finally { holder.remove(); }
+  }
+
+  // ---- 견적 목록 ----
+  const QUOTE_TABS = ['전체','작성중','발송','계약전환'];
+  function renderQuotes(){
+    const f=state.f; const tab=f.qTab||'전체';
+    let list=state.quotes.filter(q=>(tab==='전체'||(q.status||'작성중')===tab) && qmatch('quotes', q.quote_no, q.title, custName(q.customer_id), q.ref_contact, q.sales_rep, ...(q.items||[]).map(i=>i.name)));
+    list=applySort(list,'quotes',{no:q=>q.quote_no, date:q=>q.quote_date, cust:q=>custName(q.customer_id), title:q=>q.title, total:q=>num(q.total), rep:q=>q.sales_rep, status:q=>q.status});
+    if(!state.sort.quotes) list=[...list].sort((a,b)=>cmp(b.quote_date+b.quote_no, a.quote_date+a.quote_no));
+    const pg=paginate(list,'quotes');
+    const cnt=t=>state.quotes.filter(q=>t==='전체'||(q.status||'작성중')===t).length;
+    return `
+      <div class="page-head"><div><div class="page-title">견적</div><div class="page-sub">견적서 작성 → PDF → 고객사에 메일 발송 → 수주되면 계약으로 등록</div></div></div>
+      <div class="tabs">${QUOTE_TABS.map(t=>`<div class="tab-btn qTab ${tab===t?'active':''}" data-t="${t}">${t}<span class="cnt">${cnt(t)}</span></div>`).join('')}</div>
+      <div class="toolbar">
+        <button class="btn-primary" id="addQuoteBtn">+ 견적서 작성</button>
+        <span class="spacer"></span>
+        ${searchInput('quotes','견적번호·고객사·건명·품목 검색')}
+        ${bulkDelBtn('quotes')}
+      </div>
+      <div class="card flush">
+        ${list.length===0?'<div class="empty">견적서가 없습니다.</div>':`
+        <table><thead><tr>${checkAllTh('quotes')}${sortTh('견적번호','quotes','no')}${sortTh('견적일','quotes','date')}${sortTh('고객사','quotes','cust')}${sortTh('건명','quotes','title','text-align:left;')}${sortTh('합계(VAT)','quotes','total','text-align:right;')}${sortTh('영업담당','quotes','rep')}${sortTh('상태','quotes','status')}<th>발송</th><th></th></tr></thead><tbody>
+        ${pg.items.map(q=>`<tr>${checkTd('quotes',q.id)}
+          <td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td>${esc(custName(q.customer_id))}</td>
+          <td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}" style="font-weight:600;">${esc(q.title||'(건명 없음)')}</span></td>
+          <td class="num" style="font-weight:600;">${won(q.total)}</td><td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td>
+          <td class="small nowrap">${q.sent_at?esc(String(q.sent_at).slice(0,10)):'-'}</td>
+          <td class="nowrap"><button class="icon-btn shareBtn docMail" data-kind="quote" data-id="${q.id}" title="메일 보내기">${SEND_ICON}</button> <button class="icon-btn docPdf" data-kind="quote" data-id="${q.id}" title="PDF 저장">PDF</button> <button class="icon-btn editQuote" data-id="${q.id}" title="수정">&#9998;</button>${q.status!=='계약전환'?` <button class="btn-sm quoteToCtr" data-id="${q.id}" title="수주되면 계약으로 등록">계약 등록</button>`:''}</td></tr>`).join('')}
+        </tbody></table>${pager('quotes',pg,list.length)}`}
+      </div>`;
+  }
+  function bindQuotes(){
+    document.getElementById('addQuoteBtn').onclick=()=>openQuoteModal(null);
+    document.querySelectorAll('.qTab').forEach(el=>el.onclick=()=>{ state.f.qTab=el.dataset.t; state.page.quotes=1; render(); });
+    document.querySelectorAll('.editQuote').forEach(b=>b.onclick=()=>openQuoteModal(state.quotes.find(q=>q.id===b.dataset.id)));
+    document.querySelectorAll('.quoteToCtr').forEach(b=>b.onclick=()=>{ const q=state.quotes.find(x=>x.id===b.dataset.id); if(q) openContractModal(null,{fromQuote:q}); });
+  }
+
+  // ---- 견적 작성 ----
+  function newQuoteItem(type){ return type==='group' ? {type:'group', name:''} : {type:'item', name:'', spec:'', qty:1, list_price:0, unit_price:0, cost_price:0}; }
+  function openQuoteModal(q, opts){
+    opts=opts||{};
+    const me=myRep();
+    const data = q ? JSON.parse(JSON.stringify(q)) : {id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:'', quote_date:todayStr(), customer_id:'', contact_id:'', ref_contact:'', ref_phone:'', ref_email:'', valid_days:'15', delivery:'주문 후 협의', sales_rep:state.user, sales_phone:me.phone||'', sales_email:me.email||state.userEmail||'', items:[newQuoteItem()], tax_applied:true, remarks:'', status:'작성중', created_by:state.user};
+    if(!data.items || !data.items.length) data.items=[newQuoteItem()];
+    state.modal={type:'quote', isNew:!q, data, title:q?`견적서 수정 · ${q.quote_no}`:'견적서 작성', wide:true};
+    render();
+  }
+  function renderQuoteForm(d){
+    const t=qCalc(d);
+    return `
+      <div class="grid3">
+        <div class="field" style="grid-column:span 2;"><label>건명</label><input id="f_qtitle" data-bind="title" value="${esc(d.title||'')}" placeholder="예) V3 Endpoint 라이선스 공급 건"/></div>
+        <div class="field"><label>견적번호</label><input value="${esc(d.quote_no)}" disabled/></div>
+      </div>
+      <div class="grid3">
+        ${customerSearchHTML(d)}
+        ${contactSelectHTML(d,'contact_id')}
+        <div class="field"><label>견적일자</label><input type="date" data-bind="quote_date" value="${esc(d.quote_date||'')}"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>참조 (수신 담당자)</label><input id="f_refc" data-bind="ref_contact" value="${esc(d.ref_contact||'')}"/></div>
+        <div class="field"><label>참조 연락처</label><input id="f_refp" data-bind="ref_phone" value="${esc(d.ref_phone||'')}"/></div>
+        <div class="field"><label>참조 E-mail</label><input id="f_refe" data-bind="ref_email" value="${esc(d.ref_email||'')}"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>견적 유효 (일)</label><input data-bind="valid_days" value="${esc(d.valid_days||'15')}"/></div>
+        <div class="field"><label>예상 납기</label><input data-bind="delivery" value="${esc(d.delivery||'')}"/></div>
+        <div class="field"><label>영업 담당자</label><select id="f_qrep" data-bind="sales_rep">${repOptions(d.sales_rep)}</select></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>담당자 연락처</label><input id="f_qrepp" data-bind="sales_phone" value="${esc(d.sales_phone||'')}"/></div>
+        <div class="field"><label>담당자 이메일</label><input id="f_qrepe" data-bind="sales_email" value="${esc(d.sales_email||'')}"/></div>
+      </div>
+      <div class="section-title"><span>품목 <span class="muted" style="font-weight:400;">· 노란 칸(매입단가·마진)은 내부용이라 견적서에 나오지 않아요</span></span><span><button class="btn-sm ghost" id="addQGroup">+ 그룹 제목</button> <button class="btn-sm" id="addQItem">+ 품목 추가</button></span></div>
+      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:170px;">품명</th><th style="min-width:90px;">규격</th><th style="width:56px;">수량</th><th style="min-width:100px;">소비자가격</th><th class="num" style="width:54px;">DC율</th><th style="min-width:100px;">공급단가</th><th class="num" style="min-width:96px;">공급가액</th><th class="int" style="min-width:96px;">매입단가</th><th class="int num" style="min-width:86px;">마진</th><th class="int num" style="width:56px;">마진율</th><th style="width:34px;"></th></tr></thead><tbody>
+        ${d.items.map((it,i)=> it.type==='group'
+          ? `<tr class="grp-row"><td colspan="10"><input class="cell-in" id="qi_${i}_name" data-qi="${i}" data-f="name" value="${esc(it.name)}" placeholder="그룹 제목 (예: 보안 솔루션)" style="font-weight:700;"/></td><td><button class="icon-btn danger delQItem" data-i="${i}">&times;</button></td></tr>`
+          : (()=>{ const k=qItemCalc(it); return `<tr>
+            <td><input class="cell-in" id="qi_${i}_name" data-qi="${i}" data-f="name" value="${esc(it.name)}"/></td>
+            <td><input class="cell-in" id="qi_${i}_spec" data-qi="${i}" data-f="spec" value="${esc(it.spec||'')}"/></td>
+            <td><input class="cell-in n" id="qi_${i}_qty" data-qi="${i}" data-f="qty" value="${esc(it.qty)}" inputmode="numeric"/></td>
+            <td><input class="cell-in n money" id="qi_${i}_list" data-qi="${i}" data-f="list_price" value="${won(it.list_price)}" inputmode="numeric"/></td>
+            <td class="num small" id="qi_${i}_dc">${num(it.list_price)?pct(k.dc*100):'-'}</td>
+            <td><input class="cell-in n money" id="qi_${i}_unit" data-qi="${i}" data-f="unit_price" value="${won(it.unit_price)}" inputmode="numeric"/></td>
+            <td class="num" id="qi_${i}_line" style="font-weight:600;">${won(k.line)}</td>
+            <td class="int"><input class="cell-in n money" id="qi_${i}_cost" data-qi="${i}" data-f="cost_price" value="${won(it.cost_price)}" inputmode="numeric"/></td>
+            <td class="int num" id="qi_${i}_margin">${won(k.margin)}</td>
+            <td class="int num small" id="qi_${i}_mrate">${pct(k.mrate*100)}</td>
+            <td><button class="icon-btn danger delQItem" data-i="${i}" ${d.items.filter(x=>x.type!=='group').length<=1&&it.type!=='group'?'disabled':''}>&times;</button></td></tr>`; })()).join('')}
+      </tbody></table></div>
+      <div class="totals" id="qTotals"></div>
+      <div class="grid2" style="margin-top:10px;">
+        <div class="field"><label>비고 (견적서에 표시)</label><textarea id="f_qremarks" data-bind="remarks">${esc(d.remarks||'')}</textarea></div>
+        <div class="field"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="f_qtax" ${d.tax_applied?'checked':''}/> 부가세 10% 별도 계산</label></div>
+      </div>`;
+  }
+  function updateQuoteCalc(d){
+    d.items.forEach((it,i)=>{ if(it.type==='group') return; const k=qItemCalc(it);
+      const set=(id,v)=>{ const e=document.getElementById(id); if(e) e.textContent=v; };
+      set(`qi_${i}_dc`, num(it.list_price)?pct(k.dc*100):'-'); set(`qi_${i}_line`, won(k.line)); set(`qi_${i}_margin`, won(k.margin)); set(`qi_${i}_mrate`, pct(k.mrate*100)); });
+    const t=qCalc(d), el=document.getElementById('qTotals');
+    if(el) el.innerHTML=`<span>공급가액 <b>₩${won(t.subtotal)}</b></span><span>부가세 <b>₩${won(t.tax)}</b></span><span>합계 <b>₩${won(t.total)}</b></span><span class="int-txt">매입 <b>₩${won(t.cost_total)}</b> · 마진 <b>₩${won(t.margin)}</b> (${pct(t.mrate*100)})</span>`;
+  }
+  function bindMoneyInputs(scope){
+    scope.querySelectorAll('.money').forEach(el=>{
+      el.addEventListener('focus',()=>{ el.value = num(el.value) ? String(num(el.value)) : ''; });
+      el.addEventListener('blur',()=>{ el.value = won(el.value); });
+    });
+  }
+  function bindQuoteForm(d){
+    const fillFromContact=()=>{ const ct=contact(d.contact_id); if(ct){ d.ref_contact=ct.name||''; d.ref_phone=ct.phone||''; d.ref_email=ct.email||''; } };
+    bindCustomerSearch(d, ()=>{ d.contact_id=''; const cs=contactsOf(d.customer_id); if(cs.length===1){ d.contact_id=cs[0].id; fillFromContact(); } });
+    bindContactSelect(d,'contact_id');
+    const sel=document.getElementById('f_contact'); if(sel) sel.addEventListener('change',()=>{ if(sel.value && sel.value!=='__new'){ fillFromContact(); render(); } });
+    const rep=document.getElementById('f_qrep'); if(rep) rep.addEventListener('change',()=>{ const r=repByName(rep.value); d.sales_rep=rep.value; d.sales_phone=r.phone||''; d.sales_email=r.email||''; render(); });
+    document.querySelectorAll('[data-qi]').forEach(el=>{
+      const it=d.items[+el.dataset.qi], f=el.dataset.f;
+      el.addEventListener('input',()=>{ it[f] = ['qty','list_price','unit_price','cost_price'].includes(f) ? num(el.value) : el.value; updateQuoteCalc(d); });
+    });
+    bindMoneyInputs(document.getElementById('modalBg'));
+    document.getElementById('addQItem').onclick=()=>{ d.items.push(newQuoteItem()); render(); };
+    document.getElementById('addQGroup').onclick=()=>{ d.items.push(newQuoteItem('group')); render(); };
+    document.querySelectorAll('.delQItem').forEach(b=>b.onclick=()=>{ d.items.splice(+b.dataset.i,1); render(); });
+    const tax=document.getElementById('f_qtax'); if(tax) tax.onchange=()=>{ d.tax_applied=tax.checked; updateQuoteCalc(d); };
+    updateQuoteCalc(d);
+  }
+  function quoteRow(q){ const t=qCalc(q); return {id:q.id, quote_no:q.quote_no, title:q.title||'', quote_date:dn(q.quote_date), customer_id:q.customer_id||null, contact_id:(q.contact_id&&q.contact_id!=='__new')?q.contact_id:null, ref_contact:q.ref_contact||'', ref_phone:q.ref_phone||'', ref_email:q.ref_email||'', valid_days:String(q.valid_days||''), delivery:q.delivery||'', sales_rep:q.sales_rep||'', sales_phone:q.sales_phone||'', sales_email:q.sales_email||'', items:q.items||[], tax_applied:!!q.tax_applied, subtotal:t.subtotal, tax:t.tax, total:t.total, cost_total:t.cost_total, remarks:q.remarks||'', status:q.status||'작성중', sent_at:q.sent_at||null, sent_to:q.sent_to||'', contract_id:q.contract_id||null, created_by:q.created_by||state.user}; }
+  async function saveQuote(m){
+    const d=m.data;
+    d.items=d.items.filter(it=>it.type==='group' ? String(it.name||'').trim() : (String(it.name||'').trim()||num(it.unit_price)));
+    if(!d.items.some(it=>it.type!=='group')) return alert('품목을 하나 이상 입력하세요.');
+    if(!(await ensureCustomer(d))) return;
+    if(!(await ensureContact(d,'contact_id'))) return;
+    if(d.contact_id==='__new') d.contact_id=null;
+    if(d.contact_id && !d.ref_contact){ const ct=contact(d.contact_id); if(ct){ d.ref_contact=ct.name; d.ref_phone=d.ref_phone||ct.phone||''; d.ref_email=d.ref_email||ct.email||''; } }
+    const row=quoteRow(d);
+    const err=await dbUpsert('quotes',[row]); if(err) return fail('저장 실패',err);
+    const clean={...row}; const i=state.quotes.findIndex(x=>x.id===d.id); if(i>-1) state.quotes[i]=clean; else state.quotes.unshift(clean);
+    state.modal=null; state.docView={kind:'quote', id:d.id}; showToast('저장되었습니다. PDF로 저장하거나 메일로 보낼 수 있어요.');
+  }
+
+  // ---- 발주 목록 ----
+  const PO_TABS = ['전체','작성중','발송','입고완료'];
+  function renderPOs(){
+    const f=state.f; const tab=f.poTab||'전체';
+    let list=state.pos.filter(p=>(tab==='전체'||(p.status||'작성중')===tab) && qmatch('pos', p.po_no, p.title, custName(p.supplier_id), p.ref_contact, ...(p.items||[]).map(i=>i.name)));
+    list=applySort(list,'pos',{no:p=>p.po_no, date:p=>p.po_date, sup:p=>custName(p.supplier_id), title:p=>p.title, total:p=>num(p.total), due:p=>p.delivery_date, status:p=>p.status});
+    if(!state.sort.pos) list=[...list].sort((a,b)=>cmp(b.po_date+b.po_no, a.po_date+a.po_no));
+    const pg=paginate(list,'pos');
+    const cnt=t=>state.pos.filter(p=>t==='전체'||(p.status||'작성중')===t).length;
+    return `
+      <div class="page-head"><div><div class="page-title">발주</div><div class="page-sub">발주서 작성 → PDF → 매입처에 메일 발송 · 계약 상세에서 매입처별로 바로 만들 수도 있어요</div></div></div>
+      <div class="tabs">${PO_TABS.map(t=>`<div class="tab-btn poTab ${tab===t?'active':''}" data-t="${t}">${t}<span class="cnt">${cnt(t)}</span></div>`).join('')}</div>
+      <div class="toolbar">
+        <button class="btn-primary" id="addPOBtn">+ 발주서 작성</button>
+        <span class="spacer"></span>
+        ${searchInput('pos','발주번호·매입처·건명·품목 검색')}
+        ${bulkDelBtn('pos')}
+      </div>
+      <div class="card flush">
+        ${list.length===0?'<div class="empty">발주서가 없습니다.</div>':`
+        <table><thead><tr>${checkAllTh('pos')}${sortTh('발주번호','pos','no')}${sortTh('발주일','pos','date')}${sortTh('매입처','pos','sup')}${sortTh('건명','pos','title','text-align:left;')}${sortTh('합계(VAT)','pos','total','text-align:right;')}${sortTh('납기일','pos','due')}<th>관련 계약</th>${sortTh('상태','pos','status')}<th></th></tr></thead><tbody>
+        ${pg.items.map(p=>{ const ctr=contractById(p.contract_id); return `<tr>${checkTd('pos',p.id)}
+          <td class="nowrap">${esc(p.po_no)}</td><td class="nowrap">${esc(p.po_date||'-')}</td><td>${esc(custName(p.supplier_id))}</td>
+          <td class="tl"><span class="link docView" data-kind="po" data-id="${p.id}" style="font-weight:600;">${esc(p.title||'(건명 없음)')}</span></td>
+          <td class="num" style="font-weight:600;">${won(p.total)}</td><td class="nowrap">${esc(p.delivery_date||'-')}</td>
+          <td class="small">${ctr?esc(ctr.name):'-'}</td><td>${docStatusBadge(p.status)}</td>
+          <td class="nowrap"><button class="icon-btn shareBtn docMail" data-kind="po" data-id="${p.id}" title="메일 보내기">${SEND_ICON}</button> <button class="icon-btn docPdf" data-kind="po" data-id="${p.id}" title="PDF 저장">PDF</button> <button class="icon-btn editPO" data-id="${p.id}" title="수정">&#9998;</button>${p.status!=='입고완료'?` <button class="btn-sm ghost poDone" data-id="${p.id}" title="입고·납품 완료로 표시">입고완료</button>`:''}</td></tr>`; }).join('')}
+        </tbody></table>${pager('pos',pg,list.length)}`}
+      </div>`;
+  }
+  function bindPOs(){
+    document.getElementById('addPOBtn').onclick=()=>openPOModal(null);
+    document.querySelectorAll('.poTab').forEach(el=>el.onclick=()=>{ state.f.poTab=el.dataset.t; state.page.pos=1; render(); });
+    document.querySelectorAll('.editPO').forEach(b=>b.onclick=()=>openPOModal(state.pos.find(p=>p.id===b.dataset.id)));
+    document.querySelectorAll('.poDone').forEach(b=>b.onclick=async ()=>{ const p=state.pos.find(x=>x.id===b.dataset.id); if(!p) return; p.status='입고완료'; const err=await dbUpsert('purchase_orders',[poRow(p)]); if(err) return fail('처리 실패',err); showToast('입고완료로 표시했습니다.'); });
+  }
+
+  // ---- 발주 작성 ----
+  function newPOItem(){ return {type:'item', name:'', spec:'', qty:1, unit_price:0}; }
+  function openPOModal(p, opts){
+    opts=opts||{};
+    const me=myRep();
+    let data;
+    if(p) data=JSON.parse(JSON.stringify(p));
+    else {
+      data={id:uid('po'), po_no:docNo('P',state.pos,'po_no',todayStr()), title:'', po_date:todayStr(), supplier_id:'', contact_id:'', ref_contact:'', ref_phone:'', ref_email:'', contract_id:'', delivery_date:'', delivery_place:'', payment_terms:'', sales_rep:state.user, sales_phone:me.phone||'', sales_email:me.email||state.userEmail||'', items:[newPOItem()], tax_applied:true, remarks:'', status:'작성중', created_by:state.user};
+      if(opts.fromContract){
+        const c=opts.fromContract, its=itemsOf(c.id).filter(i=> opts.supplierKey ? ((i.supplier_id||('n:'+(i.supplier||'')))===opts.supplierKey) : true);
+        const sup = its[0] ? (customer(its[0].supplier_id) || supplierByName(its[0].supplier)) : null;
+        data.supplier_id = sup ? sup.id : '';
+        data._supName = sup ? sup.name : (its[0] && its[0].supplier || '');
+        data.contract_id = c.id;
+        data.title = c.name;
+        data.delivery_place = custName(c.customer_id) + (c.end_user_name ? ` (${c.end_user_name})` : '');
+        data.items = its.map(i=>{ const q=num(i.qty)||1; return {type:'item', name:i.product, spec:'', qty:q, unit_price:Math.round(num(i.purchase_amount)/q)}; });
+        if(!data.items.length) data.items=[newPOItem()];
+        const cs=data.supplier_id?contactsOf(data.supplier_id):[]; if(cs.length===1){ data.contact_id=cs[0].id; data.ref_contact=cs[0].name; data.ref_phone=cs[0].phone||''; data.ref_email=cs[0].email||''; }
+      }
+    }
+    if(!data._supName) data._supName = data.supplier_id ? custName(data.supplier_id) : '';
+    if(!data.items || !data.items.length) data.items=[newPOItem()];
+    state.modal={type:'po', isNew:!p, data, title:p?`발주서 수정 · ${p.po_no}`:'발주서 작성', wide:true};
+    render();
+  }
+  function renderPOForm(d){
+    const t=poCalc(d), cs=d.supplier_id?contactsOf(d.supplier_id):[];
+    return `
+      <div class="grid3">
+        <div class="field" style="grid-column:span 2;"><label>건명</label><input id="f_ptitle" data-bind="title" value="${esc(d.title||'')}" placeholder="예) 알파전자 V3 라이선스 발주"/></div>
+        <div class="field"><label>발주번호</label><input value="${esc(d.po_no)}" disabled/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>매입처 <span class="req">*</span></label><input id="f_psup" autocomplete="off" placeholder="입력하면 검색" value="${esc(d._supName||'')}"/>${d._supName && !supplierByName(d._supName)?'<div class="sup-new">새 매입처로 등록돼요</div>':''}</div>
+        <div class="field"><label>매입처 담당자</label><select id="f_pcontact" ${d.supplier_id?'':'disabled'}><option value="">${d.supplier_id?'선택 안 함':'매입처를 먼저 선택하세요'}</option>${cs.map(x=>`<option value="${x.id}" ${d.contact_id===x.id?'selected':''}>${esc(x.name)}${x.dept?' ('+esc(x.dept)+')':''}${x.email?' · '+esc(x.email):''}</option>`).join('')}</select></div>
+        <div class="field"><label>관련 계약 (선택)</label><select data-bind="contract_id"><option value="">없음</option>${[...state.contracts].sort((a,b)=>cmp(b.contract_date,a.contract_date)).slice(0,300).map(c=>`<option value="${c.id}" ${d.contract_id===c.id?'selected':''}>${esc(c.name)} · ${esc(custName(c.customer_id))}</option>`).join('')}</select></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>참조 (수신 담당자)</label><input id="f_prefc" data-bind="ref_contact" value="${esc(d.ref_contact||'')}"/></div>
+        <div class="field"><label>참조 연락처</label><input data-bind="ref_phone" value="${esc(d.ref_phone||'')}"/></div>
+        <div class="field"><label>참조 E-mail</label><input data-bind="ref_email" value="${esc(d.ref_email||'')}"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>발주일자</label><input type="date" data-bind="po_date" value="${esc(d.po_date||'')}"/></div>
+        <div class="field"><label>납기일</label><input type="date" data-bind="delivery_date" value="${esc(d.delivery_date||'')}"/></div>
+        <div class="field"><label>납품장소</label><input data-bind="delivery_place" value="${esc(d.delivery_place||'')}"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>결제조건</label><input data-bind="payment_terms" value="${esc(d.payment_terms||'')}" placeholder="예) 납품 후 익월 말 현금"/></div>
+        <div class="field"><label>우리 담당자</label><select id="f_prep" data-bind="sales_rep">${repOptions(d.sales_rep)}</select></div>
+        <div class="field"><label>담당자 연락처 / 이메일</label><input id="f_prepc" value="${esc([d.sales_phone,d.sales_email].filter(Boolean).join(' / '))}" placeholder="연락처 / 이메일"/></div>
+      </div>
+      <div class="section-title"><span>발주 품목</span><button class="btn-sm" id="addPItem">+ 품목 추가</button></div>
+      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:220px;">품명</th><th style="min-width:120px;">규격</th><th style="width:64px;">수량</th><th style="min-width:120px;">단가</th><th class="num" style="min-width:110px;">금액</th><th style="width:34px;"></th></tr></thead><tbody>
+        ${d.items.map((it,i)=>`<tr>
+          <td><input class="cell-in" id="pi_${i}_name" data-pi="${i}" data-f="name" value="${esc(it.name)}"/></td>
+          <td><input class="cell-in" id="pi_${i}_spec" data-pi="${i}" data-f="spec" value="${esc(it.spec||'')}"/></td>
+          <td><input class="cell-in n" id="pi_${i}_qty" data-pi="${i}" data-f="qty" value="${esc(it.qty)}" inputmode="numeric"/></td>
+          <td><input class="cell-in n money" id="pi_${i}_unit" data-pi="${i}" data-f="unit_price" value="${won(it.unit_price)}" inputmode="numeric"/></td>
+          <td class="num" id="pi_${i}_amt" style="font-weight:600;">${won(num(it.qty)*num(it.unit_price))}</td>
+          <td><button class="icon-btn danger delPItem" data-i="${i}" ${d.items.length<=1?'disabled':''}>&times;</button></td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="totals" id="pTotals"></div>
+      <div class="grid2" style="margin-top:10px;">
+        <div class="field"><label>비고 (발주서에 표시)</label><textarea data-bind="remarks">${esc(d.remarks||'')}</textarea></div>
+        <div class="field"><label>&nbsp;</label><label class="chk"><input type="checkbox" id="f_ptax" ${d.tax_applied?'checked':''}/> 부가세 10% 별도 계산</label></div>
+      </div>`;
+  }
+  function updatePOCalc(d){
+    d.items.forEach((it,i)=>{ const e=document.getElementById(`pi_${i}_amt`); if(e) e.textContent=won(num(it.qty)*num(it.unit_price)); });
+    const t=poCalc(d), el=document.getElementById('pTotals');
+    if(el) el.innerHTML=`<span>공급가액 <b>₩${won(t.subtotal)}</b></span><span>부가세 <b>₩${won(t.tax)}</b></span><span>합계 <b>₩${won(t.total)}</b></span>`;
+  }
+  function bindPOForm(d){
+    const sup=document.getElementById('f_psup');
+    const setSup=v=>{ d._supName=v; const sp=supplierByName(v); const changed=(sp?sp.id:'')!==d.supplier_id; d.supplier_id=sp?sp.id:''; if(changed){ d.contact_id=''; const cs=sp?contactsOf(sp.id):[]; if(cs.length===1){ d.contact_id=cs[0].id; d.ref_contact=cs[0].name; d.ref_phone=cs[0].phone||''; d.ref_email=cs[0].email||''; } render(); } };
+    if(sup){ sup.addEventListener('input',()=>{ d._supName=sup.value; }); sup.addEventListener('blur',()=>setTimeout(()=>{ if(document.body.contains(sup)) setSup(sup.value.trim()); },180)); attachSuggest(sup, ()=>sortedSuppliers().map(c=>c.name), setSup, '일치하는 매입처가 없습니다 · 저장하면 새로 등록됩니다'); }
+    const pc=document.getElementById('f_pcontact'); if(pc) pc.onchange=()=>{ d.contact_id=pc.value; const ct=contact(pc.value); if(ct){ d.ref_contact=ct.name||''; d.ref_phone=ct.phone||''; d.ref_email=ct.email||''; } render(); };
+    const rep=document.getElementById('f_prep'); if(rep) rep.addEventListener('change',()=>{ const r=repByName(rep.value); d.sales_rep=rep.value; d.sales_phone=r.phone||''; d.sales_email=r.email||''; render(); });
+    const rc=document.getElementById('f_prepc'); if(rc) rc.addEventListener('input',()=>{ const [ph,em]=rc.value.split('/'); d.sales_phone=(ph||'').trim(); d.sales_email=(em||'').trim(); });
+    document.querySelectorAll('[data-pi]').forEach(el=>{ const it=d.items[+el.dataset.pi], f=el.dataset.f; el.addEventListener('input',()=>{ it[f] = ['qty','unit_price'].includes(f) ? num(el.value) : el.value; updatePOCalc(d); }); });
+    bindMoneyInputs(document.getElementById('modalBg'));
+    document.getElementById('addPItem').onclick=()=>{ d.items.push(newPOItem()); render(); };
+    document.querySelectorAll('.delPItem').forEach(b=>b.onclick=()=>{ d.items.splice(+b.dataset.i,1); render(); });
+    const tax=document.getElementById('f_ptax'); if(tax) tax.onchange=()=>{ d.tax_applied=tax.checked; updatePOCalc(d); };
+    updatePOCalc(d);
+  }
+  function poRow(p){ const t=poCalc(p); return {id:p.id, po_no:p.po_no, title:p.title||'', po_date:dn(p.po_date), supplier_id:p.supplier_id||null, contact_id:p.contact_id||null, ref_contact:p.ref_contact||'', ref_phone:p.ref_phone||'', ref_email:p.ref_email||'', contract_id:p.contract_id||null, delivery_date:dn(p.delivery_date), delivery_place:p.delivery_place||'', payment_terms:p.payment_terms||'', sales_rep:p.sales_rep||'', sales_phone:p.sales_phone||'', sales_email:p.sales_email||'', items:p.items||[], tax_applied:!!p.tax_applied, subtotal:t.subtotal, tax:t.tax, total:t.total, remarks:p.remarks||'', status:p.status||'작성중', sent_at:p.sent_at||null, sent_to:p.sent_to||'', created_by:p.created_by||state.user}; }
+  async function savePO(m){
+    const d=m.data;
+    const supInput=document.getElementById('f_psup'); if(supInput) d._supName=supInput.value.trim();
+    if(!String(d._supName||'').trim()) return alert('매입처를 입력하세요.');
+    d.items=d.items.filter(it=>String(it.name||'').trim()||num(it.unit_price));
+    if(!d.items.length) return alert('품목을 하나 이상 입력하세요.');
+    if(!(await ensureSuppliers([d._supName]))) return;
+    const sp=supplierByName(d._supName); d.supplier_id=sp?sp.id:null;
+    const row=poRow(d);
+    const err=await dbUpsert('purchase_orders',[row]); if(err) return fail('저장 실패',err);
+    const i=state.pos.findIndex(x=>x.id===d.id); if(i>-1) state.pos[i]=row; else state.pos.unshift(row);
+    state.modal=null; state.docView={kind:'po', id:d.id}; showToast('저장되었습니다. PDF로 저장하거나 메일로 보낼 수 있어요.');
+  }
+
+  // ---- 문서 미리보기 ----
+  function renderDocView(){
+    const {kind,id}=state.docView, rec=docRecord(kind,id); if(!rec) return '';
+    const missing = !company().name || !company().biz_no;
+    return `<div class="modal-bg" id="docBg" style="z-index:300;"><div class="modal" style="width:880px;">
+      <div class="modal-head"><h3>${kind==='quote'?'견적서':'발주서'} · ${esc(kind==='quote'?rec.quote_no:rec.po_no)} ${docStatusBadge(rec.status)}</h3><button class="modal-close" id="docClose">&times;</button></div>
+      <div class="modal-body" style="background:#eef1f2; max-height:72vh; overflow:auto;">
+        ${missing?`<div class="info-line" style="background:var(--gold-bg);">회사정보(상호·사업자번호 등)가 비어 있어요. <span class="link" id="goCompany">등록 → 회사정보</span>에서 입력하면 문서에 자동으로 들어가요.</div>`:''}
+        <div class="doc-page">${docHTML(kind,rec)}</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-sm ghost left" id="docEdit">수정</button>
+        ${kind==='quote' && rec.status!=='계약전환'?`<button class="btn-sm" id="docToCtr">계약 등록</button>`:''}
+        <button class="btn-sm" id="docPdfBtn">PDF 저장</button>
+        <button class="btn-primary" id="docMailBtn">${SEND_ICON} 메일 보내기</button>
+      </div>
+    </div></div>`;
+  }
+  function bindDocView(){
+    const v=state.docView; if(!v) return; const rec=docRecord(v.kind,v.id); if(!rec) return;
+    const $=id=>document.getElementById(id);
+    $('docClose').onclick=()=>{ state.docView=null; render(); };
+    $('docEdit').onclick=()=>{ state.docView=null; v.kind==='quote'?openQuoteModal(rec):openPOModal(rec); };
+    const tc=$('docToCtr'); if(tc) tc.onclick=()=>{ state.docView=null; openContractModal(null,{fromQuote:rec}); };
+    $('docPdfBtn').onclick=()=>savePdf(v.kind,rec);
+    $('docMailBtn').onclick=()=>{ state.docView=null; openDocMail(v.kind,v.id); };
+    const gc=$('goCompany'); if(gc) gc.onclick=()=>{ state.docView=null; state.tab='company'; render(); };
+  }
+  async function savePdf(kind, rec){
+    showToast('PDF를 만드는 중이에요...');
+    try{ await makePdf(kind, rec, 'save'); showToast('PDF를 저장했어요.'); }
+    catch(e){ alert('PDF를 만들지 못했습니다: '+(e && e.message || e)); }
+  }
+
+  // ---- 메일 보내기 ----
+  function docRecipients(kind, rec){
+    const pid = kind==='quote' ? rec.customer_id : rec.supplier_id;
+    const list = contactsOf(pid).filter(x=>x.email).map(x=>({key:'cc:'+x.id, email:x.email, label:x.name+(x.dept?' ('+x.dept+')':''), def: x.id===rec.contact_id || (rec.ref_email && x.email===rec.ref_email)}));
+    if(rec.ref_email && !list.some(x=>x.email===rec.ref_email)) list.unshift({key:'ref', email:rec.ref_email, label:(rec.ref_contact||'참조')+' (문서에 적힌 참조)', def:true});
+    const p=customer(pid); if(kind==='quote' && p && p.tax_email && !list.some(x=>x.email===p.tax_email)) list.push({key:'tax', email:p.tax_email, label:'세금계산서 메일', def:false});
+    return list;
+  }
+  function openDocMail(kind,id){
+    const rec=docRecord(kind,id); if(!rec) return;
+    const me=myRep(), cname=companyName();
+    const isQ = kind==='quote';
+    const who = isQ ? custName(rec.customer_id) : custName(rec.supplier_id);
+    const no = isQ ? rec.quote_no : rec.po_no;
+    const subject = isQ ? `[${cname}] ${rec.title||'견적서'} 견적서 송부 (${no})` : `[${cname}] ${rec.title||'발주서'} 발주서 송부 (${no})`;
+    const sender = rec.sales_rep || state.user;
+    const body = isQ
+      ? `안녕하세요, ${cname} ${sender}입니다.\n\n요청하신 ${rec.title?'"'+rec.title+'" ':''}견적서를 첨부와 같이 송부드립니다.\n검토 후 문의 사항 있으시면 편하게 연락 주세요.\n\n감사합니다.\n\n${sender} 드림\n${cname}${rec.sales_phone?'\nTel. '+rec.sales_phone:''}${rec.sales_email?'\n'+rec.sales_email:''}`
+      : `안녕하세요, ${cname} ${sender}입니다.\n\n${rec.title?'"'+rec.title+'" ':''}발주서를 첨부와 같이 송부드립니다.\n${rec.delivery_date?'납기일은 '+rec.delivery_date+'입니다. ':''}확인 후 회신 부탁드립니다.\n\n감사합니다.\n\n${sender} 드림\n${cname}${rec.sales_phone?'\nTel. '+rec.sales_phone:''}${rec.sales_email?'\n'+rec.sales_email:''}`;
+    const recips = docRecipients(kind, rec);
+    state.docMail = {kind, id, subject, body, extra:'', sel:new Set(recips.filter(r=>r.def).map(r=>r.key)), ccMe:true, sending:false, error:'', who};
+    render();
+  }
+  function renderDocMail(){
+    const m=state.docMail, rec=docRecord(m.kind,m.id); if(!rec) return '';
+    const recips=docRecipients(m.kind,rec), myEmail=myRep().email||state.userEmail||'';
+    return `<div class="modal-bg" id="docMailBg" style="z-index:320;"><div class="modal" style="width:600px;">
+      <div class="modal-head"><h3>${SEND_ICON} ${m.kind==='quote'?'견적서':'발주서'} 메일 보내기 · ${esc(m.who)}</h3><button class="modal-close" id="dmClose">&times;</button></div>
+      <div class="modal-body">
+        <div class="field"><label>받는 사람</label>
+          <div class="recips">${recips.length?recips.map(r=>`<label class="recip"><input type="checkbox" class="dmChk" data-key="${esc(r.key)}" ${m.sel.has(r.key)?'checked':''}/> <b>${esc(r.label)}</b> <span class="muted">${esc(r.email)}</span></label>`).join(''):`<div class="muted small" style="padding:6px 2px;">이메일이 등록된 담당자가 없어요. 아래에 직접 입력하세요.</div>`}</div>
+          <input id="dmExtra" class="cell-in" style="margin-top:6px;" placeholder="다른 주소 직접 입력 (여러 개는 쉼표로)" value="${esc(m.extra)}"/>
+        </div>
+        ${myEmail?`<label class="chk" style="margin:-4px 0 10px;"><input type="checkbox" id="dmCcMe" ${m.ccMe?'checked':''}/> 나에게도 참조(CC)로 보내기 · ${esc(myEmail)}</label>`:''}
+        <div class="field"><label>제목</label><input id="dmSubject" value="${esc(m.subject)}"/></div>
+        <div class="field"><label>내용</label><textarea id="dmBody" style="height:200px; line-height:1.6;">${esc(m.body)}</textarea></div>
+        <div class="attach-chip">📎 ${esc(docFileName(m.kind,rec))} <span class="muted small">(보낼 때 자동으로 만들어 첨부돼요)</span></div>
+        ${m.error?`<div class="mail-err"><b>메일을 보내지 못했어요.</b><div>${esc(m.error)}</div><div style="margin-top:6px;"><button class="btn-sm" id="dmFallback">PDF 저장 + 내 메일 프로그램으로 열기</button></div></div>`:''}
+      </div>
+      <div class="modal-actions">
+        <span class="muted small left">답장은 ${esc(rec.sales_email||myEmail||'보낸 사람')}(으)로 와요</span>
+        <button class="btn-sm ghost" id="dmCancel">취소</button>
+        <button class="btn-primary" id="dmSend" ${m.sending?'disabled':''}>${m.sending?'보내는 중...':'보내기'}</button>
+      </div>
+    </div></div>`;
+  }
+  function docMailTo(m, rec){
+    const list=docRecipients(m.kind,rec).filter(r=>m.sel.has(r.key)).map(r=>r.email);
+    String(m.extra||'').split(/[,;\s]+/).map(x=>x.trim()).filter(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)).forEach(x=>list.push(x));
+    return [...new Set(list)];
+  }
+  function bindDocMail(){
+    const m=state.docMail; if(!m) return; const rec=docRecord(m.kind,m.id); if(!rec) return;
+    const $=id=>document.getElementById(id);
+    const close=()=>{ if(m.sending) return; state.docMail=null; render(); };
+    $('dmClose').onclick=close; $('dmCancel').onclick=close;
+    document.querySelectorAll('.dmChk').forEach(c=>c.onchange=()=>{ c.checked?m.sel.add(c.dataset.key):m.sel.delete(c.dataset.key); });
+    $('dmExtra').addEventListener('input',e=>{ m.extra=e.target.value; });
+    $('dmSubject').addEventListener('input',e=>{ m.subject=e.target.value; });
+    $('dmBody').addEventListener('input',e=>{ m.body=e.target.value; });
+    const cc=$('dmCcMe'); if(cc) cc.onchange=()=>{ m.ccMe=cc.checked; };
+    const fb=$('dmFallback'); if(fb) fb.onclick=async ()=>{ await savePdf(m.kind,rec); const to=docMailTo(m,rec); location.href=`mailto:${to.map(encodeURIComponent).join(',')}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(crlf(m.body+'\n\n(첨부: '+docFileName(m.kind,rec)+')'))}`; };
+    $('dmSend').onclick=()=>sendDocMail(m, rec);
+  }
+  async function functionError(error){
+    try{ if(error && error.context && typeof error.context.json==='function'){ const j=await error.context.json(); if(j && j.error) return j.error + (j.detail && j.detail.message ? ' ('+j.detail.message+')' : ''); } }catch(e){}
+    const msg = error && error.message || String(error);
+    if(/Failed to send a request|not found|404/i.test(msg)) return '메일 발송 서버 함수(send-mail)가 아직 설치되지 않았어요. 설정 안내에 따라 Supabase에 등록해 주세요.';
+    return msg;
+  }
+  async function sendDocMail(m, rec){
+    const to=docMailTo(m,rec);
+    if(!to.length) return alert('받는 사람을 한 명 이상 선택하거나 이메일을 입력해주세요.');
+    const myEmail=myRep().email||state.userEmail||'';
+    m.sending=true; m.error=''; render();
+    try{
+      const pdf = await makePdf(m.kind, rec, 'base64');
+      const html = `<div style="font-family:'Malgun Gothic',sans-serif; font-size:14px; line-height:1.7; color:#222;">${esc(m.body).replace(/\n/g,'<br/>')}</div>`;
+      const { data, error } = await sb.functions.invoke('send-mail', { body:{
+        to, cc: (m.ccMe && myEmail && !to.includes(myEmail)) ? [myEmail] : [],
+        subject:m.subject, text:m.body, html, fromName:companyName(), replyTo: rec.sales_email || myEmail,
+        attachments:[{filename:docFileName(m.kind,rec), content:pdf}] } });
+      if(error || (data && data.error)) throw (error || new Error(data.error));
+      rec.status = (rec.status==='계약전환'||rec.status==='입고완료') ? rec.status : '발송';
+      rec.sent_at = new Date().toISOString(); rec.sent_to = to.join(', ');
+      const err = m.kind==='quote' ? await dbUpsert('quotes',[quoteRow(rec)]) : await dbUpsert('purchase_orders',[poRow(rec)]);
+      if(err) console.warn(err);
+      state.docMail=null; showToast(`메일을 보냈어요 → ${to.join(', ')}`);
+    }catch(e){
+      m.sending=false; m.error = await functionError(e); render();
+    }
+  }
+
+  // ---- 회사정보 ----
+  function renderCompany(){
+    const c=state.companyDraft || (state.companyDraft = {...company()});
+    const can = state.isAdmin;
+    const fld=(k,l,ph)=>`<div class="field"><label>${l}</label><input data-cf="${k}" value="${esc(c[k]||'')}" placeholder="${ph||''}" ${can?'':'disabled'}/></div>`;
+    return `
+      <div class="page-head"><div><div class="page-title">회사정보</div><div class="page-sub">등록 · 견적서·발주서에 들어가는 우리 회사 정보예요${can?'':' (관리자만 수정할 수 있어요)'}</div></div></div>
+      <div class="card" style="max-width:900px;">
+        <div class="grid2">${fld('name','상호','예) 주식회사 유니온시스템즈')}${fld('name_en','영문 상호','예) UNIONSYSTEMS Co., Ltd.')}</div>
+        <div class="grid3">${fld('biz_no','사업자등록번호','000-00-00000')}${fld('ceo','대표자')}${fld('phone','대표 전화')}</div>
+        ${fld('address','주소')}
+        <div class="grid3">${fld('biz_type','업태')}${fld('biz_item','종목')}${fld('fax','팩스')}</div>
+        <div class="grid2">${fld('email','대표 이메일')}${fld('bank','입금 계좌 (견적서 하단)','예) 우리은행 1005-000-000000 (주)유니온시스템즈')}</div>
+        <div class="field"><label>직인 이미지 (견적서·발주서의 (인) 위에 찍혀요 · 배경이 투명한 PNG 권장)</label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="seal-preview">${c.seal_url?`<img src="${esc(c.seal_url)}" alt="직인"/>`:'<span class="muted small">없음</span>'}</div>
+            ${can?`<button class="btn-sm" id="sealUpload">이미지 올리기</button>${c.seal_url?'<button class="btn-sm danger" id="sealRemove">삭제</button>':''}<input type="file" id="sealFile" accept="image/png,image/jpeg" style="display:none;"/>`:''}
+          </div>
+        </div>
+        ${can?`<div style="display:flex; justify-content:flex-end;"><button class="btn-primary" id="companySave">저장</button></div>`:''}
+      </div>`;
+  }
+  function bindCompany(){
+    const c=state.companyDraft;
+    document.querySelectorAll('[data-cf]').forEach(el=>el.addEventListener('input',()=>{ c[el.dataset.cf]=el.value; }));
+    const up=document.getElementById('sealUpload'), file=document.getElementById('sealFile');
+    if(up) up.onclick=()=>file.click();
+    if(file) file.onchange=async ()=>{
+      const f=file.files[0]; file.value=''; if(!f) return;
+      if(f.size>2*1024*1024) return alert('2MB 이하 이미지만 올릴 수 있어요.');
+      const path=`company/seal_${Date.now()}.${(f.name.split('.').pop()||'png').toLowerCase()}`;
+      const r=await sb.storage.from('attachments').upload(path,f,{upsert:true}); if(r.error) return fail('업로드 실패',r.error);
+      c.seal_url=sb.storage.from('attachments').getPublicUrl(path).data.publicUrl; c.seal_path=path; render(); showToast('직인 이미지를 올렸어요. 저장을 눌러주세요.');
+    };
+    const rm=document.getElementById('sealRemove'); if(rm) rm.onclick=()=>{ c.seal_url=null; c.seal_path=null; render(); };
+    const sv=document.getElementById('companySave'); if(sv) sv.onclick=async ()=>{
+      const row={id:'main', name:c.name||'', name_en:c.name_en||'', biz_no:c.biz_no||'', ceo:c.ceo||'', address:c.address||'', biz_type:c.biz_type||'', biz_item:c.biz_item||'', phone:c.phone||'', fax:c.fax||'', email:c.email||'', bank:c.bank||'', seal_url:c.seal_url||null, seal_path:c.seal_path||null, updated_at:new Date().toISOString()};
+      const err=await dbUpsert('company_info',[row]); if(err) return fail('저장 실패',err);
+      state.company={...row}; state.companyDraft=null; showToast('회사정보를 저장했어요.');
+    };
+  }
+
   // ================= PARTNERS (고객사 / 매입처) =================
   function partnerStats(c){
     if(isSupplier(c)){
@@ -1375,6 +2030,8 @@
         ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(num(i.unit_price)||(num(i.qty)?num(i.sale_amount)/num(i.qty):0))}</td><td class="num">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num">${won(i.purchase_amount)}</td><td class="num">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td></tr>`; }).join('')}
         <tr class="total"><td colspan="3" class="tl">합계</td><td class="num">${won(t.sale)}</td><td></td><td class="num">${won(t.purchase)}</td><td class="num">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td><td></td></tr>
       </tbody></table>`:'<div class="muted">등록된 품목이 없습니다.</div>'}
+      ${(()=>{ const sups={}; its.forEach(i=>{ const k=i.supplier_id||('n:'+(i.supplier||'')); if(i.supplier_id||i.supplier){ sups[k]=supplierLabel(i.supplier_id,i.supplier); } }); const keys=Object.keys(sups); const pos=state.pos.filter(p=>p.contract_id===c.id);
+        return keys.length||pos.length ? `<div class="po-links"><span class="muted">발주</span> ${keys.map(k=>`<button class="btn-sm ghost poFromCtr" data-ctr="${c.id}" data-sup="${esc(k)}">+ ${esc(sups[k])} 발주서</button>`).join(' ')} ${pos.map(p=>`<span class="link docView" data-kind="po" data-id="${p.id}">${esc(p.po_no)} ${docStatusBadge(p.status)}</span>`).join(' ')}</div>` : ''; })()}
       ${c.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(c.remarks)}</div></div>`:''}
     </div>`;
   }
@@ -1390,6 +2047,13 @@
     opts=opts||{};
     let data, items, title;
     if(c){ data={...c, sales_rep:repDisplay(c.sales_rep)}; items=itemsOf(c.id).map(i=>({...i, supplier:supplierLabel(i.supplier_id,i.supplier)})); title='계약 수정'; }
+    else if(opts.fromQuote){
+      const q=opts.fromQuote;
+      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:q.title||'', customer_id:q.customer_id||'', contact_id:q.contact_id||'', end_user_name:'', deal_type:'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:repDisplay(q.sales_rep)||state.user, remarks:`견적 ${q.quote_no}에서 등록`, reg_date:todayStr(), _fromQuoteId:q.id};
+      items=(q.items||[]).filter(it=>it.type!=='group').map(it=>{ const qty=num(it.qty)||1; return {id:uid('it'), contract_id:data.id, product:[it.name,it.spec].filter(Boolean).join(' '), qty, unit_price:num(it.unit_price), sale_amount:qty*num(it.unit_price), supplier:'', supplier_id:null, purchase_amount:Math.round(qty*num(it.cost_price))}; });
+      title='계약 등록 (견적에서)';
+      opts._quoteInfo = `견적 ${q.quote_no}의 내용으로 채웠어요. 품목별 매입처와 만료일을 확인하고 저장하세요. 저장하면 견적은 "계약전환"으로 표시돼요.`;
+    }
     else if(opts.renewFrom){
       const o=opts.renewFrom;
       const open=ctrGroups(o).filter(g=>!g.done);
@@ -1415,7 +2079,7 @@
     data.stage = normStage(data.stage);
     data._items=items; data._removedItems=[];
     state.modal={type:'contract', isNew:!c, data, title, wide:true,
-      info: opts.renewFrom ? `기존 계약 ${opts.renewFrom.code}의 다음 기간 계약입니다. 아래 품목이 갱신되며, 이번에 갱신하지 않을 품목은 × 로 빼세요(빠진 품목은 기존 계약에 남아 알림이 계속 옵니다). 저장하면 갱신한 품목만 "갱신완료"로 바뀝니다.${opts._leftNames&&opts._leftNames.length?' · 기존 계약에 남는 품목: '+opts._leftNames.join(', '):''}` : ''};
+      info: opts._quoteInfo ? opts._quoteInfo : opts.renewFrom ? `기존 계약 ${opts.renewFrom.code}의 다음 기간 계약입니다. 아래 품목이 갱신되며, 이번에 갱신하지 않을 품목은 × 로 빼세요(빠진 품목은 기존 계약에 남아 알림이 계속 옵니다). 저장하면 갱신한 품목만 "갱신완료"로 바뀝니다.${opts._leftNames&&opts._leftNames.length?' · 기존 계약에 남는 품목: '+opts._leftNames.join(', '):''}` : ''};
     render();
   }
   function renderContractForm(d){
@@ -1558,7 +2222,8 @@
         if(oldItems.every(i=>itemDone(i,o))){ o.renewed=true; const e2=await dbUpsert('contracts',[ctrRow(o)]); if(e2) fail('기존 계약 갱신완료 표시 실패',e2); }
       } else if(!oldItems.length){ o.renewed=true; const e2=await dbUpsert('contracts',[ctrRow(o)]); if(e2) fail('기존 계약 갱신완료 표시 실패',e2); }
     } }
-    const clean={...d}; ['_items','_removedItems','_renewFromId','_newCustomerName','_nc'].forEach(k=>delete clean[k]);
+    if(d._fromQuoteId){ const q=state.quotes.find(x=>x.id===d._fromQuoteId); if(q){ q.status='계약전환'; q.contract_id=d.id; const e3=await dbUpsert('quotes',[quoteRow(q)]); if(e3) fail('견적 상태 변경 실패',e3); } }
+    const clean={...d}; ['_items','_removedItems','_renewFromId','_newCustomerName','_nc','_fromQuoteId'].forEach(k=>delete clean[k]);
     const i=state.contracts.findIndex(c=>c.id===d.id); if(i>-1) state.contracts[i]=clean; else state.contracts.unshift(clean);
     state.items = state.items.filter(x=>x.contract_id!==d.id).concat(items);
     state.modal=null; showToast(d._renewFromId?'갱신 계약이 등록되었습니다.':'저장되었습니다.');
@@ -1873,7 +2538,7 @@
   // ================= MODAL =================
   function renderModal(){
     const m=state.modal, d=m.data;
-    const forms={customer:renderCustomerForm, contract:renderContractForm, maint:renderMaintForm, ticket:renderTicketForm, rep:renderRepForm};
+    const forms={customer:renderCustomerForm, contract:renderContractForm, maint:renderMaintForm, ticket:renderTicketForm, rep:renderRepForm, quote:renderQuoteForm, po:renderPOForm};
     const canDelete = !m.isNew && (m.type!=='rep' || state.isAdmin);
     return `<div class="modal-bg" id="modalBg"><div class="modal ${m.wide?'wide':''}">
       <div class="modal-head"><h3>${esc(m.title)}</h3><button class="modal-close" id="modalClose">&times;</button></div>
@@ -1895,15 +2560,15 @@
       if(el.classList.contains('moneyIn')) return;
       el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{ d[el.dataset.bind] = el.type==='number'?num(el.value):el.value; if(el.id==='f_ctr'||el.dataset.bind==='status') {} });
     });
-    ({customer:bindCustomerForm, contract:bindContractForm, maint:bindMaintForm, ticket:bindTicketForm, rep:()=>{}})[m.type](d);
+    ({customer:bindCustomerForm, contract:bindContractForm, maint:bindMaintForm, ticket:bindTicketForm, rep:()=>{}, quote:bindQuoteForm, po:bindPOForm})[m.type](d);
     const save=document.getElementById('modalSave');
-    save.onclick=async ()=>{ save.disabled=true; try{ await ({customer:saveCustomer, contract:saveContract, maint:saveMaint, ticket:saveTicket, rep:saveRep})[m.type](m); } finally{ if(document.body.contains(save)) save.disabled=false; } };
+    save.onclick=async ()=>{ save.disabled=true; try{ await ({customer:saveCustomer, contract:saveContract, maint:saveMaint, ticket:saveTicket, rep:saveRep, quote:saveQuote, po:savePO})[m.type](m); } finally{ if(document.body.contains(save)) save.disabled=false; } };
     const comp=document.getElementById('modalComplete'); if(comp) comp.onclick=()=>saveTicket(m,true);
-    const del=document.getElementById('modalDelete'); if(del) del.onclick=()=>{ const key={customer:isSupplier(d)?'suppliers':'customers',contract:'contracts',maint:'maint',ticket:'support',rep:'reps'}[m.type]; deleteRecords(key,[d.id],()=>{ state.modal=null; }); };
+    const del=document.getElementById('modalDelete'); if(del) del.onclick=()=>{ const key={customer:isSupplier(d)?'suppliers':'customers',contract:'contracts',maint:'maint',ticket:'support',rep:'reps',quote:'quotes',po:'pos'}[m.type]; deleteRecords(key,[d.id],()=>{ state.modal=null; }); };
   }
 
   // ================= delete =================
-  const TABLES = {customers:['customers','customers','고객사'], suppliers:['customers','customers','매입처'], contracts:['contracts','contracts','계약'], maint:['contracts','contracts','유지보수 계약'], support:['support_tickets','tickets','기술지원'], reps:['reps','reps','담당자']};
+  const TABLES = {customers:['customers','customers','고객사'], suppliers:['customers','customers','매입처'], contracts:['contracts','contracts','계약'], maint:['contracts','contracts','유지보수 계약'], support:['support_tickets','tickets','기술지원'], reps:['reps','reps','담당자'], quotes:['quotes','quotes','견적서'], pos:['purchase_orders','pos','발주서']};
   function deleteRecords(key, ids, after){
     const [table, field, label] = TABLES[key];
     if(key==='customers'){
@@ -1969,6 +2634,8 @@
     if(state.tab==='contracts'||state.tab==='maint'){ name=state.tab==='maint'?'유지보수관리':'계약관리'; state.contracts.filter(c=>state.tab!=='maint'||c.deal_type==='유지보수').forEach(c=>{ const its=itemsOf(c.id); const ct=contact(c.contact_id); (its.length?its:[{}]).forEach(i=>rows.push({'계약코드':c.code,'구분':c.deal_type||'신규','계약명':c.name,'고객사':custName(c.customer_id),'고객담당자':ct?ct.name:'','앤드유저':c.end_user_name||'','제품':i.product||'','수량':i.qty||'','단가':num(i.unit_price)||'','매출':num(i.sale_amount),'매입처':supplierLabel(i.supplier_id,i.supplier),'매입':num(i.purchase_amount),'이익':num(i.sale_amount)-num(i.purchase_amount),'단계':normStage(c.stage),'결제주기':c.billing_cycle||'','계약일':c.contract_date||'','만료일':(i.id?itemEnd(i,c):c.expiry_date)||'','품목상태':i.renewed?'갱신완료':i.closed?'종료':'','영업담당':repDisplay(c.sales_rep),'갱신완료':c.renewed?'Y':''})); }); }
     if(false){ state.maint.forEach(m=>{ const t=mtTotals(m); rows.push({'구분':m.deal_type||'신규','유지보수명':m.name,'고객사':custName(mtCustomerId(m)),'결제주기':m.billing_cycle||'','시작일':m.start_date||'','만료일':m.end_date||'','매출':t.sale,'매입처':supplierLabel(m.supplier_id,m.supplier),'매입':t.purchase,'이익':t.profit,'담당':repDisplay(m.sales_rep),'갱신완료':m.renewed?'Y':''}); }); }
     if(state.tab==='support'){ name='기술지원'; state.tickets.forEach(t=>{ const ct=contact(t.contact_id); rows.push({'번호':t.code,'접수일':t.received_date||'','고객사':custName(t.customer_id),'고객담당자':ct?ct.name:'','제품':t.product||'','요청내용':t.request||'','엔지니어':repDisplay(t.assignee),'방식':t.method||'','지원내용':t.action||'','상태':t.status||'','완료일':t.done_date||''}); }); }
+    if(state.tab==='quotes'){ name='견적'; state.quotes.forEach(q=>rows.push({'견적번호':q.quote_no,'견적일':q.quote_date||'','고객사':custName(q.customer_id),'건명':q.title||'','공급가액':num(q.subtotal),'부가세':num(q.tax),'합계':num(q.total),'매입':num(q.cost_total),'영업담당':repDisplay(q.sales_rep),'상태':q.status||'','발송일':q.sent_at?String(q.sent_at).slice(0,10):'','받는사람':q.sent_to||''})); }
+    if(state.tab==='pos'){ name='발주'; state.pos.forEach(p=>rows.push({'발주번호':p.po_no,'발주일':p.po_date||'','매입처':custName(p.supplier_id),'건명':p.title||'','공급가액':num(p.subtotal),'부가세':num(p.tax),'합계':num(p.total),'납기일':p.delivery_date||'','관련계약':(contractById(p.contract_id)||{}).name||'','상태':p.status||'','발송일':p.sent_at?String(p.sent_at).slice(0,10):''})); }
     if(!rows.length) return alert('내보낼 데이터가 없습니다.');
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name); XLSX.writeFile(wb, `${name}_${todayStr()}.xlsx`);
   }
@@ -2043,11 +2710,16 @@
     if(state.excelMenu) setTimeout(()=>document.addEventListener('click', function h(e){ if(!e.target.closest('.excel-wrap')){ state.excelMenu=false; render(); } }, {once:true}),0);
     // confirm
     if(state.confirm){ document.getElementById('cfNo').onclick=()=>{ state.confirm=null; render(); }; document.getElementById('cfYes').onclick=()=>{ const fn=state.confirm.onYes; state.confirm=null; render(); fn&&fn(); }; }
-    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), support:bindSupport, reps:bindReps})[state.tab]();
+    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), support:bindSupport, reps:bindReps, quotes:bindQuotes, pos:bindPOs, company:bindCompany})[state.tab]();
     bindAttachments();
     bindModal();
     bindShare();
     bindDateFilter();
+    bindDocView(); bindDocMail();
+    document.querySelectorAll('.docView').forEach(b=>b.onclick=()=>{ state.docView={kind:b.dataset.kind, id:b.dataset.id}; render(); });
+    document.querySelectorAll('.docMail').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openDocMail(b.dataset.kind, b.dataset.id); });
+    document.querySelectorAll('.docPdf').forEach(b=>b.onclick=()=>{ const r=docRecord(b.dataset.kind,b.dataset.id); if(r) savePdf(b.dataset.kind,r); });
+    document.querySelectorAll('.poFromCtr').forEach(b=>b.onclick=()=>{ const c=contractById(b.dataset.ctr); if(c) openPOModal(null,{fromContract:c, supplierKey:b.dataset.sup}); });
   }
 
   async function init(){

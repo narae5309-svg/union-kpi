@@ -276,5 +276,74 @@ from maintenance_contracts m
 where exists (select 1 from contracts x where x.id = 'mtc_' || m.id)
   and not exists (select 1 from contract_items i where i.id = 'mti_' || m.id);
 
+-- =====================================================================
+-- 9) 견적서, 발주서, 회사정보
+-- =====================================================================
+create table if not exists company_info (
+  id text primary key,
+  name text default '', name_en text default '', biz_no text default '', ceo text default '',
+  address text default '', biz_type text default '', biz_item text default '',
+  phone text default '', fax text default '', email text default '', bank text default '',
+  seal_url text, seal_path text,
+  updated_at timestamptz default now()
+);
+insert into company_info (id) values ('main') on conflict (id) do nothing;
+
+create table if not exists quotes (
+  id text primary key,
+  quote_no text,
+  title text default '',
+  quote_date date,
+  customer_id text,
+  contact_id text,
+  ref_contact text default '', ref_phone text default '', ref_email text default '',
+  valid_days text default '15',
+  delivery text default '',
+  sales_rep text default '', sales_phone text default '', sales_email text default '',
+  items jsonb default '[]'::jsonb,
+  tax_applied boolean default true,
+  subtotal numeric default 0, tax numeric default 0, total numeric default 0, cost_total numeric default 0,
+  remarks text default '',
+  status text default '작성중',
+  sent_at timestamptz, sent_to text default '',
+  contract_id text,
+  created_by text default '',
+  created_at timestamptz default now()
+);
+
+create table if not exists purchase_orders (
+  id text primary key,
+  po_no text,
+  title text default '',
+  po_date date,
+  supplier_id text,
+  contact_id text,
+  ref_contact text default '', ref_phone text default '', ref_email text default '',
+  contract_id text,
+  delivery_date date,
+  delivery_place text default '',
+  payment_terms text default '',
+  sales_rep text default '', sales_phone text default '', sales_email text default '',
+  items jsonb default '[]'::jsonb,
+  tax_applied boolean default true,
+  subtotal numeric default 0, tax numeric default 0, total numeric default 0,
+  remarks text default '',
+  status text default '작성중',
+  sent_at timestamptz, sent_to text default '',
+  created_by text default '',
+  created_at timestamptz default now()
+);
+
+do $$
+declare t text;
+begin
+  foreach t in array array['company_info','quotes','purchase_orders']
+  loop
+    execute format('alter table %I enable row level security', t);
+    execute format('drop policy if exists "logged in users" on %I', t);
+    execute format('create policy "logged in users" on %I for all to authenticated using (true) with check (true)', t);
+  end loop;
+end $$;
+
 -- 7) 사이트가 새 표를 바로 인식하도록 새로고침
 notify pgrst, 'reload schema';
