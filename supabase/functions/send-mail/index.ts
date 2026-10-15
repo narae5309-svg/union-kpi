@@ -1,11 +1,21 @@
+import nodemailer from 'npm:nodemailer@6.9.16';
+
 // =====================================================================
 // UNION 사업관리 : 메일 발송 서버 함수 (Supabase Edge Function, 이름: send-mail)
 // 견적서·발주서 PDF를 첨부해서 Resend로 메일을 보냅니다.
 //
-// 필요한 비밀값 (Supabase → Edge Functions → Secrets):
+// 발송 방법은 둘 중 하나 (Supabase → Edge Functions → Secrets에 넣은 값으로 자동 선택):
+//  [A] 회사/Gmail 메일 계정으로 보내기 (SMTP)  ← SMTP_HOST가 있으면 이 방법 사용
+//   SMTP_HOST  : 예) smtp.gmail.com / smtps.hiworks.com
+//   SMTP_PORT  : 465 (SSL)  ※ Supabase는 25·587 포트를 막아서 465만 사용
+//   SMTP_USER  : 로그인 메일 주소
+//   SMTP_PASS  : 비밀번호 (Gmail은 '앱 비밀번호' 16자리)
+//  [B] Resend로 보내기 (도메인 인증 필요)
 //   RESEND_API_KEY  : Resend에서 만든 API 키 (re_로 시작)
 //   MAIL_FROM       : 보내는 주소. Resend에서 인증한 도메인이어야 함 (예: sales@unionsystems.co.kr)
+//  공통
 //   MAIL_FROM_NAME  : 보내는 사람 이름 (예: 유니온시스템즈)  ※ 선택
+//   MAIL_FROM       : [A]에서는 생략하면 SMTP_USER로 보냄
 //
 // 로그인한 직원만 호출할 수 있고, 답장은 보낸 직원의 메일로 가도록 reply_to를 넣습니다.
 // =====================================================================
@@ -33,9 +43,16 @@ Deno.serve(async (req) => {
     const user = await who.json();
 
     // 2) 설정값 확인
+    const smtpHost = Deno.env.get('SMTP_HOST');
+    const smtpUser = Deno.env.get('SMTP_USER');
+    const smtpPass = Deno.env.get('SMTP_PASS');
     const key = Deno.env.get('RESEND_API_KEY');
-    const fromAddr = Deno.env.get('MAIL_FROM');
-    if (!key || !fromAddr) return json({ error: '메일 발송 설정이 안 되어 있습니다 (RESEND_API_KEY, MAIL_FROM 비밀값 필요)' }, 500);
+    const fromAddr = Deno.env.get('MAIL_FROM') || (smtpHost ? smtpUser : '');
+    if (smtpHost) {
+      if (!smtpUser || !smtpPass) return json({ error: '메일 발송 설정이 덜 됐습니다 (SMTP_USER, SMTP_PASS 비밀값 필요)' }, 500);
+    } else if (!key || !fromAddr) {
+      return json({ error: '메일 발송 설정이 안 되어 있습니다 (SMTP_HOST·SMTP_USER·SMTP_PASS 또는 RESEND_API_KEY·MAIL_FROM 비밀값 필요)' }, 500);
+    }
 
     // 3) 요청 내용 확인
     const body = await req.json();
@@ -61,7 +78,35 @@ Deno.serve(async (req) => {
         .map((a: { filename: string; content: string }) => ({ filename: a.filename, content: a.content }));
     }
 
-    // 4) Resend로 발송
+    // 4-A) 메일 계정(SMTP)으로 발송
+    if (smtpHost) {
+      const port = Number(Deno.env.get('SMTP_PORT') || 465);
+      const transporter = nodemailer.createTransport({
+        host: smtpHost, port, secure: port === 465,
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+      try {
+        const info = await transporter.sendMail({
+          from: payload.from as string,
+          to, cc: cc.length ? cc : undefined,
+          replyTo: payload.reply_to as string,
+          subject: payload.subject as string,
+          text: payload.text as string,
+          html: (payload.html as string) || undefined,
+          attachments: ((payload.attachments as { filename: string; content: string }[]) || [])
+            .map((a) => ({ filename: a.filename, content: a.content, encoding: 'base64' })),
+        });
+        return json({ ok: true, id: info.messageId, sender: user.email, via: 'smtp' });
+      } catch (e) {
+        const m = String((e as Error)?.message || e);
+        const hint = /auth|535|534|Invalid login|Username and Password/i.test(m)
+          ? ' — 메일 계정 로그인 실패: SMTP_USER/SMTP_PASS를 확인하세요 (Gmail은 앱 비밀번호 필요)'
+          : /ETIMEDOUT|ECONNREFUSED|connect|timeout/i.test(m) ? ' — 메일 서버 연결 실패: SMTP_HOST와 포트(465)를 확인하세요' : '';
+        return json({ error: '메일 발송에 실패했습니다' + hint, detail: { message: m } }, 400);
+      }
+    }
+
+    // 4-B) Resend로 발송
     const r = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
