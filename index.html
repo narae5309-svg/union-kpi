@@ -66,6 +66,20 @@
   .nav-badge{background:var(--warn); color:#fff; border-radius:10px; font-size:10.5px; font-weight:700; padding:1px 7px; min-width:20px; text-align:center;}
   .nav-badge.soft{background:#3a4b5c; color:#dfe6ec;}
   .side-bottom{margin-top:auto;}
+  .stats-nav{margin:6px 0 2px; border-top:1px solid #2e3c4a; padding-top:12px !important;}
+  .st-filter{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px;}
+  .st-filter select, .st-filter input{padding:7px 9px; border:1px solid var(--grid-strong); border-radius:var(--radius); font-size:13px; font-family:inherit; background:#fff;}
+  .st-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-bottom:14px;}
+  @media (max-width:1100px){ .st-grid{grid-template-columns:1fr;} }
+  .st-card{background:#fff; border:1px solid var(--grid); border-radius:var(--radius); padding:14px 16px;}
+  .st-card h4{margin:0 0 10px; font-size:13px; color:var(--ink);}
+  .st-row{display:grid; grid-template-columns:88px 1fr auto; gap:10px; align-items:center; padding:7px 8px; border-radius:6px; cursor:pointer; font-size:13px;}
+  .st-row:hover{background:#f2f8f7;} .st-row.on{background:#e3f3f1; font-weight:700;}
+  .st-row .amt{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums;}
+  .st-row .amt small{display:block; color:var(--ink-soft); font-weight:400; font-size:11px;}
+  .st-bar{height:8px; background:#eef2f3; border-radius:4px; overflow:hidden;} .st-bar i{display:block; height:100%; background:var(--accent); border-radius:0 4px 4px 0;}
+  .st-row .cnt{font-weight:700;}
+  .st-month td .st-bar{min-width:80px;}
   .notify-btn{margin:10px 14px 0; padding:7px 10px; border:1px solid #2e3c4a; border-radius:var(--radius); font-size:12px; cursor:pointer;}
   .notify-btn:hover{background:#243342;}
   .nav-footer{padding:12px 18px 0; margin-top:12px; border-top:1px solid #2e3c4a;}
@@ -693,9 +707,9 @@
   const qmatch = (key, ...fields) => { const q=(state.q[key]||'').trim().toLowerCase(); if(!q) return true; return fields.some(f=>String(f||'').toLowerCase().includes(q)); };
 
   // ================= render root =================
-  const TAB_LABELS = (()=>{ const o={}; NAV.forEach(n=>{ if(n.group) n.items.forEach(([k,l])=>o[k]=l); else o[n[0]]=n[1]; }); return o; })();
-  function loadWTabs(){ try{ const v=JSON.parse(localStorage.getItem('clm_tabs')||'[]'); return Array.isArray(v)?v.filter(k=>TAB_LABELS[k] && k!=='dashboard'):[]; }catch(e){ return []; } }
-  function saveWTabs(){ try{ localStorage.setItem('clm_tabs', JSON.stringify(state.openTabs)); }catch(e){} }
+  const TAB_LABELS = (()=>{ const o={stats:'통계'}; NAV.forEach(n=>{ if(n.group) n.items.forEach(([k,l])=>o[k]=l); else o[n[0]]=n[1]; }); return o; })();
+  function loadWTabs(){ try{ const v=JSON.parse(sessionStorage.getItem('clm_tabs')||'[]'); return Array.isArray(v)?v.filter(k=>TAB_LABELS[k] && k!=='dashboard'):[]; }catch(e){ return []; } }
+  function saveWTabs(){ try{ sessionStorage.setItem('clm_tabs', JSON.stringify(state.openTabs)); }catch(e){} }
   function goTab(k){
     state.tabMem=state.tabMem||{};
     state.tabMem[state.tab]={expanded:state.expanded, y:window.scrollY};
@@ -853,7 +867,7 @@
     const renewN = renewalBadgeCount(), tkN = openTicketsCount(false);
     const p = notifyPerm();
     const notifyLabel = p==='granted'?'🔔 갱신 알림 켜짐':p==='denied'?'🔕 알림 차단됨':'🔔 갱신 알림 켜기';
-    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), support:renderSupport, reps:renderReps, quotes:renderQuotes, pos:renderPOs, company:renderCompany};
+    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), support:renderSupport, reps:renderReps, quotes:renderQuotes, pos:renderPOs, company:renderCompany, stats:renderStats};
     return `<div class="shell">
       <div class="sidebar">
         <div class="brand"><h2>UNION</h2><div class="who">${esc(state.user)} 님${state.isAdmin?' · 관리자':''}</div></div>
@@ -873,7 +887,7 @@
           return item(n,false);
         }).join('')}</div>
         <div class="side-bottom">
-          ${p==='unsupported'?'':`<div class="notify-btn" id="notifyBtn" style="color:${p==='granted'?'#7fe0d9':'#cfd6dd'};">${notifyLabel}</div>`}
+          <div class="nav-item stats-nav ${state.tab==='stats'?'active':''}" data-tab="stats"><span>📊 통계</span></div>
           <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span> <span class="logout-link" id="pwBtn" style="margin-left:10px;">비밀번호 변경</span>
             <div class="conn-info" title="다른 컴퓨터와 비교할 때 확인하세요">${esc(state.userEmail||'')}<br/>DB ${esc(SUPABASE_URL.replace('https://','').split('.')[0].slice(0,6))} · 계약 ${state.contracts.length} · 고객 ${partnersOf('customer').length}</div>
           </div>
@@ -1554,6 +1568,95 @@
     m.querySelector('[data-a="quote"]').onclick=()=>{ m.remove(); openRenewalQuote(btn.dataset.id, btn.dataset.end); };
     m.querySelector('[data-a="renew"]').onclick=()=>{ m.remove(); startRenewal('ctr', btn.dataset.id, btn.dataset.end); };
     setTimeout(()=>document.addEventListener('click', function h(ev){ if(!m.contains(ev.target)){ m.remove(); } else document.addEventListener('click', h, {once:true}); }, {once:true}),0);
+  }
+  // ================= 통계 =================
+  function statRange(){
+    const f=state.f; const y=todayStr().slice(0,4);
+    if(!f.stFrom) f.stFrom=y+'-01'; if(!f.stTo) f.stTo=y+'-12'; if(!f.stRep) f.stRep='전체';
+    return {from:f.stFrom, to:f.stTo, rep:f.stRep};
+  }
+  const inMonths = (d,r) => { if(!d) return false; const m=String(d).slice(0,7); return m>=r.from && m<=r.to; };
+  function statData(){
+    const r=statRange();
+    const repOk = x => r.rep==='전체' || repDisplay(x)===r.rep;
+    const ctrs=state.contracts.filter(c=>inMonths(c.contract_date||c.reg_date, r) && repOk(c.sales_rep));
+    const qs=state.quotes.filter(q=>inMonths(q.quote_date, r) && repOk(q.sales_rep));
+    return {r, ctrs, qs};
+  }
+  function monthsBetween(a,b){ const out=[]; let [y,m]=a.split('-').map(Number); const [ey,em]=b.split('-').map(Number); while(y<ey || (y===ey && m<=em)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} if(out.length>60) break; } return out; }
+  function renderStats(){
+    const {r, ctrs, qs}=statData(); const f=state.f;
+    const sum=list=>list.reduce((a,c)=>{ const t=contractTotals(c); a.n++; a.sale+=t.sale; a.purchase+=t.purchase; a.profit+=t.profit; return a; },{n:0,sale:0,purchase:0,profit:0});
+    const all=sum(ctrs);
+    const qsum=list=>({n:list.length, amt:list.reduce((a,q)=>a+qCalc(q).subtotal,0)});
+    const pick=f.stPick||{kind:'ctr', key:'all', val:''};
+    const row=(kind,key,val,label,cnt,amt,sub,max)=>`<div class="st-row ${pick.kind===kind&&pick.key===key&&pick.val===val?'on':''}" data-kind="${kind}" data-key="${key}" data-val="${esc(val)}" title="눌러서 아래 목록 보기"><span>${label} <span class="cnt">${cnt}</span><span class="muted small">건</span></span><div class="st-bar"><i style="width:${max?Math.max(2,Math.round(amt/max*100)):0}%"></i></div><span class="amt">₩${won(amt)}${sub?`<small>${sub}</small>`:''}</span></div>`;
+    const types=DEAL_TYPES.map(t=>[t, sum(ctrs.filter(c=>(c.deal_type||'신규')===t))]);
+    const tMax=Math.max(0,...types.map(([,v])=>v.sale));
+    const stages=STAGES.map(s=>[s, sum(ctrs.filter(c=>normStage(c.stage)===s))]);
+    const sMax=Math.max(0,...stages.map(([,v])=>v.sale));
+    const QST=['작성중','발송','계약전환'];
+    const qst=QST.map(s=>[s, qsum(qs.filter(q=>(q.status||'작성중')===s))]);
+    const qMax=Math.max(0,...qst.map(([,v])=>v.amt));
+    const conv = qs.length ? qst[2][1].n/qs.length*100 : 0;
+    const months=monthsBetween(r.from, r.to);
+    const byM=months.map(m=>{ const cs=ctrs.filter(c=>String(c.contract_date||c.reg_date||'').slice(0,7)===m); const o={m}; DEAL_TYPES.forEach(t=>o[t]=sum(cs.filter(c=>(c.deal_type||'신규')===t)).sale); o.total=sum(cs).sale; o.profit=sum(cs).profit; o.q=qs.filter(q=>String(q.quote_date||'').slice(0,7)===m).length; return o; });
+    const mMax=Math.max(0,...byM.map(o=>o.total));
+    const reps=r.rep==='전체' ? [...new Set([...ctrs.map(c=>repDisplay(c.sales_rep)), ...qs.map(q=>repDisplay(q.sales_rep))].filter(Boolean))] : [];
+    // detail list
+    let detail='';
+    if(pick.kind==='quote'){
+      const list=qs.filter(q=>pick.key==='all' || (q.status||'작성중')===pick.val).sort((a,b)=>cmp(b.quote_date||'',a.quote_date||''));
+      detail=`<div class="card-title" style="padding:14px 16px 0;"><span>견적 ${pick.val?`· ${esc(pick.val)}`:''} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>견적번호</th><th>견적일</th><th class="tl">고객사</th><th class="tl">건명</th><th class="num">공급가액</th><th class="num">마진</th><th>영업담당</th><th>상태</th></tr></thead><tbody>${list.map(q=>{ const t=qCalc(q); return `<tr><td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl">${esc(custName(q.customer_id))}</td><td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}">${esc(q.title||'(건명 없음)')}</span></td><td class="num">${won(t.subtotal)}</td><td class="num">${won(t.margin)}</td><td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="empty">해당 견적이 없습니다.</div>'}`;
+    } else {
+      const list=ctrs.filter(c=>pick.key==='all' || (pick.key==='deal' ? (c.deal_type||'신규')===pick.val : normStage(c.stage)===pick.val)).sort((a,b)=>cmp(b.contract_date||'',a.contract_date||''));
+      const lab = pick.key==='deal'||pick.key==='stage' ? ` · ${esc(pick.val)}` : ' 전체';
+      const t=sum(list);
+      detail=`<div class="card-title" style="padding:14px 16px 0;"><span>계약${lab} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>분류</th><th>계약일</th><th class="tl">계약명</th><th class="tl">고객사</th><th class="num">계약금액</th><th class="num">매입</th><th class="num">이익</th><th>단계</th><th>영업담당</th></tr></thead><tbody>${list.map(c=>{ const x=contractTotals(c); return `<tr><td>${dealBadge(c.deal_type)}</td><td class="nowrap">${esc(c.contract_date||'-')}</td><td class="tl"><span class="link gotoCtr" data-id="${c.id}">${esc(c.name)}</span></td><td class="tl">${esc(custName(c.customer_id))}</td><td class="num">${won(x.sale)}</td><td class="num">${won(x.purchase)}</td><td class="num" style="color:#d0312d;">${won(x.profit)}</td><td>${stageBadge(c.stage)}</td><td>${esc(repDisplay(c.sales_rep)||'-')}</td></tr>`; }).join('')}<tr class="total"><td colspan="4" style="text-align:right;">합계</td><td class="num">${won(t.sale)}</td><td class="num">${won(t.purchase)}</td><td class="num" style="color:#d0312d;">${won(t.profit)}</td><td colspan="2"></td></tr></tbody></table>`:'<div class="empty">해당 계약이 없습니다.</div>'}`;
+    }
+    const y=+todayStr().slice(0,4), cm=todayStr().slice(0,7), pm=addMonths(cm+'-01',-1).slice(0,7);
+    const quick=[['올해',y+'-01',y+'-12'],['작년',(y-1)+'-01',(y-1)+'-12'],['이번 달',cm,cm],['지난 달',pm,pm],['상반기',y+'-01',y+'-06'],['하반기',y+'-07',y+'-12']];
+    return `
+      <div class="page-head"><div><div class="page-title">통계</div><div class="page-sub">기간·담당자별 계약과 견적 현황 · 계약은 계약일, 견적은 견적일 기준 · 항목을 누르면 아래에 목록이 나와요</div></div></div>
+      <div class="st-filter">
+        <input type="month" id="stFrom" value="${esc(r.from)}"/><span>~</span><input type="month" id="stTo" value="${esc(r.to)}"/>
+        ${quick.map(([l,a,b])=>`<button class="btn-sm ${r.from===a&&r.to===b?'':'ghost'} stQuick" data-a="${a}" data-b="${b}">${l}</button>`).join('')}
+        <span class="spacer"></span>
+        <select id="stRep"><option value="전체">담당자 전체</option>${repNames().map(n=>`<option ${r.rep===n?'selected':''}>${esc(n)}</option>`).join('')}</select>
+      </div>
+      <div class="kpis">
+        <div class="kpi stK" data-kind="ctr" data-key="all"><div class="lbl">계약</div><div class="val">${all.n}<span style="font-size:13px; font-weight:600;"> 건</span></div><div class="sub">계약금액 ₩${won(all.sale)}</div></div>
+        <div class="kpi"><div class="lbl">이익</div><div class="val" style="color:#d0312d;">₩${won(all.profit)}</div><div class="sub">매입 ₩${won(all.purchase)} · 마진 ${pct(all.sale?all.profit/all.sale*100:0)}</div></div>
+        <div class="kpi stK" data-kind="quote" data-key="all"><div class="lbl">견적</div><div class="val">${qs.length}<span style="font-size:13px; font-weight:600;"> 건</span></div><div class="sub">공급가액 ₩${won(qsum(qs).amt)}</div></div>
+        <div class="kpi"><div class="lbl">견적 → 계약 전환율</div><div class="val">${pct(conv)}</div><div class="sub">계약전환 ${qst[2][1].n}건 / 견적 ${qs.length}건</div></div>
+      </div>
+      <div class="st-grid">
+        <div class="st-card"><h4>분류별 계약</h4>${types.map(([t,v])=>row('ctr','deal',t,t,v.n,v.sale,`이익 ₩${won(v.profit)}`,tMax)).join('')}</div>
+        <div class="st-card"><h4>견적 상태</h4>${qst.map(([s,v])=>row('quote','status',s,s,v.n,v.amt,'',qMax)).join('')}</div>
+        <div class="st-card"><h4>계약 단계</h4>${stages.map(([s,v])=>row('ctr','stage',s,s,v.n,v.sale,`이익 ₩${won(v.profit)}`,sMax)).join('')}</div>
+      </div>
+      <div class="card flush" style="margin-bottom:14px;">
+        <div class="card-title" style="padding:14px 16px 0;"><span>월별 계약금액</span></div>
+        <table class="st-month" style="margin-top:8px;"><thead><tr><th>월</th>${DEAL_TYPES.map(t=>`<th class="num">${t}</th>`).join('')}<th class="num">합계</th><th style="width:28%;"></th><th class="num">이익</th><th>견적</th></tr></thead><tbody>
+          ${byM.map(o=>`<tr><td class="nowrap">${esc(o.m.replace('-','년 '))}월</td>${DEAL_TYPES.map(t=>`<td class="num">${o[t]?won(o[t]):'-'}</td>`).join('')}<td class="num" style="font-weight:700;">${o.total?won(o.total):'-'}</td><td><div class="st-bar" title="₩${won(o.total)}"><i style="width:${mMax&&o.total?Math.max(2,Math.round(o.total/mMax*100)):0}%"></i></div></td><td class="num" style="color:#d0312d;">${o.profit?won(o.profit):'-'}</td><td>${o.q||'-'}</td></tr>`).join('')}
+          <tr class="total"><td>합계</td>${DEAL_TYPES.map(t=>`<td class="num">${won(types.find(x=>x[0]===t)[1].sale)}</td>`).join('')}<td class="num">${won(all.sale)}</td><td></td><td class="num" style="color:#d0312d;">${won(all.profit)}</td><td>${qs.length}</td></tr>
+        </tbody></table>
+      </div>
+      ${reps.length>1?`<div class="card flush" style="margin-bottom:14px;"><div class="card-title" style="padding:14px 16px 0;"><span>담당자별</span></div>
+        <table style="margin-top:8px;"><thead><tr><th class="tl">담당자</th><th>계약</th><th class="num">계약금액</th><th class="num">이익</th><th>견적</th><th>계약전환</th><th>전환율</th></tr></thead><tbody>
+        ${reps.map(n=>{ const cs=sum(ctrs.filter(c=>repDisplay(c.sales_rep)===n)); const q=qs.filter(x=>repDisplay(x.sales_rep)===n); const cv=q.filter(x=>x.status==='계약전환').length; return {n,cs,q:q.length,cv}; }).sort((a,b)=>b.cs.sale-a.cs.sale).map(o=>`<tr><td class="tl"><span class="link stRepPick" data-rep="${esc(o.n)}">${esc(o.n)}</span></td><td>${o.cs.n}</td><td class="num">${won(o.cs.sale)}</td><td class="num" style="color:#d0312d;">${won(o.cs.profit)}</td><td>${o.q}</td><td>${o.cv}</td><td>${o.q?pct(o.cv/o.q*100):'-'}</td></tr>`).join('')}
+        </tbody></table></div>`:''}
+      <div class="card flush">${detail}</div>`;
+  }
+  function bindStats(){
+    const f=state.f, $=id=>document.getElementById(id);
+    const set=(a,b)=>{ if(a&&b&&b<a) return alert('끝 월이 시작 월보다 빠릅니다.'); f.stFrom=a; f.stTo=b; render(); };
+    $('stFrom').onchange=e=>set(e.target.value, f.stTo); $('stTo').onchange=e=>set(f.stFrom, e.target.value);
+    document.querySelectorAll('.stQuick').forEach(b=>b.onclick=()=>set(b.dataset.a,b.dataset.b));
+    $('stRep').onchange=e=>{ f.stRep=e.target.value; render(); };
+    document.querySelectorAll('.stRepPick').forEach(b=>b.onclick=()=>{ f.stRep=b.dataset.rep; render(); });
+    document.querySelectorAll('.st-row, .stK').forEach(el=>el.onclick=()=>{ f.stPick={kind:el.dataset.kind, key:el.dataset.key, val:el.dataset.val||''}; render(); });
+    document.querySelectorAll('.gotoCtr').forEach(b=>b.onclick=()=>{ state.f.ctrTab='전체'; state.q.contracts=''; goTab('contracts'); state.expanded=b.dataset.id; render(); });
   }
   function bindQuotes(){
     document.getElementById('addQuoteBtn').onclick=()=>openQuoteModal(null);
@@ -3041,7 +3144,7 @@
     if(state.excelMenu) setTimeout(()=>document.addEventListener('click', function h(e){ if(!e.target.closest('.excel-wrap')){ state.excelMenu=false; render(); } }, {once:true}),0);
     // confirm
     if(state.confirm){ document.getElementById('cfNo').onclick=()=>{ state.confirm=null; render(); }; document.getElementById('cfYes').onclick=()=>{ const fn=state.confirm.onYes; state.confirm=null; render(); fn&&fn(); }; }
-    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), support:bindSupport, reps:bindReps, quotes:bindQuotes, pos:bindPOs, company:bindCompany})[state.tab]();
+    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), support:bindSupport, reps:bindReps, quotes:bindQuotes, pos:bindPOs, company:bindCompany, stats:bindStats})[state.tab]();
     bindAttachments();
     bindModal();
     bindShare();
