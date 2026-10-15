@@ -432,6 +432,9 @@
     setItem:(k,v)=>{ try{ if(keepLogin()){ localStorage.setItem(k,v); sessionStorage.removeItem(k); } else { sessionStorage.setItem(k,v); localStorage.removeItem(k); } }catch(e){} },
     removeItem:k=>{ try{ localStorage.removeItem(k); sessionStorage.removeItem(k); }catch(e){} },
   };
+  const URL_HASH = location.hash || '', URL_QS = location.search || '';
+  const IS_RECOVERY = /type=recovery/.test(URL_HASH+URL_QS);
+  const LINK_ERROR = (/error_description=([^&]+)/.exec(URL_HASH+URL_QS)||[])[1];
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:authStorage } });
   const root = document.getElementById('app');
 
@@ -715,6 +718,7 @@
     if(a && (a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT') && (a.id || a.dataset.bind)){ rid = a.id ? '#'+a.id : `#modalBg [data-bind="${a.dataset.bind}"]`; try{ s1=a.selectionStart; s2=a.selectionEnd; }catch(e){} }
     document.querySelectorAll('.sugg-float').forEach(x=>x.remove());
     if(state.view==='login'){ root.innerHTML=renderLogin(); bindLogin(); return; }
+    if(state.view==='recovery'){ root.innerHTML=renderRecovery(); bindRecovery(); return; }
     root.innerHTML = renderShell();
     if(!state.loading) bindShell();
     if(rid){ const el=document.querySelector(rid); if(el){ el.focus(); try{ if(s1!=null) el.setSelectionRange(s1,s2); }catch(e){} } }
@@ -725,38 +729,117 @@
       <div class="logo">UNION</div>
       <h1>사업관리 시스템 로그인</h1>
       <p class="sub" id="loginSub">이메일과 비밀번호로 로그인하세요</p>
-      <div id="signupNameWrap" style="display:none;"><input id="loginName" placeholder="이름 (예: 최신영)"/></div>
       <input id="loginEmail" type="email" placeholder="이메일" autocomplete="username"/>
       <input id="loginPassword" type="password" placeholder="비밀번호" autocomplete="current-password"/>
-      <label class="chk keep-login"><input type="checkbox" id="keepLogin" ${keepLogin()?'checked':''}/> 자동로그인</label>
+      <label class="chk keep-login" id="keepWrap"><input type="checkbox" id="keepLogin" ${keepLogin()?'checked':''}/> 자동로그인</label>
       <button class="btn-primary block" id="loginBtn">로그인</button>
-      <p style="font-size:12px; color:var(--ink-soft); margin-top:14px;">계정이 없으신가요? <a href="#" id="toggleSignup" style="color:var(--accent-dark); font-weight:600;">회원가입</a></p>
-      <p id="loginError" style="color:var(--warn); font-size:12px; margin-top:6px; min-height:16px;"></p>
+      <p style="font-size:12px; color:var(--ink-soft); margin-top:14px;"><a href="#" id="toggleReset" style="color:var(--accent-dark); font-weight:600;">비밀번호를 잊으셨나요?</a></p>
+      <p class="muted" style="font-size:11.5px; margin-top:4px;">계정은 관리자가 만들어 드려요. 계정이 없으면 관리자에게 요청하세요.</p>
+      <p id="loginError" style="color:var(--warn); font-size:12px; margin-top:6px; min-height:16px;">${LINK_ERROR?'링크가 만료됐거나 이미 사용됐어요. 비밀번호 재설정 메일을 다시 받아 주세요.':''}</p>
     </div></div>`;
+  }
+  function renderRecovery(){
+    return `<div class="login-screen"><div class="login-card">
+      <div class="logo">UNION</div>
+      <h1>새 비밀번호 설정</h1>
+      <p class="sub">${esc(state.userEmail||'')} 계정의 새 비밀번호를 입력하세요</p>
+      <input id="newPw1" type="password" placeholder="새 비밀번호 (8자 이상)" autocomplete="new-password"/>
+      <input id="newPw2" type="password" placeholder="새 비밀번호 한 번 더" autocomplete="new-password"/>
+      <button class="btn-primary block" id="newPwBtn">비밀번호 변경</button>
+      <p id="newPwErr" style="color:var(--warn); font-size:12px; margin-top:10px; min-height:16px;"></p>
+    </div></div>`;
+  }
+  function pwProblem(a,b){ if(!a || a.length<8) return '비밀번호는 8자 이상으로 정해주세요.'; if(a!==b) return '두 비밀번호가 서로 달라요.'; return ''; }
+  function bindRecovery(){
+    const $=id=>document.getElementById(id);
+    const go=async ()=>{ const a=$('newPw1').value, b=$('newPw2').value, e=$('newPwErr'); const p=pwProblem(a,b); if(p){ e.textContent=p; return; }
+      $('newPwBtn').disabled=true;
+      const { error } = await sb.auth.updateUser({ password:a });
+      $('newPwBtn').disabled=false;
+      if(error){ e.textContent = /different|same/i.test(error.message)?'이전과 다른 비밀번호로 정해주세요.':'변경 실패: '+error.message; return; }
+      try{ history.replaceState(null,'',location.pathname); }catch(x){}
+      state.view='main'; showToast('비밀번호를 바꿨어요.'); loadAll(); };
+    $('newPwBtn').onclick=go; $('newPw2').addEventListener('keydown',e=>{ if(e.key==='Enter') go(); }); $('newPw1').focus();
+  }
+  function renderPwForm(d){
+    return `<div class="field"><label>새 비밀번호 (8자 이상)</label><input type="password" id="pw1" autocomplete="new-password"/></div>
+      <div class="field"><label>새 비밀번호 확인</label><input type="password" id="pw2" autocomplete="new-password"/></div>`;
+  }
+  async function savePw(m){
+    const a=document.getElementById('pw1').value, b=document.getElementById('pw2').value; const p=pwProblem(a,b); if(p) return alert(p);
+    const { error } = await sb.auth.updateUser({ password:a });
+    if(error) return alert(/different|same/i.test(error.message)?'이전과 다른 비밀번호로 정해주세요.':'변경 실패: '+error.message);
+    state.modal=null; showToast('비밀번호를 바꿨어요. 다음 로그인부터 새 비밀번호를 쓰세요.');
+  }
+  function renderAcctForm(d){
+    return `<div class="grid2">
+      <div class="field"><label>이메일 (로그인 아이디)</label><input data-bind="email" value="${esc(d.email||'')}" ${d.lockEmail?'disabled':''}/></div>
+      <div class="field"><label>이름</label><input data-bind="name" value="${esc(d.name||'')}" ${d.lockEmail?'disabled':''}/></div>
+    </div>
+    <div class="field"><label>${d.mode==='reset'?'새 임시 비밀번호':'임시 비밀번호'} (8자 이상 · 직원에게 알려주고, 로그인 후 "비밀번호 변경"에서 바꾸게 하세요)</label><div style="display:flex; gap:8px;"><input data-bind="password" id="acctPw" value="${esc(d.password||'')}" style="font-family:monospace;"/><button class="btn-sm ghost" id="acctGen" type="button">새로 만들기</button></div></div>`;
+  }
+  const tempPw = () => { const c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789'; let s=''; const r=crypto.getRandomValues(new Uint32Array(10)); r.forEach(x=>s+=c[x%c.length]); return s+'!'; };
+  function bindAcctForm(d){ const g=document.getElementById('acctGen'); if(g) g.onclick=()=>{ d.password=tempPw(); document.getElementById('acctPw').value=d.password; }; }
+  async function adminUsers(body){
+    const { data, error } = await sb.functions.invoke('admin-users', { body });
+    if(error){ const msg = await functionError(error); throw new Error(/send-mail/.test(msg) ? msg.replace(/send-mail/g,'admin-users') : msg); }
+    if(data && data.error) throw new Error(data.error);
+    return data;
+  }
+  async function loadAccounts(){
+    state.accounts={loading:true};
+    try{ const d=await adminUsers({action:'list'}); state.accounts={users:d.users||[]}; }
+    catch(e){ state.accounts={error:e.message}; }
+    if(state.tab==='reps') render();
+  }
+  async function saveAcct(m){
+    const d=m.data, email=String(d.email||'').trim().toLowerCase();
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return alert('이메일을 정확히 입력하세요.');
+    if(String(d.password||'').length<8) return alert('임시 비밀번호는 8자 이상이어야 해요.');
+    try{
+      if(d.mode==='reset') await adminUsers({action:'set_password', id:d.id, password:d.password});
+      else {
+        await adminUsers({action:'create', email, password:d.password, name:d.name||''});
+        if(!state.reps.some(r=>(r.email||'').toLowerCase()===email) && d.name){
+          const rep={id:uid('rp'), name:d.name, dept:d.dept||DEPTS[0], phone:'', email, is_admin:false};
+          const err=await dbUpsert('reps',[rep]); if(!err) state.reps.push(rep);
+        }
+      }
+    }catch(e){ return alert(e.message); }
+    state.modal=null;
+    const pw=d.password; render();
+    alert(`${d.mode==='reset'?'비밀번호를 초기화했어요.':'계정을 만들었어요.'}\n\n아이디: ${email}\n임시 비밀번호: ${pw}\n\n직원에게 알려주고, 로그인 후 왼쪽 아래 "비밀번호 변경"에서 바꾸게 하세요.`);
+    loadAccounts();
   }
   function bindLogin(){
     let mode='login';
     const $=id=>document.getElementById(id);
-    $('toggleSignup').onclick=e=>{ e.preventDefault(); mode=mode==='login'?'signup':'login'; $('signupNameWrap').style.display=mode==='signup'?'block':'none'; $('loginSub').textContent=mode==='signup'?'이메일, 비밀번호, 이름을 입력해 가입하세요':'이메일과 비밀번호로 로그인하세요'; $('loginBtn').textContent=mode==='signup'?'가입하기':'로그인'; $('toggleSignup').textContent=mode==='signup'?'로그인으로 돌아가기':'회원가입'; $('loginError').textContent=''; };
+    $('toggleReset').onclick=e=>{ e.preventDefault(); mode=mode==='login'?'reset':'login'; const r=mode==='reset';
+      $('loginPassword').style.display=r?'none':''; $('keepWrap').style.display=r?'none':'';
+      $('loginSub').textContent=r?'가입한 이메일을 입력하면 비밀번호 재설정 메일을 보내드려요':'이메일과 비밀번호로 로그인하세요';
+      $('loginBtn').textContent=r?'재설정 메일 받기':'로그인'; $('toggleReset').textContent=r?'로그인으로 돌아가기':'비밀번호를 잊으셨나요?'; $('loginError').textContent=''; $('loginError').style.color=''; };
     async function go(){
       const email=$('loginEmail').value.trim(), password=$('loginPassword').value, err=$('loginError'), btn=$('loginBtn');
+      err.style.color='';
+      if(mode==='reset'){
+        if(!email) { err.textContent='이메일을 입력하세요.'; return; }
+        btn.disabled=true;
+        try{
+          const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+          if(error){ err.textContent = /rate|seconds|limit/i.test(error.message) ? '메일을 너무 자주 요청했어요. 잠시 뒤 다시 시도해 주세요.' : '보내지 못했어요: '+error.message; return; }
+          err.style.color='var(--accent-dark)'; err.textContent='메일을 보냈어요. 메일의 링크를 누르면 새 비밀번호를 정할 수 있어요. (안 보이면 스팸함 확인)';
+        } catch(e){ err.textContent='서버에 연결할 수 없습니다. ('+e.message+')'; }
+        finally{ btn.disabled=false; }
+        return;
+      }
       if(!email||!password){ err.textContent='이메일과 비밀번호를 입력하세요.'; return; }
       LS.set('union-keep-login', $('keepLogin').checked?'1':'0');
       LS.set('union-last-email', email);
       btn.disabled=true;
       try{
-        if(mode==='signup'){
-          const name=($('loginName').value||'').trim();
-          if(!name){ err.textContent='이름을 입력해주세요. 계약 담당자로 표시됩니다.'; return; }
-          const { data, error } = await sb.auth.signUp({ email, password, options:{ data:{ name:name||email } } });
-          if(error){ err.textContent=error.message; return; }
-          if(!data.session){ err.textContent='가입 완료. 이메일 인증 후 로그인해주세요.'; return; }
-          state.user=name||email; state.userEmail=email;
-        } else {
-          const { data, error } = await sb.auth.signInWithPassword({ email, password });
-          if(error){ err.textContent='로그인 실패: '+error.message; return; }
-          state.user=(data.user.user_metadata && data.user.user_metadata.name) || data.user.email; state.userEmail=data.user.email;
-        }
+        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        if(error){ err.textContent = /invalid login/i.test(error.message) ? '이메일 또는 비밀번호가 맞지 않아요.' : '로그인 실패: '+error.message; return; }
+        state.user=(data.user.user_metadata && data.user.user_metadata.name) || data.user.email; state.userEmail=data.user.email;
         state.view='main'; loadAll();
       } catch(e){ err.textContent='서버에 연결할 수 없습니다. ('+e.message+')'; }
       finally{ btn.disabled=false; }
@@ -792,7 +875,7 @@
         }).join('')}</div>
         <div class="side-bottom">
           ${p==='unsupported'?'':`<div class="notify-btn" id="notifyBtn" style="color:${p==='granted'?'#7fe0d9':'#cfd6dd'};">${notifyLabel}</div>`}
-          <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span>
+          <div class="nav-footer"><span class="logout-link" id="logoutBtn">로그아웃</span> <span class="logout-link" id="pwBtn" style="margin-left:10px;">비밀번호 변경</span>
             <div class="conn-info" title="다른 컴퓨터와 비교할 때 확인하세요">${esc(state.userEmail||'')}<br/>DB ${esc(SUPABASE_URL.replace('https://','').split('.')[0].slice(0,6))} · 계약 ${state.contracts.length} · 고객 ${partnersOf('customer').length}</div>
           </div>
         </div>
@@ -2683,20 +2766,51 @@
     return `
       <div class="page-head"><div><div class="page-title">담당자관리</div><div class="page-sub">설정 · 우리 회사 영업·기술지원 담당자 · 이메일이 로그인 계정과 같아야 본인으로 인식됩니다</div></div></div>
       <div class="toolbar">
-        ${state.isAdmin?'<button class="btn-primary" id="addRepBtn">+ 담당자 추가</button>':'<span class="muted small">담당자 추가·수정은 관리자만 할 수 있습니다.</span>'}
+        ${state.isAdmin?'<button class="btn-primary" id="addRepBtn">+ 담당자 추가</button> <button class="btn-sm" id="addAcctBtn">+ 로그인 계정 만들기</button>':'<span class="muted small">담당자 추가·수정은 관리자만 할 수 있습니다.</span>'}
         <span class="spacer"></span>
         ${searchInput('reps','이름·부서·이메일 검색')}
         ${state.isAdmin?bulkDelBtn('reps'):''}
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">등록된 담당자가 없습니다.</div>':`
-        <table><thead><tr>${state.isAdmin?checkAllTh('reps'):''}${sortTh('이름','reps','name','text-align:left;')}${sortTh('부서','reps','dept')}<th>연락처</th>${sortTh('이메일 (로그인 계정)','reps','email')}<th style="text-align:center;">관리자</th><th style="text-align:center;">진행 중 지원</th><th></th></tr></thead><tbody>
-        ${list.map(r=>`<tr>${state.isAdmin?checkTd('reps',r.id):''}<td class="tl" style="font-weight:600;">${esc(r.name)}${r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase()?' <span class="badge blue">나</span>':''}</td><td>${esc(r.dept||'-')}</td><td>${esc(r.phone||'-')}</td><td>${esc(r.email||'-')}</td><td style="text-align:center;">${r.is_admin?'<span class="badge green">관리자</span>':'-'}</td><td style="text-align:center;">${state.tickets.filter(t=>repDisplay(t.assignee)===r.name && t.status!=='완료').length||'-'}</td><td>${state.isAdmin?`<button class="icon-btn editRep" data-id="${r.id}" title="수정">&#9998;</button>`:''}</td></tr>`).join('')}
+        <table><thead><tr>${state.isAdmin?checkAllTh('reps'):''}${sortTh('이름','reps','name','text-align:left;')}${sortTh('부서','reps','dept')}<th>연락처</th>${sortTh('이메일 (로그인 계정)','reps','email')}<th style="text-align:center;">관리자</th>${state.isAdmin?'<th style="text-align:center;">로그인 계정</th>':''}<th style="text-align:center;">진행 중 지원</th><th></th></tr></thead><tbody>
+        ${list.map(r=>`<tr>${state.isAdmin?checkTd('reps',r.id):''}<td class="tl" style="font-weight:600;">${esc(r.name)}${r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase()?' <span class="badge blue">나</span>':''}</td><td>${esc(r.dept||'-')}</td><td>${esc(r.phone||'-')}</td><td>${esc(r.email||'-')}</td><td style="text-align:center;">${r.is_admin?'<span class="badge green">관리자</span>':'-'}</td>${state.isAdmin?`<td style="text-align:center;" class="nowrap">${acctCell(r)}</td>`:''}<td style="text-align:center;">${state.tickets.filter(t=>repDisplay(t.assignee)===r.name && t.status!=='완료').length||'-'}</td><td>${state.isAdmin?`<button class="icon-btn editRep" data-id="${r.id}" title="수정">&#9998;</button>`:''}</td></tr>`).join('')}
         </tbody></table>`}
-      </div>`;
+      </div>
+      ${state.isAdmin?acctExtraHTML():''}`;
+  }
+  const acctUsers = () => (state.accounts && state.accounts.users) || null;
+  const acctByEmail = e => { const u=acctUsers(); return u && e ? u.find(x=>(x.email||'').toLowerCase()===e.toLowerCase()) : null; };
+  function acctCell(r){
+    const A=state.accounts;
+    if(!A || A.loading) return '<span class="muted small">확인 중…</span>';
+    if(A.error) return '<span class="muted small">-</span>';
+    const u=acctByEmail(r.email);
+    if(u && (u.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()) return '<span class="badge green">있음</span> <span class="muted small">내 계정</span>';
+    if(u) return `<span class="badge green" title="마지막 로그인 ${esc(u.last_sign_in_at?String(u.last_sign_in_at).slice(0,10):'없음')}">있음</span> <button class="btn-sm ghost acctReset" data-id="${u.id}" data-email="${esc(u.email)}">비밀번호 초기화</button> ${(u.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()?'':`<button class="btn-sm danger acctDel" data-id="${u.id}" data-email="${esc(u.email)}">계정 삭제</button>`}`;
+    return r.email ? `<span class="muted small">없음</span> <button class="btn-sm acctMake" data-email="${esc(r.email)}" data-name="${esc(r.name)}">계정 만들기</button>` : '<span class="muted small">이메일 없음</span>';
+  }
+  function acctExtraHTML(){
+    const A=state.accounts;
+    if(A && A.error) return `<div class="card" style="margin-top:14px; border-color:#f3d19e; background:#fffaf0;"><b>로그인 계정 관리를 쓰려면 설정이 필요해요.</b><div class="small muted" style="margin-top:4px;">Supabase에 <b>admin-users</b> 함수를 등록하고 "Verify JWT"를 꺼 주세요. (${esc(A.error)})</div></div>`;
+    const u=acctUsers(); if(!u) return '';
+    const orphan=u.filter(x=>!state.reps.some(r=>(r.email||'').toLowerCase()===(x.email||'').toLowerCase()));
+    if(!orphan.length) return '';
+    return `<div class="card flush" style="margin-top:14px;"><div class="card-title" style="padding:14px 16px 0;"><span>담당자로 등록 안 된 로그인 계정 ${orphan.length}개</span><span class="muted small" style="font-weight:400;">예전 회원가입·테스트 계정이면 삭제하세요</span></div>
+      <table style="margin-top:8px;"><thead><tr><th class="tl">이메일</th><th>이름</th><th>만든 날</th><th>마지막 로그인</th><th></th></tr></thead><tbody>
+      ${orphan.map(x=>`<tr><td class="tl">${esc(x.email)}</td><td>${esc(x.name||'-')}</td><td>${esc(String(x.created_at||'').slice(0,10)||'-')}</td><td>${esc(x.last_sign_in_at?String(x.last_sign_in_at).slice(0,10):'없음')}</td><td class="nowrap"><button class="btn-sm ghost acctReset" data-id="${x.id}" data-email="${esc(x.email)}">비밀번호 초기화</button> ${(x.email||'').toLowerCase()===(state.userEmail||'').toLowerCase()?'':`<button class="btn-sm danger acctDel" data-id="${x.id}" data-email="${esc(x.email)}">계정 삭제</button>`}</td></tr>`).join('')}
+      </tbody></table></div>`;
   }
   function bindReps(){
     const a=document.getElementById('addRepBtn'); if(a) a.onclick=()=>openRepModal(null);
+    if(state.isAdmin && !state.accounts) setTimeout(loadAccounts,0);
+    const mk=document.getElementById('addAcctBtn'); if(mk) mk.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'create', email:'', name:'', password:tempPw()}, title:'로그인 계정 만들기', info:'계정을 만들면 바로 로그인할 수 있어요. 이름을 넣으면 담당자 목록에도 추가돼요.'}; render(); };
+    document.querySelectorAll('.acctMake').forEach(b=>b.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'create', email:b.dataset.email, name:b.dataset.name, password:tempPw(), lockEmail:true}, title:'로그인 계정 만들기'}; render(); });
+    document.querySelectorAll('.acctReset').forEach(b=>b.onclick=()=>{ state.modal={type:'acct', isNew:true, data:{mode:'reset', id:b.dataset.id, email:b.dataset.email, password:tempPw(), lockEmail:true}, title:'비밀번호 초기화', info:'임시 비밀번호로 바꿔요. 직원에게 알려주고 로그인 후 바꾸게 하세요.'}; render(); });
+    document.querySelectorAll('.acctDel').forEach(b=>b.onclick=()=>askConfirm(`${b.dataset.email} 계정을 삭제할까요?\n이 계정으로는 더 이상 로그인할 수 없어요.\n(계약·견적 등 데이터와 담당자 정보는 그대로 남아요)`, async ()=>{
+      try{ await adminUsers({action:'delete', id:b.dataset.id}); showToast('계정을 삭제했어요.'); }catch(e){ alert(e.message); }
+      loadAccounts();
+    }));
     document.querySelectorAll('.editRep').forEach(b=>b.onclick=()=>openRepModal(state.reps.find(r=>r.id===b.dataset.id)));
   }
   function openRepModal(r, info){ state.modal={type:'rep', isNew:!r, data:r?{...r, name: r.name && r.name.includes('@') ? '' : r.name}:{id:uid('rp'), name:'', dept:DEPTS[0], phone:'', email:'', is_admin:false}, title:info?'내 이름 설정':(r?'담당자 수정':'담당자 추가'), info:info||''}; render(); }
@@ -2755,8 +2869,8 @@
   // ================= MODAL =================
   function renderModal(){
     const m=state.modal, d=m.data;
-    const forms={customer:renderCustomerForm, contract:renderContractForm, maint:renderMaintForm, ticket:renderTicketForm, rep:renderRepForm, quote:renderQuoteForm, po:renderPOForm};
-    const canDelete = !m.isNew && (m.type!=='rep' || state.isAdmin);
+    const forms={customer:renderCustomerForm, contract:renderContractForm, maint:renderMaintForm, ticket:renderTicketForm, rep:renderRepForm, quote:renderQuoteForm, po:renderPOForm, pw:renderPwForm, acct:renderAcctForm};
+    const canDelete = !m.isNew && (m.type!=='rep' || state.isAdmin) && !['pw','acct'].includes(m.type);
     return `<div class="modal-bg" id="modalBg"><div class="modal ${m.wide?'wide':''}">
       <div class="modal-head"><h3>${esc(m.title)}</h3><button class="modal-close" id="modalClose">&times;</button></div>
       <div class="modal-body">${m.info?`<div class="info-line">${esc(m.info)}</div>`:''}${forms[m.type](d)}</div>
@@ -2777,9 +2891,9 @@
       if(el.classList.contains('moneyIn')) return;
       el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{ d[el.dataset.bind] = el.type==='number'?num(el.value):el.value; if(el.id==='f_ctr'||el.dataset.bind==='status') {} });
     });
-    ({customer:bindCustomerForm, contract:bindContractForm, maint:bindMaintForm, ticket:bindTicketForm, rep:()=>{}, quote:bindQuoteForm, po:bindPOForm})[m.type](d);
+    ({customer:bindCustomerForm, contract:bindContractForm, maint:bindMaintForm, ticket:bindTicketForm, rep:()=>{}, quote:bindQuoteForm, po:bindPOForm, pw:()=>{}, acct:bindAcctForm})[m.type](d);
     const save=document.getElementById('modalSave');
-    save.onclick=async ()=>{ save.disabled=true; try{ await ({customer:saveCustomer, contract:saveContract, maint:saveMaint, ticket:saveTicket, rep:saveRep, quote:saveQuote, po:savePO})[m.type](m); } finally{ if(document.body.contains(save)) save.disabled=false; } };
+    save.onclick=async ()=>{ save.disabled=true; try{ await ({customer:saveCustomer, contract:saveContract, maint:saveMaint, ticket:saveTicket, rep:saveRep, quote:saveQuote, po:savePO, pw:savePw, acct:saveAcct})[m.type](m); } finally{ if(document.body.contains(save)) save.disabled=false; } };
     const comp=document.getElementById('modalComplete'); if(comp) comp.onclick=()=>saveTicket(m,true);
     const del=document.getElementById('modalDelete'); if(del) del.onclick=()=>{ const key={customer:isSupplier(d)?'suppliers':'customers',contract:'contracts',maint:'maint',ticket:'support',rep:'reps',quote:'quotes',po:'pos'}[m.type]; deleteRecords(key,[d.id],()=>{ state.modal=null; }); };
   }
@@ -2896,6 +3010,7 @@
     document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>goTab(el.dataset.tab));
     document.querySelectorAll('.nav-group').forEach(el=>el.onclick=()=>{ const g=el.dataset.group; const open=el.classList.contains('open'); state.navOpen=state.navOpen||{}; state.navOpen[g]=!open; if(open && NAV.find(n=>n.group===g).items.some(([k])=>k===state.tab)){ state.tab='dashboard'; } render(); });
     document.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.goto; render(); });
+    document.getElementById('pwBtn').onclick=()=>{ state.modal={type:'pw', isNew:true, data:{}, title:'비밀번호 변경'}; render(); setTimeout(()=>{ const e=document.getElementById('pw1'); if(e) e.focus(); },0); };
     document.getElementById('logoutBtn').onclick=async ()=>{ await sb.auth.signOut(); state.view='login'; state.user=null; render(); };
     const nb=document.getElementById('notifyBtn');
     if(nb) nb.onclick=async ()=>{
@@ -2944,8 +3059,10 @@
   }
 
   async function init(){
+    try{ sb.auth.onAuthStateChange((ev, session)=>{ if(ev==='PASSWORD_RECOVERY'){ if(session&&session.user) state.userEmail=session.user.email; state.view='recovery'; render(); } }); }catch(e){}
     try{
       const { data } = await sb.auth.getSession();
+      if(IS_RECOVERY && data && data.session){ state.userEmail=data.session.user.email; state.view='recovery'; render(); return; }
       if(data && data.session){ const u=data.session.user; state.user=(u.user_metadata&&u.user_metadata.name)||u.email; state.userEmail=u.email; state.view='main'; await loadAll(); return; }
     }catch(e){}
     render();
