@@ -1264,7 +1264,6 @@
           <div class="q-to">${esc(custName(q.customer_id))} <span>귀중</span></div>
           <table class="q-kv">
             <colgroup><col style="width:78px"/><col/></colgroup>
-            <tr><th>건 명</th><td>${esc(q.title||'')}</td></tr>
             <tr><th>참 조</th><td>${esc(q.ref_contact||'')}${q.ref_contact?' 님 귀하':''}</td></tr>
             <tr><th>연락처</th><td>${esc(q.ref_phone||'')}</td></tr>
             <tr><th>E-mail</th><td>${esc(q.ref_email||'')}</td></tr>
@@ -1281,7 +1280,6 @@
             <tr><th>상 호</th><td>${esc(companyName())}</td><th>영 문</th><td class="sm">${esc(c.name_en||'')}</td></tr>
             <tr><th>소재지</th><td colspan="3" class="sm">${esc(c.address||'')}</td></tr>
             <tr><th>업 태</th><td>${esc(c.biz_type||'')}</td><th>종 목</th><td class="sm">${esc(c.biz_item||'')}</td></tr>
-            <tr><th>대표전화</th><td>${esc(c.phone||'')}</td><th>팩 스</th><td>${esc(c.fax||'')}</td></tr>
             <tr><th rowspan="2" class="hl">영업 담당자</th><td rowspan="2" class="c">${esc(q.sales_rep||'')}</td><th class="hl">연락처</th><td>${esc(q.sales_phone||'')}</td></tr>
             <tr><th class="hl">E-mail</th><td class="sm">${esc(q.sales_email||'')}</td></tr>
           </table>
