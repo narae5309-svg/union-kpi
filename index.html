@@ -332,7 +332,7 @@
   const DEPTS = ['영업팀','기술지원팀','경영지원','기타'];
   const PAGE_SIZE = 50;
   const SEND_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;"><path fill="currentColor" d="M21.6 2.4a1 1 0 0 0-1.06-.22L3.04 9.1a1 1 0 0 0 .02 1.88l6.9 2.4 2.4 6.9a1 1 0 0 0 1.88.02l6.92-17.5a1 1 0 0 0-.56-1.4z"/><path d="M10.2 13.8 20.6 3.4" stroke="#1b6fb0" stroke-width="1.7" stroke-linecap="round" opacity=".45"/></svg>';
-  const NAV = [['dashboard','대시보드'],['contracts','계약관리'],['maint','유지보수관리'],['support','기술지원'],{group:'설정', items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리']]}];
+  const NAV = [['dashboard','대시보드'],{group:'계약', open:true, items:[['contracts','계약관리'],['maint','유지보수']]},['support','기술지원'],{group:'등록', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리']]}];
 
   const state = {
     view:'login', user:null, userEmail:null, isAdmin:false, tab:'dashboard', loading:true, setupMissing:[],
@@ -651,7 +651,8 @@
           };
           if(n.group){
             const inGroup = n.items.some(([k])=>k===state.tab);
-            const open = inGroup || LS.get('union-nav-'+n.group)==='1';
+            const saved = (state.navOpen||{})[n.group];
+            const open = inGroup || (saved==null ? !!n.open : saved);
             return `<div class="nav-group ${open?'open':''}" data-group="${n.group}"><span>${n.group}</span><span class="caret">${open?'▾':'▸'}</span></div>${open?n.items.map(i=>item(i,true)).join(''):''}`;
           }
           return item(n,false);
@@ -956,7 +957,7 @@
       const K = await loadKakao();
       K.Share.sendDefault(card);
     }catch(e){
-      alert('카카오톡 공유를 열 수 없습니다.\n\n카카오 개발자 사이트 → 내 애플리케이션 → 앱 설정 → 플랫폼(또는 JavaScript SDK 도메인)에 이 사이트 주소가 등록되어 있는지 확인해주세요:\n'+location.origin+'\n\n('+(e && e.message || e)+')');
+      alert('카카오톡 공유를 열 수 없습니다.\n\n카카오 개발자 사이트 → 내 애플리케이션 → 앱 등록 → 플랫폼(또는 JavaScript SDK 도메인)에 이 사이트 주소가 등록되어 있는지 확인해주세요:\n'+location.origin+'\n\n('+(e && e.message || e)+')');
     }
   }
   // ---- 보내기 창 (카카오톡 / 이메일) ----
@@ -1039,7 +1040,7 @@
             </div>
           </details>` : `
           <div class="field"><label>받는 사람 ${sh.to==='customer'?`<span class="muted" style="font-weight:400;">(${esc(custName(recordCustomerId(sh.kind,rec)))} 담당자)</span>`:'<span class="muted" style="font-weight:400;">(담당자관리에 등록된 이메일)</span>'}</label>
-            <div class="recips">${recips.length? recips.map(r=>`<label class="recip"><input type="checkbox" class="recipChk" data-key="${esc(r.key)}" ${sh.sel.has(r.key)?'checked':''}/> <b>${esc(r.label)}</b> <span class="muted">${esc(r.email)}</span></label>`).join('') : `<div class="muted small" style="padding:6px 2px;">${sh.to==='customer'?'이 고객사에 이메일이 등록된 담당자가 없습니다. 설정 → 고객관리에서 담당자 이메일을 등록하거나 아래에 직접 입력하세요.':'이메일이 등록된 담당자가 없습니다. 설정 → 담당자관리에서 등록하세요.'}</div>`}</div>
+            <div class="recips">${recips.length? recips.map(r=>`<label class="recip"><input type="checkbox" class="recipChk" data-key="${esc(r.key)}" ${sh.sel.has(r.key)?'checked':''}/> <b>${esc(r.label)}</b> <span class="muted">${esc(r.email)}</span></label>`).join('') : `<div class="muted small" style="padding:6px 2px;">${sh.to==='customer'?'이 고객사에 이메일이 등록된 담당자가 없습니다. 등록 → 고객관리에서 담당자 이메일을 등록하거나 아래에 직접 입력하세요.':'이메일이 등록된 담당자가 없습니다. 등록 → 담당자관리에서 등록하세요.'}</div>`}</div>
             <input id="mailExtra" class="cell-in" style="margin-top:6px;" placeholder="다른 주소 직접 입력 (여러 개는 쉼표로)" value="${esc(sh.extra||'')}"/>
           </div>
           <div class="field"><label>제목</label><input id="mailSubject" value="${esc(sh.subject)}"/></div>
@@ -1098,7 +1099,7 @@
     const pg = paginate(list,key);
     const contactCount = state.contacts.filter(x=>all.some(c=>c.id===x.customer_id)).length;
     return `
-      <div class="page-head"><div><div class="page-title">${kind==='supplier'?'매입처관리':'고객관리'}</div><div class="page-sub">설정 · ${kind==='supplier'?'제품을 사오는 총판·벤더 · 계약 품목과 유지보수의 매입처는 여기 등록된 곳만 고를 수 있습니다':'제품을 판매하는 고객사와 고객 담당자'} · ${label} ${all.length}곳, 담당자 ${contactCount}명</div></div></div>
+      <div class="page-head"><div><div class="page-title">${kind==='supplier'?'매입처관리':'고객관리'}</div><div class="page-sub">등록 · ${kind==='supplier'?'제품을 사오는 총판·벤더 · 계약 품목과 유지보수의 매입처는 여기 등록된 곳만 고를 수 있습니다':'제품을 판매하는 고객사와 고객 담당자'} · ${label} ${all.length}곳, 담당자 ${contactCount}명</div></div></div>
       <div class="toolbar">
         <button class="btn-primary" id="addPartnerBtn">+ ${label} 추가</button>
         <span class="spacer"></span>
@@ -1324,7 +1325,7 @@
     const pg = paginate(list,key);
     const reps=[...new Set(base.map(c=>repDisplay(c.sales_rep)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
     return `
-      <div class="page-head"><div><div class="page-title">${isMt?'유지보수관리':'계약관리'}</div><div class="page-sub">${isMt?'분류가 "유지보수"인 계약만 모아 봅니다 · 등록·수정은 계약과 같은 방식':'모든 계약 · 분류(신규/갱신/유지보수), 품목별 매출·매입, 만료일'}</div></div></div>
+      <div class="page-head"><div><div class="page-title">${isMt?'유지보수':'계약관리'}</div><div class="page-sub">${isMt?'분류가 "유지보수"인 계약만 모아 봅니다 · 등록·수정은 계약과 같은 방식':'모든 계약 · 분류(신규/갱신/유지보수), 품목별 매출·매입, 만료일'}</div></div></div>
       ${periodTabsHTML(base,ctrState,f[tabKey],'ctrTab')}
       <div class="toolbar">
         <button class="btn-primary" id="addCtrBtn">+ ${isMt?'유지보수 계약 추가':'계약 추가'}</button>
@@ -1756,7 +1757,7 @@
       </div>
       <div class="grid2">
         <div class="field"><label>지원 제품</label><input id="f_product" data-bind="product" list="prodList" value="${esc(d.product||'')}" placeholder="${prods.length?'목록에서 선택하거나 직접 입력':'제품명 입력'}"/><datalist id="prodList">${prods.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>${prods.length?`<div class="hint">이 고객사가 구매한 제품 ${prods.length}개가 목록에 있습니다.</div>`:''}</div>
-        <div class="field"><label>담당 엔지니어 <span class="muted" style="font-weight:400;">(기술지원팀)</span></label><select data-bind="assignee"><option value="">미배정</option>${engineerOptions(d.assignee)}</select>${state.reps.some(isEngineer)?'':'<div class="hint">기술지원팀 담당자가 없습니다. 설정 → 담당자관리에서 부서를 "기술지원팀"으로 지정해주세요.</div>'}</div>
+        <div class="field"><label>담당 엔지니어 <span class="muted" style="font-weight:400;">(기술지원팀)</span></label><select data-bind="assignee"><option value="">미배정</option>${engineerOptions(d.assignee)}</select>${state.reps.some(isEngineer)?'':'<div class="hint">기술지원팀 담당자가 없습니다. 등록 → 담당자관리에서 부서를 "기술지원팀"으로 지정해주세요.</div>'}</div>
       </div>
       <div class="field"><label>요청 내용 <span class="req">*</span></label><textarea id="f_request" data-bind="request" placeholder="고객이 요청한 내용, 장애 증상 등">${esc(d.request||'')}</textarea></div>
       <div class="section-title" style="margin-top:14px;"><span>처리 내용</span></div>
@@ -1798,7 +1799,7 @@
     let list=state.reps.filter(r=>qmatch('reps',r.name,r.email,r.dept,r.phone));
     list=applySort(list,'reps',{name:r=>r.name, dept:r=>r.dept, email:r=>r.email});
     return `
-      <div class="page-head"><div><div class="page-title">담당자관리</div><div class="page-sub">설정 · 우리 회사 영업·기술지원 담당자 · 이메일이 로그인 계정과 같아야 본인으로 인식됩니다</div></div></div>
+      <div class="page-head"><div><div class="page-title">담당자관리</div><div class="page-sub">등록 · 우리 회사 영업·기술지원 담당자 · 이메일이 로그인 계정과 같아야 본인으로 인식됩니다</div></div></div>
       <div class="toolbar">
         ${state.isAdmin?'<button class="btn-primary" id="addRepBtn">+ 담당자 추가</button>':'<span class="muted small">담당자 추가·수정은 관리자만 할 수 있습니다.</span>'}
         <span class="spacer"></span>
@@ -2009,7 +2010,7 @@
   // ================= shell binding =================
   function bindShell(){
     document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.tab; state.expanded=null; state.excelMenu=false; state.datePop=null; Object.values(state.sel).forEach(s=>s.clear()); render(); window.scrollTo(0,0); });
-    document.querySelectorAll('.nav-group').forEach(el=>el.onclick=()=>{ const g=el.dataset.group; const open=el.classList.contains('open'); LS.set('union-nav-'+g, open?'0':'1'); if(open && NAV.find(n=>n.group===g).items.some(([k])=>k===state.tab)){ state.tab='dashboard'; } render(); });
+    document.querySelectorAll('.nav-group').forEach(el=>el.onclick=()=>{ const g=el.dataset.group; const open=el.classList.contains('open'); state.navOpen=state.navOpen||{}; state.navOpen[g]=!open; if(open && NAV.find(n=>n.group===g).items.some(([k])=>k===state.tab)){ state.tab='dashboard'; } render(); });
     document.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.goto; render(); });
     document.getElementById('logoutBtn').onclick=async ()=>{ await sb.auth.signOut(); state.view='login'; state.user=null; render(); };
     const nb=document.getElementById('notifyBtn');
