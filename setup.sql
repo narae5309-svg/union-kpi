@@ -315,6 +315,8 @@ create table if not exists quotes (
   created_by text default '',
   created_at timestamptz default now()
 );
+alter table quotes add column if not exists renew_of text;
+alter table quotes add column if not exists renew_end text;
 
 create table if not exists purchase_orders (
   id text primary key,

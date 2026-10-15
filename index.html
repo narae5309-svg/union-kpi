@@ -832,7 +832,7 @@
                 <div class="t link openRenewal" data-kind="${x.kind}" data-id="${x.id}">${esc(x.name)}</div>${x.sub?`<div class="s" style="color:var(--ink);">└ ${esc(x.sub)}</div>`:''}
                 <div class="s">${esc(custName(x.customerId))} · ₩${won(x.amount)}</div>
                 <div class="s">만료 ${esc(x.end)} · ${esc(repDisplay(x.rep)||'-')}</div>
-                <div class="acts"><button class="btn-sm renewBtn" data-kind="${x.kind}" data-id="${x.id}" data-end="${x.end}">갱신 등록</button><button class="btn-sm ghost closeBtn" data-kind="${x.kind}" data-id="${x.id}" data-end="${x.end}">갱신 안 함</button><button class="icon-btn shareBtn" data-kind="${x.kind}" data-id="${x.id}" title="보내기 (카톡·메일)" style="margin-left:auto;">${SEND_ICON}</button></div>
+                <div class="acts">${x.kind==='ctr'?(()=>{ const rq=renewQuoteOf(x.id,x.end); return rq?`<button class="btn-sm ghost renewQuote" data-id="${x.id}" data-end="${x.end}" title="${esc(rq.quote_no)}">견적 ${esc(rq.status||'작성중')}</button>`:`<button class="btn-sm ghost renewQuote" data-id="${x.id}" data-end="${x.end}" title="이 계약으로 갱신 견적 만들기">견적</button>`; })():''}<button class="btn-sm renewBtn" data-kind="${x.kind}" data-id="${x.id}" data-end="${x.end}">갱신 등록</button><button class="btn-sm ghost closeBtn" data-kind="${x.kind}" data-id="${x.id}" data-end="${x.end}">갱신 안 함</button><button class="icon-btn shareBtn" data-kind="${x.kind}" data-id="${x.id}" title="보내기 (카톡·메일)" style="margin-left:auto;">${SEND_ICON}</button></div>
               </div>`).join('')}</div>
           </div>`).join('')}
         </div>
@@ -942,7 +942,7 @@
             <div class="row"><span><span class="badge ${e.type==='sign'?'blue':e.type==='end'?'orange':e.type==='mtend'?'purple':'gray'}">${esc(e.label)}</span>${e.type!=='done'&&e.type!=='sign'?` <span class="dday">${ddayLabel(daysUntil(e.date))}</span>`:''}</span><button class="icon-btn shareBtn" data-kind="${e.kind}" data-id="${e.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button></div>
             <div class="t link calOpen" data-kind="${e.kind}" data-id="${e.id}">${esc(e.name)}</div>
             <div class="s">${esc(e.cust)}</div>
-            ${(e.type==='end'||e.type==='mtend')?`<div class="acts"><button class="btn-sm renewBtn" data-kind="${e.kind}" data-id="${e.id}" data-end="${e.end||''}">갱신 등록</button></div>`:''}
+            ${(e.type==='end'||e.type==='mtend')?`<div class="acts">${e.kind==='ctr'?`<button class="btn-sm ghost renewQuote" data-id="${e.id}" data-end="${e.end||''}">견적</button>`:''}<button class="btn-sm renewBtn" data-kind="${e.kind}" data-id="${e.id}" data-end="${e.end||''}">갱신 등록</button></div>`:''}
           </div>`).join('')}
         </div>
       </div>
@@ -1378,7 +1378,7 @@
         <table><thead><tr>${checkAllTh('quotes')}${sortTh('견적번호','quotes','no')}${endTh('quotes')}${sortTh('고객사','quotes','cust','text-align:left;')}${sortTh('건명','quotes','title','text-align:left;')}${sortTh('합계(VAT)','quotes','total','text-align:right;')}${sortTh('마진','quotes','margin','text-align:right;')}${sortTh('마진율','quotes','mrate')}${sortTh('영업담당','quotes','rep')}${sortTh('상태','quotes','status')}<th>발송</th><th></th></tr></thead><tbody>
         ${pg.items.map(q=>`<tr class="${state.expanded===q.id?'open-row':''}">${checkTd('quotes',q.id)}
           <td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl"><span class="link toggleRow" data-id="${q.id}" style="font-weight:600;" title="품목·마진 보기">${esc(custName(q.customer_id))}</span></td>
-          <td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}" style="font-weight:600;">${esc(q.title||'(건명 없음)')}</span></td>
+          <td class="tl">${q.renew_of?'<span class="badge gold" title="계약 갱신 견적">갱신</span> ':''}<span class="link docView" data-kind="quote" data-id="${q.id}" style="font-weight:600;">${esc(q.title||'(건명 없음)')}</span></td>
           <td class="num" style="font-weight:600;">${won(q.total)}</td>${(()=>{ const m=qCalc(q); return `<td class="num" style="${m.margin<0?'color:#c0392b;':''}">${won(m.margin)}</td><td>${m.subtotal?pct(m.mrate*100):'-'}</td>`; })()}<td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td>
           <td class="small nowrap">${q.sent_at?esc(String(q.sent_at).slice(0,10)):'-'}</td>
           <td class="nowrap"><button class="icon-btn shareBtn docMail" data-kind="quote" data-id="${q.id}" title="메일 보내기">${SEND_ICON}</button> <button class="icon-btn docPdf" data-kind="quote" data-id="${q.id}" title="PDF 저장">PDF</button> <button class="icon-btn editQuote" data-id="${q.id}" title="수정">&#9998;</button>${q.status!=='계약전환'?` <button class="btn-sm quoteToCtr" data-id="${q.id}" title="수주되면 계약으로 등록">계약 등록</button>`:''}</td></tr>${state.expanded===q.id?`<tr class="detail"><td colspan="12">${quoteDetail(q)}</td></tr>`:''}`).join('')}
@@ -1405,6 +1405,28 @@
       </tbody></table>`:'<div class="muted">입력한 품목이 없습니다.</div>'}
       ${q.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(q.remarks)}</div></div>`:''}
     </div>`;
+  }
+  // ---- 만료 다가오는 계약 → 갱신 견적 ----
+  const renewQuoteOf = (cid,end) => state.quotes.find(q=>q.renew_of===cid && (!end || !q.renew_end || q.renew_end===end) && q.status!=='계약전환');
+  function openRenewalQuote(cid, end){
+    const c=contractById(cid); if(!c) return;
+    const ex=renewQuoteOf(cid,end);
+    if(ex && confirm(`이미 만든 갱신 견적(${ex.quote_no} · ${ex.status||'작성중'})이 있어요.\n그 견적을 열까요?\n\n[취소]를 누르면 새로 만듭니다.`)){ state.tab='quotes'; state.expanded=ex.id; state.docView={kind:'quote', id:ex.id}; render(); return; }
+    const groups=ctrGroups(c).filter(g=>!g.done && (!end || g.end===end));
+    const its=groups.flatMap(g=>g.items);
+    const srcQ=state.quotes.filter(q=>q.contract_id===c.id || q.renew_of===c.id).sort((a,b)=>cmp(b.quote_date||'',a.quote_date||''))[0];
+    const qItems=(srcQ&&srcQ.items||[]).filter(x=>x.type!=='group');
+    const match=prod=>qItems.find(x=>[x.name,x.spec].filter(Boolean).join(' ')===prod) || qItems.find(x=>x.name===prod);
+    const items = its.length ? its.map(i=>{
+      const qty=num(i.qty)||1, m=match(i.product), ie=itemEnd(i,c);
+      const st=ie?addDays(ie,1):'', en=ie?addDays(addMonths(st,12),-1):'';
+      return {type:'item', name:m?m.name:i.product, spec:m?(m.spec||''):'', qty, list_price:m?num(m.list_price):0, unit_price:num(i.unit_price)||Math.round(num(i.sale_amount)/qty), cost_price:Math.round(num(i.purchase_amount)/qty), lic_start:st, lic_end:en, src_id:i.id};
+    }) : [{type:'item', name:c.name, spec:'', qty:1, list_price:0, unit_price:contractTotals(c).sale, cost_price:contractTotals(c).purchase, lic_start:c.expiry_date?addDays(c.expiry_date,1):'', lic_end:c.expiry_date?addDays(addMonths(addDays(c.expiry_date,1),12),-1):''}];
+    const ct=contact(c.contact_id)||{}, me=myRep(), rep=repByName(repDisplay(c.sales_rep))||{};
+    const data={id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:`${c.name} 갱신`, quote_date:todayStr(), customer_id:c.customer_id||'', contact_id:c.contact_id||'', ref_contact:ct.name||'', ref_phone:ct.phone||'', ref_email:ct.email||'', valid_days:(srcQ&&srcQ.valid_days)||'15', delivery:(srcQ&&srcQ.delivery)||'주문 후 협의', sales_rep:repDisplay(c.sales_rep)||state.user, sales_phone:rep.phone||me.phone||'', sales_email:rep.email||me.email||state.userEmail||'', items, tax_applied:srcQ?!!srcQ.tax_applied:true, remarks:(srcQ&&srcQ.remarks)||'', status:'작성중', renew_of:c.id, renew_end:end||(groups[0]&&groups[0].end)||'', created_by:state.user};
+    state.tab='quotes';
+    state.modal={type:'quote', isNew:true, data, title:'갱신 견적 작성', wide:true, info:`"${c.name}"의 다음 기간 견적이에요. 지금 계약의 품목·단가·매입가${srcQ?`와 지난 견적(${srcQ.quote_no})의 소비자가·비고`:''}를 복사했고, 기간은 만료일 다음 날부터 1년으로 넣었어요. 금액을 확인하고 저장하세요. 수주되면 "계약 등록"을 누르면 기존 계약이 갱신완료로 바뀌어요.`};
+    render();
   }
   function bindQuotes(){
     document.getElementById('addQuoteBtn').onclick=()=>openQuoteModal(null);
@@ -1504,7 +1526,17 @@
     const tax=document.getElementById('f_qtax'); if(tax) tax.onchange=()=>{ d.tax_applied=tax.checked; updateQuoteCalc(d); };
     updateQuoteCalc(d);
   }
-  function quoteRow(q){ const t=qCalc(q); return {id:q.id, quote_no:q.quote_no, title:q.title||'', quote_date:dn(q.quote_date), customer_id:q.customer_id||null, contact_id:(q.contact_id&&q.contact_id!=='__new')?q.contact_id:null, ref_contact:q.ref_contact||'', ref_phone:q.ref_phone||'', ref_email:q.ref_email||'', valid_days:String(q.valid_days||''), delivery:q.delivery||'', sales_rep:q.sales_rep||'', sales_phone:q.sales_phone||'', sales_email:q.sales_email||'', items:q.items||[], tax_applied:!!q.tax_applied, subtotal:t.subtotal, tax:t.tax, total:t.total, cost_total:t.cost_total, remarks:q.remarks||'', status:q.status||'작성중', sent_at:q.sent_at||null, sent_to:q.sent_to||'', contract_id:q.contract_id||null, created_by:q.created_by||state.user}; }
+  function quoteRow(q){ const t=qCalc(q); return {id:q.id, quote_no:q.quote_no, title:q.title||'', quote_date:dn(q.quote_date), customer_id:q.customer_id||null, contact_id:(q.contact_id&&q.contact_id!=='__new')?q.contact_id:null, ref_contact:q.ref_contact||'', ref_phone:q.ref_phone||'', ref_email:q.ref_email||'', valid_days:String(q.valid_days||''), delivery:q.delivery||'', sales_rep:q.sales_rep||'', sales_phone:q.sales_phone||'', sales_email:q.sales_email||'', items:q.items||[], tax_applied:!!q.tax_applied, subtotal:t.subtotal, tax:t.tax, total:t.total, cost_total:t.cost_total, remarks:q.remarks||'', status:q.status||'작성중', sent_at:q.sent_at||null, sent_to:q.sent_to||'', contract_id:q.contract_id||null, renew_of:q.renew_of||null, renew_end:q.renew_end||'', created_by:q.created_by||state.user}; }
+  async function upsertQuotes(rows){
+    if(state.noRenewCols) rows=rows.map(r=>{ const x={...r}; delete x.renew_of; delete x.renew_end; return x; });
+    let err=await dbUpsert('quotes',rows);
+    if(err && /renew_/.test(err.message||String(err))){
+      state.noRenewCols=true;
+      err=await dbUpsert('quotes',rows.map(r=>{ const x={...r}; delete x.renew_of; delete x.renew_end; return x; }));
+      if(!err) showToast('저장했어요. (갱신 견적 연결 정보를 저장하려면 setup.sql을 한 번 더 실행해 주세요)');
+    }
+    return err;
+  }
   async function saveQuote(m){
     const d=m.data;
     d.items=d.items.filter(it=>it.type==='group' ? String(it.name||'').trim() : (String(it.name||'').trim()||num(it.unit_price)));
@@ -1514,7 +1546,7 @@
     if(d.contact_id==='__new') d.contact_id=null;
     if(d.contact_id && !d.ref_contact){ const ct=contact(d.contact_id); if(ct){ d.ref_contact=ct.name; d.ref_phone=d.ref_phone||ct.phone||''; d.ref_email=d.ref_email||ct.email||''; } }
     const row=quoteRow(d);
-    const err=await dbUpsert('quotes',[row]); if(err) return fail('저장 실패',err);
+    const err=await upsertQuotes([row]); if(err) return fail('저장 실패',err);
     const clean={...row}; const i=state.quotes.findIndex(x=>x.id===d.id); if(i>-1) state.quotes[i]=clean; else state.quotes.unshift(clean);
     state.modal=null; state.docView={kind:'quote', id:d.id}; showToast('저장되었습니다. PDF로 저장하거나 메일로 보낼 수 있어요.');
   }
@@ -1796,7 +1828,7 @@
       if(error || (data && data.error)) throw (error || new Error(data.error));
       rec.status = (rec.status==='계약전환'||rec.status==='입고완료') ? rec.status : '발송';
       rec.sent_at = new Date().toISOString(); rec.sent_to = to.join(', ');
-      const err = m.kind==='quote' ? await dbUpsert('quotes',[quoteRow(rec)]) : await dbUpsert('purchase_orders',[poRow(rec)]);
+      const err = m.kind==='quote' ? await upsertQuotes([quoteRow(rec)]) : await dbUpsert('purchase_orders',[poRow(rec)]);
       if(err) console.warn(err);
       state.docMail=null; showToast(`메일을 보냈어요 → ${to.join(', ')}`);
     }catch(e){
@@ -2143,7 +2175,7 @@
             <td class="nowrap">${cs.end?esc(cs.end):''}<div>${ddayBadge(cs.end,cs.renewed,cs.dismissed,c.alert_days)}${cs.extra?` <span class="badge gray" title="${esc(cs.groups.filter(g=>!g.done).slice(1).map(g=>g.end).join(', '))}">외 ${cs.extra}개 일정</span>`:''}</div></td>
             <td class="nowrap">${esc(repDisplay(c.sales_rep)||'-')}</td>
             <td style="text-align:center;">${c.attachment_url?`<button class="icon-btn attachView" data-kind="ctr" data-id="${c.id}" title="${esc(c.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="ctr" data-id="${c.id}" title="계약서 첨부">&#128206;</button>`}</td>
-            <td class="nowrap">${canRenew?`<button class="btn-sm renewBtn" data-kind="ctr" data-id="${c.id}" title="다음 기간 계약 만들기">갱신</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
+            <td class="nowrap">${canRenew?`<button class="btn-sm ghost renewQuote" data-id="${c.id}" data-end="${cs.end||''}" title="다음 기간 갱신 견적 만들기">견적</button> <button class="btn-sm renewBtn" data-kind="ctr" data-id="${c.id}" title="다음 기간 계약 만들기">갱신</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
           if(open) html += `<tr class="detail"><td colspan="${isMt?12:11}">${contractDetail(c)}</td></tr>`;
           return html;
         }).join('')}
@@ -2183,14 +2215,16 @@
     if(c){ data={...c, sales_rep:repDisplay(c.sales_rep)}; items=itemsOf(c.id).map(i=>({...i, supplier:supplierLabel(i.supplier_id,i.supplier)})); title='계약 수정'; }
     else if(opts.fromQuote){
       const q=opts.fromQuote;
-      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:q.title||'', customer_id:q.customer_id||'', contact_id:q.contact_id||'', end_user_name:'', deal_type:'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:repDisplay(q.sales_rep)||state.user, remarks:`견적 ${q.quote_no}에서 등록`, reg_date:todayStr(), _fromQuoteId:q.id};
+      const old = q.renew_of ? contractById(q.renew_of) : null;
+      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:q.title||'', customer_id:q.customer_id||'', contact_id:q.contact_id||'', end_user_name:old?(old.end_user_name||''):'', deal_type:old?(old.deal_type==='유지보수'?'유지보수':'갱신'):'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:repDisplay(q.sales_rep)||state.user, remarks:`견적 ${q.quote_no}에서 등록`, reg_date:todayStr(), _fromQuoteId:q.id};
       const qits=(q.items||[]).filter(it=>it.type!=='group');
       const ends=qits.map(it=>it.lic_end).filter(Boolean), starts=qits.map(it=>it.lic_start).filter(Boolean).sort();
       if(ends.length){ const cnt={}; ends.forEach(e=>cnt[e]=(cnt[e]||0)+1); data.expiry_date=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||(a<b?1:-1))[0]; }
       if(starts.length) data.contract_date=starts[0];
-      items=qits.map(it=>{ const qty=num(it.qty)||1; return {id:uid('it'), contract_id:data.id, product:[it.name,it.spec].filter(Boolean).join(' '), qty, unit_price:num(it.unit_price), sale_amount:qty*num(it.unit_price), supplier:'', supplier_id:null, purchase_amount:Math.round(qty*num(it.cost_price)), end_date:(it.lic_end && it.lic_end!==data.expiry_date)?it.lic_end:''}; });
+      if(old){ data._renewFromId=old.id; data.name=old.name; if(old.billing_cycle) data.billing_cycle=old.billing_cycle; data.alert_days=old.alert_days||30; }
+      items=qits.map(it=>{ const qty=num(it.qty)||1; const si=it.src_id?state.items.find(x=>x.id===it.src_id):null; return {id:uid('it'), contract_id:data.id, product:si?si.product:[it.name,it.spec].filter(Boolean).join(' '), qty, unit_price:num(it.unit_price), sale_amount:qty*num(it.unit_price), supplier:si?supplierLabel(si.supplier_id,si.supplier):'', supplier_id:si?si.supplier_id:null, purchase_amount:Math.round(qty*num(it.cost_price)), end_date:(it.lic_end && it.lic_end!==data.expiry_date)?it.lic_end:'', _srcId:si?si.id:undefined}; });
       title='계약 등록 (견적에서)';
-      opts._quoteInfo = `견적 ${q.quote_no}의 내용으로 채웠어요. 품목별 매입처와 만료일을 확인하고 저장하세요. 저장하면 견적은 "계약전환"으로 표시돼요.`;
+      opts._quoteInfo = old ? `갱신 견적 ${q.quote_no}의 내용으로 "${old.name}" 갱신 계약을 채웠어요. 저장하면 기존 계약의 해당 품목이 "갱신완료"로 바뀌고, 견적은 "계약전환"으로 표시돼요.` : `견적 ${q.quote_no}의 내용으로 채웠어요. 품목별 매입처와 만료일을 확인하고 저장하세요. 저장하면 견적은 "계약전환"으로 표시돼요.`;
     }
     else if(opts.renewFrom){
       const o=opts.renewFrom;
@@ -2360,7 +2394,7 @@
         if(oldItems.every(i=>itemDone(i,o))){ o.renewed=true; const e2=await dbUpsert('contracts',[ctrRow(o)]); if(e2) fail('기존 계약 갱신완료 표시 실패',e2); }
       } else if(!oldItems.length){ o.renewed=true; const e2=await dbUpsert('contracts',[ctrRow(o)]); if(e2) fail('기존 계약 갱신완료 표시 실패',e2); }
     } }
-    if(d._fromQuoteId){ const q=state.quotes.find(x=>x.id===d._fromQuoteId); if(q){ q.status='계약전환'; q.contract_id=d.id; const e3=await dbUpsert('quotes',[quoteRow(q)]); if(e3) fail('견적 상태 변경 실패',e3); } }
+    if(d._fromQuoteId){ const q=state.quotes.find(x=>x.id===d._fromQuoteId); if(q){ q.status='계약전환'; q.contract_id=d.id; const e3=await upsertQuotes([quoteRow(q)]); if(e3) fail('견적 상태 변경 실패',e3); } }
     const clean={...d}; ['_items','_removedItems','_renewFromId','_newCustomerName','_nc','_fromQuoteId'].forEach(k=>delete clean[k]);
     const i=state.contracts.findIndex(c=>c.id===d.id); if(i>-1) state.contracts[i]=clean; else state.contracts.unshift(clean);
     state.items = state.items.filter(x=>x.contract_id!==d.id).concat(items);
@@ -2853,6 +2887,7 @@
     bindModal();
     bindShare();
     bindDateFilter();
+    document.querySelectorAll('.renewQuote').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openRenewalQuote(b.dataset.id, b.dataset.end); });
     bindDocView(); bindDocMail();
     document.querySelectorAll('.docView').forEach(b=>b.onclick=()=>{ state.docView={kind:b.dataset.kind, id:b.dataset.id}; render(); });
     document.querySelectorAll('.docMail').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openDocMail(b.dataset.kind, b.dataset.id); });
