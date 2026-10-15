@@ -545,7 +545,7 @@
   async function loadAll(){
     state.loading=true; render();
     const tables = [['reps','reps'],['customers','customers'],['contacts','customer_contacts'],['contracts','contracts'],['items','contract_items'],['tickets','support_tickets'],['quotes','quotes'],['pos','purchase_orders'],['companyRows','company_info']];
-    const res = await Promise.all(tables.map(([,t])=>sb.from(t).select('*').order('created_at',{ascending:false})));
+    const res = await Promise.all(tables.map(([,t])=> t==='company_info' ? sb.from(t).select('*') : sb.from(t).select('*').order('created_at',{ascending:false})));
     state.setupMissing = [];
     res.forEach((r,i)=>{
       const [key,t]=tables[i];
