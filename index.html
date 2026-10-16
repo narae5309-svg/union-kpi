@@ -269,7 +269,8 @@
   .doc-remarks{border:1px solid #888; padding:8px 10px; font-size:11px; margin-bottom:10px;}
   .doc-remarks div{white-space:pre-wrap; margin-top:3px;}
   .doc-foot{font-size:11px; margin-bottom:6px;}
-  .qdoc{display:flex; flex-direction:column; min-height:980px; font-size:11px;}
+  .qdoc{display:flex; flex-direction:column; min-height:980px; font-size:11px; position:relative;}
+  .q-wm{position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); width:62%; max-height:46%; object-fit:contain; opacity:.07; pointer-events:none; z-index:5;}
   .qdoc table{border-collapse:collapse; width:100%;}
   .qdoc td, .qdoc th{text-align:left;}
   .q-title{text-align:center; font-size:24px; font-weight:800; border-top:2px solid #333; border-bottom:1px solid #333; padding:8px 0; margin-bottom:14px;}
@@ -1356,6 +1357,7 @@
     const dt = q.quote_date ? (()=>{ const [y,m,d]=q.quote_date.split('-'); return `${y}년 ${+m}월 ${+d}일`; })() : '-';
     const notice=qText('quote_notice'), agree=qText('quote_agree'), footer=qText('quote_footer');
     return `<div class="doc qdoc">
+      ${c.watermark_url?`<img class="q-wm" src="${esc(c.watermark_url)}" crossorigin="anonymous" alt=""/>`:''}
       <div class="q-title">견 &nbsp; &nbsp;적 &nbsp; &nbsp;서</div>
       <table class="q-head"><tr>
         <td class="q-left">
@@ -2095,6 +2097,12 @@
             ${can?`<button class="btn-sm" id="bannerUpload">이미지 올리기</button>${c.quote_banner_url?'<button class="btn-sm danger" id="bannerRemove">삭제</button>':''}<input type="file" id="bannerFile" accept="image/png,image/jpeg" style="display:none;"/>`:''}
           </div>
         </div>
+        <div class="field"><label>워터마크 (회사 로고 · 견적서 가운데에 아주 연하게 들어가요 · 배경 투명한 PNG 권장)</label>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <div class="seal-preview" style="width:auto; min-width:64px; max-width:240px;">${c.watermark_url?`<img src="${esc(c.watermark_url)}" alt="" style="max-height:56px; width:auto;"/>`:'<span class="muted small">없음</span>'}</div>
+            ${can?`<button class="btn-sm" id="wmUpload">이미지 올리기</button>${c.watermark_url?'<button class="btn-sm danger" id="wmRemove">삭제</button>':''}<input type="file" id="wmFile" accept="image/png,image/jpeg" style="display:none;"/>`:''}
+          </div>
+        </div>
         <div class="hint">칸을 비워 두면 견적서에서 그 문구가 빠져요.</div>
         ${can?`<div style="display:flex; justify-content:flex-end;"><button class="btn-primary" id="companySave">저장</button></div>`:''}
       </div>`;
@@ -2116,14 +2124,15 @@
     };
     imgUp('sealUpload','sealFile','sealRemove','seal','seal_url','seal_path','직인');
     imgUp('bannerUpload','bannerFile','bannerRemove','banner','quote_banner_url','quote_banner_path','안내');
+    imgUp('wmUpload','wmFile','wmRemove','watermark','watermark_url','watermark_path','워터마크');
     const sv=document.getElementById('companySave'); if(sv) sv.onclick=async ()=>{
       const row={id:'main', name:c.name||'', name_en:c.name_en||'', biz_no:c.biz_no||'', ceo:c.ceo||'', address:c.address||'', biz_type:c.biz_type||'', biz_item:c.biz_item||'', phone:c.phone||'', fax:c.fax||'', email:c.email||'', bank:c.bank||'', seal_url:c.seal_url||null, seal_path:c.seal_path||null, updated_at:new Date().toISOString()};
-      const extra={quote_agree:c.quote_agree==null?Q_DEF.quote_agree:c.quote_agree, quote_notice:c.quote_notice==null?Q_DEF.quote_notice:c.quote_notice, quote_footer:c.quote_footer==null?Q_DEF.quote_footer:c.quote_footer, quote_banner_url:c.quote_banner_url||null, quote_banner_path:c.quote_banner_path||null};
+      const extra={quote_agree:c.quote_agree==null?Q_DEF.quote_agree:c.quote_agree, quote_notice:c.quote_notice==null?Q_DEF.quote_notice:c.quote_notice, quote_footer:c.quote_footer==null?Q_DEF.quote_footer:c.quote_footer, quote_banner_url:c.quote_banner_url||null, quote_banner_path:c.quote_banner_path||null, watermark_url:c.watermark_url||null, watermark_path:c.watermark_path||null};
       let err=await dbUpsert('company_info',[{...row,...extra}]);
-      if(err && /quote_|column/i.test(err.message||String(err))){
+      if(err && /quote_|watermark|column/i.test(err.message||String(err))){
         err=await dbUpsert('company_info',[row]); if(err) return fail('저장 실패',err);
         state.company={...row}; state.companyDraft=null; render();
-        return alert('기본 회사정보는 저장했어요.\n견적서 하단 문구·이미지를 저장하려면 Supabase SQL Editor에서 setup.sql을 한 번 더 실행해 주세요.');
+        return alert('기본 회사정보는 저장했어요.\n견적서 하단 문구·워터마크 같은 추가 항목을 저장하려면 Supabase SQL Editor에서 setup.sql을 한 번 더 실행해 주세요.');
       }
       if(err) return fail('저장 실패',err);
       state.company={...row,...extra}; state.companyDraft=null; showToast('회사정보를 저장했어요.');
