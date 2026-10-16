@@ -1105,6 +1105,17 @@
       if(its.length){ L.push('■ 품목:'); its.forEach(i=>{ const ie=itemEnd(i,c); L.push(`  - ${i.product}${num(i.qty)>1?' × '+num(i.qty):''}${withAmount?' / ₩'+won(i.sale_amount):''}${ctrGroups(c).length>1&&ie?' (만료 '+ie+')':''}`); }); }
       if(withAmount) L.push(`■ 계약금액: ₩${won(t.sale)}`);
       L.push(`■ 영업담당: ${repDisplay(c.sales_rep)||'-'}`);
+    } else if(kind==='tk'){
+      const t=state.tickets.find(x=>x.id===id); if(!t) return '';
+      const ct=contact(t.contact_id);
+      L.push('[UNION 기술지원 요청]');
+      L.push(`■ 접수번호: ${t.code||'-'} (${t.received_date||'-'})`);
+      L.push(`■ 고객사: ${custName(t.customer_id)}`);
+      if(ct) L.push(`■ 고객 담당자: ${ct.name}${ct.phone?' · '+ct.phone:''}${ct.email?' · '+ct.email:''}`);
+      L.push(`■ 지원 제품: ${t.product||'-'}`);
+      L.push(`■ 담당 엔지니어: ${repDisplay(t.assignee)||'미배정'}`);
+      L.push(`■ 요청자: ${repDisplay(t.created_by)||state.user||'-'}`);
+      L.push('■ 요청 내용:'); L.push(t.request||'-');
     } else {
       const m=state.maint.find(x=>x.id===id); if(!m) return '';
       const d=daysUntil(m.end_date), ctr=contractById(m.contract_id);
@@ -1168,6 +1179,19 @@
       if(withAmount){ card.itemContent.sum='계약금액'; card.itemContent.sumOp=shortWon(t.sale); }
       return card;
     }
+    if(kind==='tk'){
+      const t=state.tickets.find(x=>x.id===id); if(!t) return null; const ct=contact(t.contact_id);
+      return {objectType:'feed',
+        content:{title: clip(`[기술지원 요청] ${custName(t.customer_id)}`,60), description: clip(t.request||'',80), link},
+        itemContent:{profileText:'UNION 사업관리', items:[
+          {item:'제품', itemOp:clip(t.product||'-',20)},
+          {item:'고객담당', itemOp:clip(ct?ct.name+(ct.phone?' '+ct.phone:''):'-',20)},
+          {item:'접수일', itemOp:t.received_date||'-'},
+          {item:'엔지니어', itemOp:clip(repDisplay(t.assignee)||'미배정',20)},
+          {item:'요청자', itemOp:clip(repDisplay(t.created_by)||state.user||'-',20)},
+        ]},
+        buttons:[{title:'시스템에서 보기', link}]};
+    }
     const m=state.maint.find(x=>x.id===id); if(!m) return null;
     const d=daysUntil(m.end_date);
     const card = {objectType:'feed',
@@ -1194,8 +1218,8 @@
     }
   }
   // ---- 보내기 창 (카카오톡 / 이메일) ----
-  function shareRecord(kind,id){ return kind==='ctr' ? contractById(id) : state.maint.find(x=>x.id===id); }
-  function recordCustomerId(kind,rec){ return kind==='ctr' ? rec.customer_id : mtCustomerId(rec); }
+  function shareRecord(kind,id){ if(kind==='tk'){ const t=state.tickets.find(x=>x.id===id); return t?{...t, name:`기술지원 요청 · ${custName(t.customer_id)}`}:null; } return kind==='ctr' ? contractById(id) : state.maint.find(x=>x.id===id); }
+  function recordCustomerId(kind,rec){ return kind==='ctr'||kind==='tk' ? rec.customer_id : mtCustomerId(rec); }
   function emailRecipients(sh){
     const rec=shareRecord(sh.kind,sh.id); if(!rec) return [];
     if(sh.to==='customer'){
@@ -1204,18 +1228,22 @@
       if(cu.tax_email && !list.some(x=>x.email===cu.tax_email)) list.push({key:'tax', email:cu.tax_email, label:'세금계산서 메일', def:false});
       return list;
     }
-    const repName=repDisplay(rec.sales_rep);
-    return state.reps.filter(r=>r.email).map(r=>({key:'rp:'+r.id, email:r.email, label:r.name+(r.dept?' ('+r.dept+')':''), def: r.name===repName && !isMine(r.name)}));
+    const repName= sh.kind==='tk' ? repDisplay(rec.assignee) : repDisplay(rec.sales_rep);
+    let reps=state.reps.filter(r=>r.email);
+    if(sh.kind==='tk') reps=[...reps].sort((a,b)=>(isEngineer(b)?1:0)-(isEngineer(a)?1:0));
+    return reps.map(r=>({key:'rp:'+r.id, email:r.email, label:r.name+(r.dept?' ('+r.dept+')':''), def: r.name===repName && (sh.kind==='tk' || !isMine(r.name))}));
   }
   function mailSubject(sh){
     const rec=shareRecord(sh.kind,sh.id); if(!rec) return '';
     const cust=custName(recordCustomerId(sh.kind,rec));
+    if(sh.kind==='tk') return `[기술지원 요청] ${cust}${rec.product?' · '+rec.product:''}${rec.code?' ('+rec.code+')':''}`;
     if(sh.to==='customer') return sh.kind==='ctr' ? `[${COMPANY_NAME}] ${rec.name} 계약 안내` : `[${COMPANY_NAME}] ${rec.name} 유지보수 안내`;
     const end = sh.kind==='ctr' ? ctrState(rec).end : rec.end_date, d=daysUntil(end);
     return `[${sh.kind==='ctr'?'계약':'유지보수'}] ${rec.name} · ${cust}${end?` · 만료 ${end}${d!=null && !rec.renewed?' ('+ddayLabel(d)+')':''}`:''}`;
   }
   function mailBody(sh){
     let t=shareText(sh.kind,sh.id,sh.withAmount);
+    if(sh.kind==='tk'){ const rec=shareRecord('tk',sh.id)||{}; return `${repDisplay(rec.assignee)?repDisplay(rec.assignee)+'님, ':''}기술지원 요청드립니다.\n\n${t}\n\n시스템에서 보기: ${KAKAO_LINK_URL}\n\n${state.user||''} 드림`; }
     if(sh.to==='customer'){
       t=t.replace('[UNION 계약 안내]','[계약 안내]').replace('[UNION 유지보수 안내]','[유지보수 안내]').replace('■ 영업담당:','■ 담당자:').replace('■ 담당:','■ 담당자:');
       return `안녕하세요, ${COMPANY_NAME}입니다.\n아래와 같이 안내드립니다.\n\n${t}\n\n문의 사항이 있으시면 언제든 연락 주세요.\n감사합니다.\n\n${state.user||''} 드림\n${COMPANY_NAME}`;
@@ -1256,11 +1284,11 @@
           <button class="ch-tab ${sh.channel==='kakao'?'on':''}" data-ch="kakao"><span class="kk">${KAKAO_ICON}</span> 카카오톡</button>
           <button class="ch-tab ${sh.channel==='mail'?'on':''}" data-ch="mail">✉️ 이메일</button>
         </div>
-        <div class="seg" style="margin-bottom:10px;">
+        ${sh.kind==='tk'?`<div class="hint" style="margin:0 0 10px;">담당 엔지니어 <b>${esc(repDisplay(rec.assignee)||'미배정')}</b>에게 요청 내용을 보내요.</div>`:`<div class="seg" style="margin-bottom:10px;">
           <button class="seg-btn ${sh.to!=='customer'?'on':''}" data-to="staff">👥 우리 직원에게</button>
           <button class="seg-btn ${sh.to==='customer'?'on':''}" data-to="customer">🏢 고객사에게</button>
         </div>
-        <label class="chk" style="margin-bottom:12px;"><input type="checkbox" id="shareAmt" ${sh.withAmount?'checked':''}/> 금액 포함 (매입·이익은 항상 빠집니다)</label>
+        <label class="chk" style="margin-bottom:12px;"><input type="checkbox" id="shareAmt" ${sh.withAmount?'checked':''}/> 금액 포함 (매입·이익은 항상 빠집니다)</label>`}
         ${sh.channel==='kakao' ? `
           <div class="hint" style="margin:-4px 0 10px;">${sh.to==='customer'?`카드를 누르면 <b>회사 홈페이지</b>로 연결돼요. 시스템 주소는 보내지지 않아요.`:'카드의 "시스템에서 보기"를 누르면 이 시스템으로 들어와요. (로그인 필요)'}</div>
           <button class="kakao-btn" id="shareKakao"><span class="kk">${KAKAO_ICON}</span> 카카오톡으로 보내기</button>
@@ -1279,10 +1307,11 @@
           <div class="field"><label>제목</label><input id="mailSubject" value="${esc(sh.subject)}"/></div>
           <div class="field"><label>내용</label><textarea id="mailBody" style="height:220px; font-size:13px; line-height:1.6;">${esc(sh.body)}</textarea></div>
           <div class="mail-acts">
-            <button class="btn-primary" id="mailOpen">✉️ 메일 프로그램으로 보내기</button>
+            ${sh.kind==='tk'?`<button class="btn-primary" id="mailDirect" ${sh.sending?'disabled':''}>${sh.sending?'보내는 중…':'✉️ 바로 보내기'}</button><button class="btn-sm" id="mailOpen">메일 프로그램으로</button>`:`<button class="btn-primary" id="mailOpen">✉️ 메일 프로그램으로 보내기</button>`}
             <button class="btn-sm" id="mailGmail">Gmail로 보내기</button>
           </div>
-          <div class="hint">버튼을 누르면 받는 사람·제목·내용이 채워진 메일 쓰기 창이 열려요. 확인하고 <b>보내기</b>만 누르면 됩니다. Outlook 같은 메일 프로그램이 없으면 Gmail 버튼을 쓰세요.</div>`}
+          ${sh.kind==='tk'?`<div class="hint">"바로 보내기"를 누르면 시스템이 메일을 바로 보내요. 나에게도 참조로 한 통 와요.${sh.error?`<div style="color:var(--warn); margin-top:4px;">${esc(sh.error)}</div>`:''}</div>`:''}
+          <div class="hint" ${sh.kind==='tk'?'style="display:none;"':''}>버튼을 누르면 받는 사람·제목·내용이 채워진 메일 쓰기 창이 열려요. 확인하고 <b>보내기</b>만 누르면 됩니다. Outlook 같은 메일 프로그램이 없으면 Gmail 버튼을 쓰세요.</div>`}
       </div>
       <div class="modal-actions"><button class="btn-sm ghost" id="shareCancel">닫기</button></div>
     </div></div>`;
@@ -1298,7 +1327,7 @@
     $('shareClose').onclick=close; $('shareCancel').onclick=close;
     document.querySelectorAll('.ch-tab').forEach(b=>b.onclick=()=>{ sh.channel=b.dataset.ch; render(); });
     document.querySelectorAll('.seg-btn[data-to]').forEach(b=>b.onclick=()=>{ const to=b.dataset.to; if(sh.to===to) return; sh.to=to; sh.withAmount = to!=='customer'; refreshShareContent(sh); render(); });
-    $('shareAmt').onchange=e=>{ sh.withAmount=e.target.checked; sh.text=shareText(sh.kind,sh.id,sh.withAmount); sh.body=mailBody(sh); render(); };
+    if($('shareAmt')) $('shareAmt').onchange=e=>{ sh.withAmount=e.target.checked; sh.text=shareText(sh.kind,sh.id,sh.withAmount); sh.body=mailBody(sh); render(); };
     if(sh.channel==='kakao'){
       $('shareText').addEventListener('input',e=>{ sh.text=e.target.value; });
       $('shareCopy').onclick=async ()=>{ const ok=await copyText(sh.text); state.share=null; showToast(ok?'복사했어요. 원하는 곳에 붙여넣기(Ctrl+V) 하세요.':'복사에 실패했어요. 내용을 직접 선택해 복사해주세요.'); };
@@ -1310,6 +1339,17 @@
       $('mailSubject').addEventListener('input',e=>{ sh.subject=e.target.value; });
       $('mailBody').addEventListener('input',e=>{ sh.body=e.target.value; });
       $('mailOpen').onclick=()=>openMail(sh,'default');
+      const md=$('mailDirect'); if(md) md.onclick=async ()=>{
+        const to=chosenEmails(sh); if(!to.length) return alert('받는 사람을 한 명 이상 선택하거나 이메일을 입력해주세요.');
+        const myEmail=myRep().email||state.userEmail||'';
+        sh.sending=true; sh.error=''; render();
+        try{
+          const html=`<div style="font-family:'Malgun Gothic',sans-serif; font-size:14px; line-height:1.7; color:#222;">${esc(sh.body).replace(/\n/g,'<br/>')}</div>`;
+          const { data, error } = await sb.functions.invoke('send-mail', { body:{ to, cc:(myEmail && !to.includes(myEmail))?[myEmail]:[], subject:sh.subject, text:sh.body, html, fromName:'UNION 사업관리', replyTo:myEmail } });
+          if(error || (data && data.error)) throw (error || new Error(data.error));
+          state.share=null; showToast(`메일을 보냈어요 → ${to.join(', ')}`);
+        }catch(e){ sh.sending=false; sh.error=(await functionError(e))+' · "메일 프로그램으로"나 Gmail 버튼으로 보내도 돼요.'; render(); }
+      };
       $('mailGmail').onclick=()=>openMail(sh,'gmail');
     }
   }
@@ -2783,7 +2823,7 @@
     const pg=paginate(list,'support');
     const engineers=[...new Set(state.tickets.map(t=>repDisplay(t.assignee)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
     return `
-      <div class="page-head"><div><div class="page-title">기술지원</div><div class="page-sub">고객 요청 접수 → 엔지니어 배정 → 처리 → 완료</div></div></div>
+      <div class="page-head"><div><div class="page-title">기술지원</div><div class="page-sub">영업팀이 요청 접수 → 담당 엔지니어에게 카톡·메일로 전달 → 완료되면 상태를 완료로</div></div></div>
       <div class="tabs">${['미완료',...TK_STATUS,'전체'].map(s=>`<div class="tab-btn tkTab ${f.tkStatus===s?'active':''}" data-s="${s}">${s}<span class="cnt">${counts[s]}</span></div>`).join('')}</div>
       <div class="toolbar">
         <button class="btn-primary" id="addTkBtn">+ 지원 요청 접수</button>
@@ -2794,14 +2834,14 @@
       </div>
       <div class="card flush">
         ${list.length===0?'<div class="empty">해당하는 기술지원 요청이 없습니다.</div>':`
-        <table><thead><tr>${checkAllTh('support')}${sortTh('접수일','support','date')}${sortTh('고객사','support','cust')}<th>고객 담당자</th>${sortTh('지원 제품','support','product')}<th class="tl">요청 내용</th>${sortTh('엔지니어','support','assignee')}${sortTh('방식','support','method')}${sortTh('상태','support','status')}${sortTh('완료일','support','done')}<th></th></tr></thead><tbody>
+        <table><thead><tr>${checkAllTh('support')}${sortTh('접수일','support','date')}${sortTh('고객사','support','cust')}<th>고객 담당자</th>${sortTh('지원 제품','support','product')}<th class="tl">요청 내용</th>${sortTh('엔지니어','support','assignee')}${sortTh('상태','support','status')}${sortTh('완료일','support','done')}<th></th></tr></thead><tbody>
         ${pg.items.map(t=>{ const ct=contact(t.contact_id), open=state.expanded===t.id; let h=`<tr>${checkTd('support',t.id)}
           <td class="nowrap">${esc(t.received_date||'-')}<div class="muted small">${esc(t.code||'')}</div></td>
           <td>${esc(custName(t.customer_id))}</td><td>${ct?esc(ct.name):'-'}</td><td>${esc(t.product||'-')}</td>
           <td class="tl"><div class="clip link toggleRow" data-id="${t.id}">${esc(t.request||'-')}</div></td>
-          <td>${t.assignee?esc(repDisplay(t.assignee)):'<span class="badge warn">미배정</span>'}</td><td>${esc(t.method||'-')}</td><td>${tkBadge(t.status)}</td><td class="nowrap">${esc(t.done_date||'-')}</td>
-          <td class="nowrap">${t.status!=='완료'?`<button class="btn-sm editTk" data-id="${t.id}">처리</button>`:`<button class="icon-btn editTk" data-id="${t.id}" title="수정">&#9998;</button>`}</td></tr>`;
-          if(open) h+=`<tr class="detail"><td colspan="11"><div class="detail-box"><div><span class="muted">요청 내용</span><div style="white-space:pre-wrap; margin-bottom:8px;">${esc(t.request||'-')}</div></div><div><span class="muted">지원 내용</span><div style="white-space:pre-wrap;">${esc(t.action||'아직 입력되지 않았습니다.')}</div></div>${ct?`<div class="muted small" style="margin-top:6px;">고객 연락처: ${esc(ct.phone||'-')} · ${esc(ct.email||'-')}</div>`:''}</div></td></tr>`;
+          <td>${t.assignee?esc(repDisplay(t.assignee)):'<span class="badge warn">미배정</span>'}</td><td>${tkBadge(t.status)}</td><td class="nowrap">${esc(t.done_date||'-')}</td>
+          <td class="nowrap"><button class="icon-btn shareBtn" data-kind="tk" data-id="${t.id}" title="엔지니어에게 보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editTk" data-id="${t.id}" title="수정">&#9998;</button></td></tr>`;
+          if(open) h+=`<tr class="detail"><td colspan="10"><div class="detail-box"><div><span class="muted">요청 내용</span><div style="white-space:pre-wrap; margin-bottom:8px;">${esc(t.request||'-')}</div></div>${t.action?`<div><span class="muted">지원 내용</span><div style="white-space:pre-wrap;">${esc(t.action)}</div></div>`:''}${ct?`<div class="muted small" style="margin-top:6px;">고객 연락처: ${esc(ct.phone||'-')} · ${esc(ct.email||'-')}</div>`:''}</div></td></tr>`;
           return h; }).join('')}
         </tbody></table>${pager('support',pg,list.length)}`}
       </div>`;
@@ -2812,7 +2852,7 @@
     const a=document.getElementById('fTkAssignee'); if(a) a.onchange=()=>{ state.f.tkAssignee=a.value; state.page.support=1; render(); };
   }
   function openTicketModal(t){
-    const data = t ? {...t, assignee:repDisplay(t.assignee)} : {id:uid('ts'), code:nextCode('TS',state.tickets), customer_id:'', contact_id:'', contract_id:'', product:'', request:'', received_date:todayStr(), assignee:'', status:'접수', method:'', action:'', done_date:'', created_by:state.user};
+    const data = t ? {...t, assignee:repDisplay(t.assignee)} : {id:uid('ts'), code:nextCode('TS',state.tickets), customer_id:'', contact_id:'', contract_id:'', product:'', request:'', received_date:todayStr(), assignee:'', status:'접수', method:'', action:'', done_date:'', created_by:state.user, isNewTk:true};
     state.modal={type:'ticket', isNew:!t, data, title:t?`기술지원 ${t.code||''}`:'기술지원 요청 접수'};
     render();
   }
@@ -2831,18 +2871,13 @@
         ${contactSelectHTML(d,'contact_id')}
         <div class="field"><label>접수일</label><input type="date" data-bind="received_date" value="${esc(d.received_date||'')}"/></div>
       </div>
-      <div class="grid2">
+      <div class="grid3">
         <div class="field"><label>지원 제품</label><input id="f_product" data-bind="product" list="prodList" value="${esc(d.product||'')}" placeholder="${prods.length?'목록에서 선택하거나 직접 입력':'제품명 입력'}"/><datalist id="prodList">${prods.map(p=>`<option value="${esc(p)}">`).join('')}</datalist>${prods.length?`<div class="hint">이 고객사가 구매한 제품 ${prods.length}개가 목록에 있습니다.</div>`:''}</div>
-        <div class="field"><label>담당 엔지니어 <span class="muted" style="font-weight:400;">(기술지원팀)</span></label><select data-bind="assignee"><option value="">미배정</option>${engineerOptions(d.assignee)}</select>${state.reps.some(isEngineer)?'':'<div class="hint">기술지원팀 담당자가 없습니다. 등록 → 담당자관리에서 부서를 "기술지원팀"으로 지정해주세요.</div>'}</div>
+        <div class="field"><label>담당 엔지니어 <span class="muted" style="font-weight:400;">(기술지원팀)</span></label><select data-bind="assignee"><option value="">미배정</option>${engineerOptions(d.assignee)}</select>${state.reps.some(isEngineer)?'':'<div class="hint">기술지원팀 담당자가 없습니다. 설정 → 담당자관리에서 부서를 "기술지원팀"으로 지정해주세요.</div>'}</div>
+        <div class="field"><label>상태</label><select data-bind="status">${TK_STATUS.map(o=>`<option ${d.status===o?'selected':''}>${o}</option>`).join('')}</select></div>
       </div>
       <div class="field"><label>요청 내용 <span class="req">*</span></label><textarea id="f_request" data-bind="request" placeholder="고객이 요청한 내용, 장애 증상 등">${esc(d.request||'')}</textarea></div>
-      <div class="section-title" style="margin-top:14px;"><span>처리 내용</span></div>
-      <div class="grid3">
-        <div class="field"><label>상태</label><select data-bind="status">${TK_STATUS.map(o=>`<option ${d.status===o?'selected':''}>${o}</option>`).join('')}</select></div>
-        <div class="field"><label>지원 방식</label><select data-bind="method"><option value="">선택</option>${METHODS.map(o=>`<option ${d.method===o?'selected':''}>${o}</option>`).join('')}</select></div>
-        <div class="field"><label>완료일</label><input type="date" data-bind="done_date" value="${esc(d.done_date||'')}"/></div>
-      </div>
-      <div class="field"><label>지원 내용</label><textarea id="f_action" data-bind="action" placeholder="어떤 지원을 했는지">${esc(d.action||'')}</textarea></div>`;
+      ${d.isNewTk?'<div class="hint">저장하면 담당 엔지니어에게 카톡·메일로 보낼 수 있는 창이 열려요.</div>':''}`;
   }
   function bindTicketForm(d){
     bindCustomerSearch(d, ()=>{ d.contact_id=''; });
@@ -2851,23 +2886,20 @@
   async function saveTicket(m, complete){
     const d=m.data;
     if(!String(d.request||'').trim()) return alert('요청 내용을 입력하세요.');
-    if(complete){
-      if(!d.method) return alert('완료 처리하려면 지원 방식(방문/원격/전화)을 선택하세요.');
-      if(!String(d.action||'').trim()) return alert('완료 처리하려면 지원 내용을 입력하세요.');
-      d.status='완료'; if(!d.done_date) d.done_date=todayStr();
-    } else {
-      if(d.status==='완료' && !d.done_date) d.done_date=todayStr();
-      if(d.status==='접수' && d.assignee && d.action) d.status='처리중';
-    }
+    if(complete) d.status='완료';
+    if(d.status==='완료' && !d.done_date) d.done_date=todayStr();
+    if(d.status!=='완료') d.done_date='';
     if(!(await ensureCustomer(d))) return;
     if(!(await ensureContact(d,'contact_id'))) return;
     if(d.contact_id==='__new') d.contact_id=null;
     const hit = state.contracts.filter(c=>c.customer_id===d.customer_id).find(c=>itemsOf(c.id).some(i=>i.product===d.product));
     d.contract_id = hit ? hit.id : (d.contract_id||null);
     const err=await dbUpsert('support_tickets',[tkRow(d)]); if(err) return fail('저장 실패',err);
-    const clean={...d}; ['_newCustomerName','_nc'].forEach(k=>delete clean[k]);
+    const clean={...d}; ['_newCustomerName','_nc','isNewTk'].forEach(k=>delete clean[k]);
     const i=state.tickets.findIndex(x=>x.id===d.id); if(i>-1) state.tickets[i]=clean; else state.tickets.unshift(clean);
-    state.modal=null; showToast(complete?'완료 처리되었습니다.':'저장되었습니다.');
+    state.modal=null;
+    if(m.isNew){ openShare('tk', d.id); showToast('접수했어요. 담당 엔지니어에게 보내세요.'); }
+    else showToast(complete?'완료 처리되었습니다.':'저장되었습니다.');
   }
 
   // ================= REPS =================
@@ -2988,7 +3020,7 @@
       <div class="modal-actions">
         ${canDelete?`<button class="btn-sm danger left" id="modalDelete">삭제</button>`:''}
         <button class="btn-sm ghost" id="modalCancel">취소</button>
-        ${m.type==='ticket' && d.status!=='완료'?`<button class="btn-sm blue" id="modalComplete">완료 처리</button>`:''}
+        ${m.type==='ticket' && !m.isNew && d.status!=='완료'?`<button class="btn-sm blue" id="modalComplete">완료 처리</button>`:''}
         <button class="btn-primary" id="modalSave">저장</button>
       </div>
     </div></div>`;
