@@ -1452,6 +1452,7 @@
   }
   const company = () => state.company || {};
   const companyName = () => company().name || COMPANY_NAME;
+  const shortCompany = () => (companyName().replace(/주식회사|\(주\)|㈜/g,'').replace(/\s+/g,' ').trim()) || COMPANY_NAME;
   function myRep(){ return state.reps.find(r=>r.email && state.userEmail && r.email.toLowerCase()===state.userEmail.toLowerCase()) || {}; }
   function repByName(n){ return state.reps.find(r=>r.name===n) || {}; }
   function docNo(prefix, list, field, date){ const compact=String(date||todayStr()).replace(/-/g,'').slice(2); const n=list.filter(x=>String(x[field]||'').startsWith(prefix+compact)).length+1; return prefix+compact+'-'+String(n).padStart(3,'0'); }
@@ -2106,7 +2107,7 @@
   }
   function openDocMail(kind,id){
     const rec=docRecord(kind,id); if(!rec) return;
-    const me=myRep(), cname=companyName();
+    const me=myRep(), cname=shortCompany();
     const isQ = kind==='quote';
     const who = isQ ? custName(rec.customer_id) : custName(rec.supplier_id);
     const no = isQ ? rec.quote_no : rec.po_no;
@@ -2131,10 +2132,12 @@
       return {type:q.renew_of?'갱신':'신규', form:'LIC', supplier:si?supplierLabel(si.supplier_id,si.supplier):''};
     });
     const myName=me.name||state.user||'';
+    const endUser=q.end_user_name||(old?(old.end_user_name||''):'');
+    const custLabel=endUser?`${cust}_${endUser}`:cust;
     state.poReq={qid, rows, extra:'', ccMe:true, sending:false, error:'', attachPdf:false,
       sel:new Set(state.reps.filter(r=>r.email && r.is_admin && !isMine(r.name)).map(r=>'rp:'+r.id)),
-      subject:`[발주요청] ${cust} ${q.title||''}`.trim(),
-      intro:`안녕하세요.\n${companyName()} ${myName}입니다.\n\n${cust} ${q.title||''} 건 세금계산서 요청드립니다.\n감사합니다.`,
+      subject:`[발주요청] ${custLabel} ${q.title||''}`.trim(),
+      intro:`안녕하세요.\n${shortCompany()} ${myName}입니다.\n\n${custLabel} ${q.title||''} 건 세금계산서 요청드립니다.\n감사합니다.`,
       issueDate:'', taxEmail:cu.tax_email||'', payTerms:'납품후', note:'', special:q.remarks||'', endUser:q.end_user_name||(old?(old.end_user_name||''):'')};
     render();
   }
@@ -2341,7 +2344,7 @@
       const html = `<div style="font-family:'Malgun Gothic',sans-serif; font-size:14px; line-height:1.7; color:#222;">${esc(m.body).replace(/\n/g,'<br/>')}</div>`;
       const { data, error } = await sb.functions.invoke('send-mail', { body:{
         to, cc: (m.ccMe && myEmail && !to.includes(myEmail)) ? [myEmail] : [],
-        subject:m.subject, text:m.body, html, fromName:companyName(), replyTo: rec.sales_email || myEmail,
+        subject:m.subject, text:m.body, html, fromName:shortCompany(), replyTo: rec.sales_email || myEmail,
         attachments:[{filename:docFileName(m.kind,rec), content:pdf}] } });
       if(error || (data && data.error)) throw (error || new Error(data.error));
       rec.status = (rec.status==='계약전환'||rec.status==='입고완료') ? rec.status : '발송';
