@@ -2205,7 +2205,7 @@
           <div class="recips">${reps.map(r=>`<label class="recip"><input type="checkbox" class="prChk" data-key="rp:${r.id}" ${pr.sel.has('rp:'+r.id)?'checked':''}/> <b>${esc(r.name)}${r.dept?' ('+esc(r.dept)+')':''}</b> <span class="muted">${esc(r.email)}</span></label>`).join('')||'<div class="muted small">이메일이 등록된 직원이 없어요.</div>'}</div>
           <input id="prExtra" class="cell-in" style="margin-top:6px;" placeholder="다른 주소 직접 입력 (영업그룹 메일 등, 여러 개는 쉼표로)" value="${esc(pr.extra)}"/>
         </div>
-        <div class="field"><label>참조 (CC)</label><div class="recips" style="padding:8px 10px;"><b>영업팀 그룹메일</b> <span class="muted">${esc(SALES_GROUP_MAIL)}</span> <span class="muted small">· 항상 들어가요</span></div></div>
+        <label class="chk" style="margin:-4px 0 10px;"><input type="checkbox" id="prCcGroup" ${pr.ccGroup!==false?'checked':''}/> 참조(CC)에 영업팀 그룹메일 넣기 · ${esc(SALES_GROUP_MAIL)}</label>
         <div class="field"><label>제목</label><input id="prSubject" value="${esc(pr.subject)}"/></div>
         <div class="field"><label>인사말</label><textarea id="prIntro" style="height:110px; line-height:1.6;">${esc(pr.intro)}</textarea></div>
         <div class="section-title"><span>발주요청 정보</span></div>
@@ -2248,6 +2248,7 @@
     document.querySelectorAll('.prF').forEach(el=>el.addEventListener('input',()=>{ pr[el.dataset.f]=el.value; pv(); }));
     document.querySelectorAll('.prR').forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{ pr.rows[+el.dataset.i][el.dataset.f]=el.value; pv(); }));
     $('prPdf').onchange=e=>{ pr.attachPdf=e.target.checked; };
+    $('prCcGroup').onchange=e=>{ pr.ccGroup=e.target.checked; };
     $('prRefresh').onclick=pv;
     $('prSend').onclick=async ()=>{
       const list=state.reps.filter(r=>pr.sel.has('rp:'+r.id) && r.email).map(r=>r.email);
@@ -2256,7 +2257,7 @@
       const myEmail=myRep().email||state.userEmail||'';
       pr.sending=true; pr.error=''; render();
       try{
-        const body={ to, cc:to.includes(SALES_GROUP_MAIL)?[]:[SALES_GROUP_MAIL], subject:pr.subject, text:poReqText(q,pr), html:poReqHTML(q,pr), fromName:(myRep().name||state.user||'UNION 사업관리'), replyTo:myEmail };
+        const body={ to, cc:(pr.ccGroup!==false && !to.includes(SALES_GROUP_MAIL))?[SALES_GROUP_MAIL]:[], subject:pr.subject, text:poReqText(q,pr), html:poReqHTML(q,pr), fromName:(myRep().name||state.user||'UNION 사업관리'), replyTo:myEmail };
         if(pr.attachPdf){ const pdf=await makePdf('quote', q, 'base64'); body.attachments=[{filename:docFileName('quote',q), content:pdf}]; }
         const { data, error } = await sb.functions.invoke('send-mail', { body });
         if(error || (data && data.error)) throw (error || new Error(data.error));
