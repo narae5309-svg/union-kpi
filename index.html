@@ -1614,7 +1614,7 @@
   const QUOTE_TABS = ['전체','작성중','발송','계약전환'];
   function renderQuotes(){
     const f=state.f; const tab=f.qTab||'전체';
-    let list=state.quotes.filter(q=>(tab==='전체'||(q.status||'작성중')===tab) && qmatch('quotes', q.quote_no, q.title, custName(q.customer_id), q.ref_contact, q.sales_rep, ...(q.items||[]).map(i=>i.name)));
+    let list=state.quotes.filter(q=>(tab==='전체'||(q.status||'작성중')===tab) && qmatch('quotes', q.quote_no, q.title, custName(q.customer_id), q.end_user_name, q.ref_contact, q.sales_rep, ...(q.items||[]).map(i=>i.name)));
     list=list.filter(q=>endInRange('quotes', q.quote_date));
     list=applySort(list,'quotes',{margin:q=>qCalc(q).margin, mrate:q=>qCalc(q).mrate, end:q=>q.quote_date, no:q=>q.quote_no, date:q=>q.quote_date, cust:q=>custName(q.customer_id), title:q=>q.title, total:q=>num(q.total), rep:q=>q.sales_rep, status:q=>q.status});
     if(!state.sort.quotes) list=[...list].sort((a,b)=>cmp(b.quote_date+b.quote_no, a.quote_date+a.quote_no));
@@ -1634,7 +1634,7 @@
         ${list.length===0?'<div class="empty">견적서가 없습니다.</div>':`
         <table><thead><tr>${checkAllTh('quotes')}${sortTh('견적번호','quotes','no')}${endTh('quotes')}${sortTh('고객사','quotes','cust','text-align:left;')}${sortTh('건명','quotes','title','text-align:left;')}${sortTh('합계(VAT)','quotes','total','text-align:right;')}${sortTh('마진','quotes','margin','text-align:right;')}${sortTh('마진율','quotes','mrate')}${sortTh('영업담당','quotes','rep')}${sortTh('상태','quotes','status')}<th>발송</th><th></th></tr></thead><tbody>
         ${pg.items.map(q=>`<tr class="${state.expanded===q.id?'open-row':''}">${checkTd('quotes',q.id)}
-          <td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl"><span class="link toggleRow" data-id="${q.id}" style="font-weight:600;" title="품목·마진 보기">${esc(custName(q.customer_id))}</span></td>
+          <td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl"><span class="link toggleRow" data-id="${q.id}" style="font-weight:600;" title="품목·마진 보기">${esc(custName(q.customer_id))}</span>${q.end_user_name?`<div class="muted small">↳ ${esc(q.end_user_name)}</div>`:''}</td>
           <td class="tl">${q.renew_of?'<span class="badge gold" title="계약 갱신 견적">갱신</span> ':''}<span class="link docView" data-kind="quote" data-id="${q.id}" style="font-weight:600;">${esc(q.title||'(건명 없음)')}</span></td>
           <td class="num" style="font-weight:600;">${won(q.total)}</td>${(()=>{ const m=qCalc(q); return `<td class="num" style="${m.margin<0?'color:#c0392b;':''}">${won(m.margin)}</td><td>${m.subtotal?pct(m.mrate*100):'-'}</td>`; })()}<td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td>
           <td class="small nowrap">${q.sent_at?esc(String(q.sent_at).slice(0,10)):'-'}</td>
@@ -1652,6 +1652,7 @@
     return `<div class="detail-box">
       <div class="detail-grid">
         <div><span class="muted">건명</span> ${esc(q.title||'-')}</div>
+        ${q.end_user_name?`<div><span class="muted">앤드유저</span> ${esc(q.end_user_name)}</div>`:''}
         <div><span class="muted">참조</span> ${esc(q.ref_contact||'-')}${q.ref_phone?' · '+esc(q.ref_phone):''}</div>
         <div><span class="muted">견적유효</span> 견적일로부터 ${esc(q.valid_days||'15')}일</div>
         <div><span class="muted">예상납기</span> ${esc(q.delivery||'-')}</div>
@@ -1680,7 +1681,7 @@
       return {type:'item', name:m?m.name:i.product, spec:m?(m.spec||''):'', qty, list_price:m?num(m.list_price):0, unit_price:num(i.unit_price)||Math.round(num(i.sale_amount)/qty), cost_price:Math.round(num(i.purchase_amount)/qty), lic_start:st, lic_end:en, src_id:i.id};
     }) : [{type:'item', name:c.name, spec:'', qty:1, list_price:0, unit_price:contractTotals(c).sale, cost_price:contractTotals(c).purchase, lic_start:c.expiry_date?addDays(c.expiry_date,1):'', lic_end:c.expiry_date?addDays(addMonths(addDays(c.expiry_date,1),12),-1):''}];
     const ct=contact(c.contact_id)||{}, me=myRep(), rep=repByName(repDisplay(c.sales_rep))||{};
-    const data={id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:c.name||'', quote_date:todayStr(), customer_id:c.customer_id||'', contact_id:c.contact_id||'', ref_contact:ct.name||'', ref_phone:ct.phone||'', ref_email:ct.email||'', valid_days:(srcQ&&srcQ.valid_days)||'15', delivery:(srcQ&&srcQ.delivery)||'주문 후 협의', sales_rep:repDisplay(c.sales_rep)||state.user, sales_phone:rep.phone||me.phone||'', sales_email:rep.email||me.email||state.userEmail||'', items, tax_applied:srcQ?!!srcQ.tax_applied:true, remarks:(srcQ&&srcQ.remarks)||'', status:'작성중', renew_of:c.id, renew_end:end||(groups[0]&&groups[0].end)||'', created_by:state.user};
+    const data={id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:c.name||'', end_user_name:c.end_user_name||'', quote_date:todayStr(), customer_id:c.customer_id||'', contact_id:c.contact_id||'', ref_contact:ct.name||'', ref_phone:ct.phone||'', ref_email:ct.email||'', valid_days:(srcQ&&srcQ.valid_days)||'15', delivery:(srcQ&&srcQ.delivery)||'주문 후 협의', sales_rep:repDisplay(c.sales_rep)||state.user, sales_phone:rep.phone||me.phone||'', sales_email:rep.email||me.email||state.userEmail||'', items, tax_applied:srcQ?!!srcQ.tax_applied:true, remarks:(srcQ&&srcQ.remarks)||'', status:'작성중', renew_of:c.id, renew_end:end||(groups[0]&&groups[0].end)||'', created_by:state.user};
     state.tab='quotes';
     state.modal={type:'quote', isNew:true, data, title:'갱신 견적 작성', wide:true, info:`"${c.name}"의 다음 기간 견적이에요. 지금 계약의 품목·단가·매입가${srcQ?`와 지난 견적(${srcQ.quote_no})의 소비자가·비고`:''}를 복사했고, 기간은 만료일 다음 날부터 1년으로 넣었어요. 금액을 확인하고 저장하세요. 수주되면 "계약 등록"을 누르면 기존 계약이 갱신완료로 바뀌어요.`};
     render();
@@ -1799,7 +1800,7 @@
   function openQuoteModal(q, opts){
     opts=opts||{};
     const me=myRep();
-    const data = q ? JSON.parse(JSON.stringify(q)) : {id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:'', quote_date:todayStr(), customer_id:'', contact_id:'', ref_contact:'', ref_phone:'', ref_email:'', valid_days:'15', delivery:'주문 후 협의', sales_rep:state.user, sales_phone:me.phone||'', sales_email:me.email||state.userEmail||'', items:[newQuoteItem()], tax_applied:true, remarks:'', status:'작성중', created_by:state.user};
+    const data = q ? JSON.parse(JSON.stringify(q)) : {id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:'', quote_date:todayStr(), customer_id:'', contact_id:'', ref_contact:'', ref_phone:'', ref_email:'', valid_days:'15', delivery:'주문 후 협의', sales_rep:state.user, sales_phone:me.phone||'', sales_email:me.email||state.userEmail||'', end_user_name:'', items:[newQuoteItem()], tax_applied:true, remarks:'', status:'작성중', created_by:state.user};
     if(!data.items || !data.items.length) data.items=[newQuoteItem()];
     state.modal={type:'quote', isNew:!q, data, title:q?`견적서 수정 · ${q.quote_no}`:'견적서 작성', wide:true};
     render();
@@ -1815,6 +1816,9 @@
         ${customerSearchHTML(d)}
         ${contactSelectHTML(d,'contact_id')}
         <div class="field"><label>견적일자</label><input type="date" data-bind="quote_date" value="${esc(d.quote_date||'')}"/></div>
+      </div>
+      <div class="grid3">
+        <div class="field"><label>앤드유저 (최종 사용처, 다를 때만)</label><input id="f_qenduser" data-bind="end_user_name" value="${esc(d.end_user_name||'')}" placeholder="고객사와 실제 사용처가 다르면 입력"/></div>
       </div>
       <div class="grid3">
         <div class="field"><label>참조 (수신 담당자)</label><input id="f_refc" data-bind="ref_contact" value="${esc(d.ref_contact||'')}"/></div>
@@ -1885,14 +1889,18 @@
     const tax=document.getElementById('f_qtax'); if(tax) tax.onchange=()=>{ d.tax_applied=tax.checked; updateQuoteCalc(d); };
     updateQuoteCalc(d);
   }
-  function quoteRow(q){ const t=qCalc(q); return {id:q.id, quote_no:q.quote_no, title:q.title||'', quote_date:dn(q.quote_date), customer_id:q.customer_id||null, contact_id:(q.contact_id&&q.contact_id!=='__new')?q.contact_id:null, ref_contact:q.ref_contact||'', ref_phone:q.ref_phone||'', ref_email:q.ref_email||'', valid_days:String(q.valid_days||''), delivery:q.delivery||'', sales_rep:q.sales_rep||'', sales_phone:q.sales_phone||'', sales_email:q.sales_email||'', items:q.items||[], tax_applied:!!q.tax_applied, subtotal:t.subtotal, tax:t.tax, total:t.total, cost_total:t.cost_total, remarks:q.remarks||'', status:q.status||'작성중', sent_at:q.sent_at||null, sent_to:q.sent_to||'', contract_id:q.contract_id||null, renew_of:q.renew_of||null, renew_end:q.renew_end||'', created_by:q.created_by||state.user}; }
+  function quoteRow(q){ const t=qCalc(q); return {id:q.id, quote_no:q.quote_no, title:q.title||'', quote_date:dn(q.quote_date), customer_id:q.customer_id||null, contact_id:(q.contact_id&&q.contact_id!=='__new')?q.contact_id:null, ref_contact:q.ref_contact||'', ref_phone:q.ref_phone||'', ref_email:q.ref_email||'', valid_days:String(q.valid_days||''), delivery:q.delivery||'', sales_rep:q.sales_rep||'', sales_phone:q.sales_phone||'', sales_email:q.sales_email||'', items:q.items||[], tax_applied:!!q.tax_applied, subtotal:t.subtotal, tax:t.tax, total:t.total, cost_total:t.cost_total, remarks:q.remarks||'', status:q.status||'작성중', sent_at:q.sent_at||null, sent_to:q.sent_to||'', contract_id:q.contract_id||null, end_user_name:q.end_user_name||'', renew_of:q.renew_of||null, renew_end:q.renew_end||'', created_by:q.created_by||state.user}; }
+  const QUOTE_OPT_COLS=['renew_of','renew_end','end_user_name'];
   async function upsertQuotes(rows){
-    if(state.noRenewCols) rows=rows.map(r=>{ const x={...r}; delete x.renew_of; delete x.renew_end; return x; });
-    let err=await dbUpsert('quotes',rows);
-    if(err && /renew_/.test(err.message||String(err))){
-      state.noRenewCols=true;
-      err=await dbUpsert('quotes',rows.map(r=>{ const x={...r}; delete x.renew_of; delete x.renew_end; return x; }));
-      if(!err) showToast('저장했어요. (갱신 견적 연결 정보를 저장하려면 setup.sql을 한 번 더 실행해 주세요)');
+    state.quoteMissingCols=state.quoteMissingCols||new Set();
+    const strip=rs=>rs.map(r=>{ const x={...r}; state.quoteMissingCols.forEach(c=>delete x[c]); return x; });
+    let err=await dbUpsert('quotes',strip(rows));
+    for(let k=0; k<3 && err; k++){
+      const msg=err.message||String(err); const col=QUOTE_OPT_COLS.find(c=>msg.includes(c));
+      if(!col) break;
+      state.quoteMissingCols.add(col);
+      err=await dbUpsert('quotes',strip(rows));
+      if(!err) showToast('저장했어요. (앤드유저·갱신 연결 정보까지 저장하려면 setup.sql을 한 번 더 실행해 주세요)');
     }
     return err;
   }
@@ -2123,7 +2131,7 @@
       sel:new Set(state.reps.filter(r=>r.email && r.is_admin && !isMine(r.name)).map(r=>'rp:'+r.id)),
       subject:`[발주요청] ${cust} ${q.title||''}`.trim(),
       intro:`안녕하세요.\n${companyName()} ${myName}입니다.\n\n${cust} ${q.title||''} 건 세금계산서 요청드립니다.\n감사합니다.`,
-      issueDate:'', taxEmail:cu.tax_email||'', payTerms:'납품후', note:'', special:q.remarks||'', endUser:old?(old.end_user_name||''):''};
+      issueDate:'', taxEmail:cu.tax_email||'', payTerms:'납품후', note:'', special:q.remarks||'', endUser:q.end_user_name||(old?(old.end_user_name||''):'')};
     render();
   }
   function licSummary(q){
@@ -2718,7 +2726,7 @@
     else if(opts.fromQuote){
       const q=opts.fromQuote;
       const old = q.renew_of ? contractById(q.renew_of) : null;
-      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:q.title||'', customer_id:q.customer_id||'', contact_id:q.contact_id||'', end_user_name:old?(old.end_user_name||''):'', deal_type:old?(old.deal_type==='유지보수'?'유지보수':'갱신'):'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:repDisplay(q.sales_rep)||state.user, remarks:`견적 ${q.quote_no}에서 등록`, reg_date:todayStr(), _fromQuoteId:q.id};
+      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:q.title||'', customer_id:q.customer_id||'', contact_id:q.contact_id||'', end_user_name:q.end_user_name||(old?(old.end_user_name||''):''), deal_type:old?(old.deal_type==='유지보수'?'유지보수':'갱신'):'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:repDisplay(q.sales_rep)||state.user, remarks:`견적 ${q.quote_no}에서 등록`, reg_date:todayStr(), _fromQuoteId:q.id};
       const qits=(q.items||[]).filter(it=>it.type!=='group');
       const ends=qits.map(it=>it.lic_end).filter(Boolean), starts=qits.map(it=>it.lic_start).filter(Boolean).sort();
       if(ends.length){ const cnt={}; ends.forEach(e=>cnt[e]=(cnt[e]||0)+1); data.expiry_date=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||(a<b?1:-1))[0]; }
@@ -3331,7 +3339,7 @@
     if(state.tab==='contracts'||state.tab==='maint'){ name=state.tab==='maint'?'유지보수관리':'계약관리'; state.contracts.filter(c=>state.tab!=='maint'||c.deal_type==='유지보수').forEach(c=>{ const its=itemsOf(c.id); const ct=contact(c.contact_id); (its.length?its:[{}]).forEach(i=>rows.push({'계약코드':c.code,'구분':c.deal_type||'신규','계약명':c.name,'고객사':custName(c.customer_id),'고객담당자':ct?ct.name:'','앤드유저':c.end_user_name||'','제품':i.product||'','수량':i.qty||'','단가':num(i.unit_price)||'','매출':num(i.sale_amount),'매입처':supplierLabel(i.supplier_id,i.supplier),'매입':num(i.purchase_amount),'이익':num(i.sale_amount)-num(i.purchase_amount),'단계':normStage(c.stage),'결제주기':c.billing_cycle||'','계약일':c.contract_date||'','만료일':(i.id?itemEnd(i,c):c.expiry_date)||'','품목상태':i.renewed?'갱신완료':i.closed?'종료':'','영업담당':repDisplay(c.sales_rep),'갱신완료':c.renewed?'Y':''})); }); }
     if(false){ state.maint.forEach(m=>{ const t=mtTotals(m); rows.push({'구분':m.deal_type||'신규','유지보수명':m.name,'고객사':custName(mtCustomerId(m)),'결제주기':m.billing_cycle||'','시작일':m.start_date||'','만료일':m.end_date||'','매출':t.sale,'매입처':supplierLabel(m.supplier_id,m.supplier),'매입':t.purchase,'이익':t.profit,'담당':repDisplay(m.sales_rep),'갱신완료':m.renewed?'Y':''}); }); }
     if(state.tab==='support'){ name='기술지원'; state.tickets.forEach(t=>{ const ct=contact(t.contact_id); rows.push({'번호':t.code,'접수일':t.received_date||'','고객사':custName(t.customer_id),'고객담당자':ct?ct.name:'','제품':t.product||'','요청내용':t.request||'','엔지니어':repDisplay(t.assignee),'방식':t.method||'','지원내용':t.action||'','상태':t.status||'','완료일':t.done_date||''}); }); }
-    if(state.tab==='quotes'){ name='견적'; state.quotes.forEach(q=>rows.push({'견적번호':q.quote_no,'견적일':q.quote_date||'','고객사':custName(q.customer_id),'건명':q.title||'','공급가액':num(q.subtotal),'부가세':num(q.tax),'합계':num(q.total),'매입':num(q.cost_total),'마진':qCalc(q).margin,'마진율(%)':Math.round(qCalc(q).mrate*1000)/10,'영업담당':repDisplay(q.sales_rep),'상태':q.status||'','발송일':q.sent_at?String(q.sent_at).slice(0,10):'','받는사람':q.sent_to||''})); }
+    if(state.tab==='quotes'){ name='견적'; state.quotes.forEach(q=>rows.push({'견적번호':q.quote_no,'견적일':q.quote_date||'','고객사':custName(q.customer_id),'앤드유저':q.end_user_name||'','건명':q.title||'','공급가액':num(q.subtotal),'부가세':num(q.tax),'합계':num(q.total),'매입':num(q.cost_total),'마진':qCalc(q).margin,'마진율(%)':Math.round(qCalc(q).mrate*1000)/10,'영업담당':repDisplay(q.sales_rep),'상태':q.status||'','발송일':q.sent_at?String(q.sent_at).slice(0,10):'','받는사람':q.sent_to||''})); }
     if(state.tab==='pos'){ name='발주'; state.pos.forEach(p=>rows.push({'발주번호':p.po_no,'발주일':p.po_date||'','매입처':custName(p.supplier_id),'건명':p.title||'','공급가액':num(p.subtotal),'부가세':num(p.tax),'합계':num(p.total),'납기일':p.delivery_date||'','관련계약':(contractById(p.contract_id)||{}).name||'','상태':p.status||'','발송일':p.sent_at?String(p.sent_at).slice(0,10):''})); }
     if(!rows.length) return alert('내보낼 데이터가 없습니다.');
     const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), name); XLSX.writeFile(wb, `${name}_${todayStr()}.xlsx`);
