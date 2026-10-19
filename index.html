@@ -154,6 +154,13 @@
   .detail-box{padding:14px 18px; font-size:12.5px; line-height:1.6;}
   .detail-box table{border:1px solid var(--grid); margin:6px 0 10px; background:#fff;}
   .detail-box th{background:#f2f7f7;}
+  .date-wrap{position:relative; display:inline-block; width:100%;}
+  .date-wrap .date-txt{width:100%; padding-right:30px !important; font-variant-numeric:tabular-nums;}
+  .date-wrap .date-txt.bad{border-color:#d0312d !important; background:#fff5f5 !important;}
+  .date-wrap .date-pick{position:absolute; right:4px; bottom:2px; width:24px; height:0; padding:0; border:0; opacity:0; pointer-events:none;}
+  .date-wrap .date-btn{position:absolute; right:4px; top:50%; transform:translateY(-50%); width:24px; height:24px; border:none; background:none; color:var(--ink-soft); cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; border-radius:4px;}
+  .date-wrap .date-btn:hover{background:#eef4f4; color:var(--accent-dark);}
+  .date-pop .date-wrap, .dp-row .date-wrap{width:auto; flex:1;}
   .plus-menu{position:fixed; z-index:400; background:#fff; border:1px solid var(--grid-strong); border-radius:10px; box-shadow:0 8px 24px rgba(0,0,0,.14); padding:5px; min-width:220px;}
   .plus-menu button{display:flex; flex-direction:column; align-items:flex-start; gap:1px; width:100%; border:none; background:none; padding:8px 10px; border-radius:7px; cursor:pointer; text-align:left; font-family:inherit;}
   .plus-menu button:hover{background:#eef7f6;}
@@ -308,6 +315,7 @@
   .q-lic{font-size:9.5px; color:#555; margin-top:1px;}
   .lic-cell input{display:block; min-width:122px; padding:3px 5px !important; font-size:12px !important;}
   .lic-cell input + input{margin-top:3px;}
+  .lic-cell .date-wrap{display:block;} .lic-cell .date-wrap + .date-wrap{margin-top:3px;}
   .q-spacer{flex:1; min-height:24px;}
   .q-bottom{border-top:1.5px solid #333; border-bottom:1.5px solid #333; table-layout:fixed;}
   .q-bottom th, .q-bottom td{padding:4px 8px; font-size:10.5px; height:22px;}
@@ -755,10 +763,66 @@
     if(state.view==='login'){ root.innerHTML=renderLogin(); bindLogin(); return; }
     if(state.view==='recovery'){ root.innerHTML=renderRecovery(); bindRecovery(); return; }
     root.innerHTML = renderShell();
+    enhanceDates(root);
     if(!state.loading) bindShell();
     if(rid){ const el=document.querySelector(rid); if(el){ el.focus(); try{ if(s1!=null) el.setSelectionRange(s1,s2); }catch(e){} } }
   }
 
+
+  // ---- 날짜 칸: 숫자만 연달아 입력해도 (20261001 → 2026-10-01) 되게, 달력 버튼은 그대로 ----
+  function fmtDateDigits(v){
+    const d=String(v||'').replace(/\D/g,'').slice(0,8);
+    if(d.length<=4) return d;
+    if(d.length<=6) return d.slice(0,4)+'-'+d.slice(4);
+    return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6);
+  }
+  function normDate(v){
+    v=String(v||'').trim(); if(!v) return '';
+    let d=v.replace(/\D/g,'');
+    const m=/^(\d{2,4})[.\-\/\s]+(\d{1,2})[.\-\/\s]+(\d{1,2})$/.exec(v);
+    if(m){ const y=m[1].length===2?'20'+m[1]:m[1]; d=y+m[2].padStart(2,'0')+m[3].padStart(2,'0'); }
+    else if(d.length===6) d='20'+d;
+    if(d.length!==8) return null;
+    const y=+d.slice(0,4), mo=+d.slice(4,6), da=+d.slice(6,8), t=new Date(y,mo-1,da);
+    if(t.getFullYear()!==y || t.getMonth()!==mo-1 || t.getDate()!==da) return null;
+    return d.slice(0,4)+'-'+d.slice(4,6)+'-'+d.slice(6,8);
+  }
+  function enhanceDates(scope){
+    scope.querySelectorAll('input[type="date"]').forEach(el=>{
+      const wrap=document.createElement('span'); wrap.className='date-wrap';
+      el.parentNode.insertBefore(wrap, el); wrap.appendChild(el);
+      el.type='text'; el.classList.add('date-txt'); el.setAttribute('inputmode','numeric'); el.setAttribute('maxlength','10'); el.setAttribute('autocomplete','off');
+      if(!el.placeholder) el.placeholder='YYYY-MM-DD';
+      if(el.value && normDate(el.value)===null) el.classList.add('bad');
+      const pick=document.createElement('input'); pick.type='date'; pick.className='date-pick'; pick.tabIndex=-1; pick.value=el.value||'';
+      const btn=document.createElement('button'); btn.type='button'; btn.className='date-btn'; btn.tabIndex=-1; btn.title='달력에서 고르기';
+      btn.innerHTML='<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="8" y1="3" x2="8" y2="7"/><line x1="16" y1="3" x2="16" y2="7"/></svg>';
+      if(el.disabled){ btn.disabled=true; }
+      wrap.appendChild(pick); wrap.appendChild(btn);
+      const fire=()=>{ el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); };
+      btn.onclick=()=>{ pick.value=normDate(el.value)||''; try{ pick.showPicker(); }catch(e){ pick.focus(); pick.click(); } };
+      pick.addEventListener('change',()=>{ el.value=pick.value; el.classList.remove('bad'); fire(); });
+      el.addEventListener('input',e=>{
+        if(!e.isTrusted) return;
+        const raw=el.value;
+        if(/^\d[\d\-]*$/.test(raw) || raw==='') { const f=fmtDateDigits(raw); if(f!==raw){ el.value=f; try{ el.setSelectionRange(f.length,f.length); }catch(x){} } }
+        el.classList.remove('bad');
+      });
+      el.addEventListener('change',e=>{
+        if(!e.isTrusted || !el.value) return;
+        const n=normDate(el.value);
+        if(n===null){ e.stopImmediatePropagation(); el.classList.add('bad'); return; }
+        if(n!==el.value) el.value=n;
+      });
+      el.addEventListener('blur',()=>{
+        if(!el.value) return;
+        const n=normDate(el.value);
+        if(n===null){ el.classList.add('bad'); showToast('날짜는 8자리 숫자로 입력해 주세요 (예: 20261001)'); return; }
+        if(n!==el.value){ el.value=n; fire(); }
+      });
+      el.addEventListener('keydown',e=>{ if(e.key==='Enter'){ const n=normDate(el.value); if(n && n!==el.value){ el.value=n; fire(); } } });
+    });
+  }
   function renderLogin(){
     return `<div class="login-screen"><div class="login-card">
       <div class="logo">UNION</div>
