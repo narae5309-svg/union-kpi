@@ -154,6 +154,7 @@
   .detail-box{padding:14px 18px; font-size:12.5px; line-height:1.6;}
   .detail-box table{border:1px solid var(--grid); margin:6px 0 10px; background:#fff;}
   .detail-box th{background:#f2f7f7;}
+  .pr-preview{border:1px solid var(--grid-strong); border-radius:var(--radius); background:#fff; width:100%; height:440px; display:block;}
   .date-wrap{position:relative; display:inline-block; width:100%;}
   .date-wrap .date-txt{width:100%; padding-right:30px !important; font-variant-numeric:tabular-nums;}
   .date-wrap .date-txt.bad{border-color:#d0312d !important; background:#fff5f5 !important;}
@@ -990,6 +991,7 @@
     ${state.share?renderShare():''}
     ${state.docView?renderDocView():''}
     ${state.docMail?renderDocMail():''}
+    ${state.poReq?renderPoReq():''}
     ${state.datePop && state.tab===state.datePop?renderDatePop():''}
     ${state.confirm?renderConfirm():''}
     ${state.toast?`<div class="toast">${esc(state.toast)}</div>`:''}
@@ -2106,12 +2108,147 @@
     state.docMail = {kind, id, subject, body, extra:'', sel:new Set(recips.filter(r=>r.def).map(r=>r.key)), ccMe:true, sending:false, error:'', who};
     render();
   }
+
+  // ================= 발주요청서 (견적 → 우리 직원에게) =================
+  function openPoReq(qid){
+    const q=state.quotes.find(x=>x.id===qid); if(!q) return;
+    const me=myRep(), cu=customer(q.customer_id)||{}, cust=custName(q.customer_id);
+    const old=q.renew_of?contractById(q.renew_of):null;
+    const rows=(q.items||[]).filter(it=>it.type!=='group').map(it=>{
+      const si=it.src_id?state.items.find(x=>x.id===it.src_id):null;
+      return {type:q.renew_of?'갱신':'신규', form:'LIC', supplier:si?supplierLabel(si.supplier_id,si.supplier):''};
+    });
+    const myName=me.name||state.user||'';
+    state.poReq={qid, rows, extra:'', ccMe:true, sending:false, error:'', attachPdf:false,
+      sel:new Set(state.reps.filter(r=>r.email && r.is_admin && !isMine(r.name)).map(r=>'rp:'+r.id)),
+      subject:`[발주요청] ${cust} ${q.title||''}`.trim(),
+      intro:`안녕하세요.\n${companyName()} ${myName}입니다.\n\n${cust} ${q.title||''} 건 세금계산서 요청드립니다.\n감사합니다.`,
+      issueDate:'', taxEmail:cu.tax_email||'', payTerms:'납품후', note:'', special:q.remarks||'', endUser:old?(old.end_user_name||''):''};
+    render();
+  }
+  function licSummary(q){
+    const its=(q.items||[]).filter(x=>x.type!=='group' && (x.lic_start||x.lic_end));
+    if(!its.length) return '';
+    const keys=[...new Set(its.map(x=>`${x.lic_start||''} ~ ${x.lic_end||''}`))];
+    return keys.length===1 ? keys[0] : keys.join(', ');
+  }
+  function poReqTableHTML(q, pr){
+    const B='border:1px solid #000;', H=B+'background:#bfbfbf;font-weight:bold;text-align:center;padding:5px 8px;', C=B+'padding:5px 8px;text-align:center;', L=B+'padding:5px 8px;text-align:left;', N=B+'padding:5px 8px;text-align:right;white-space:nowrap;';
+    const t=qCalc(q), cust=custName(q.customer_id), me=myRep();
+    const its=(q.items||[]).filter(x=>x.type!=='group');
+    const costTax=q.tax_applied?Math.round(t.cost_total*0.1):0;
+    const rows=its.map((it,i)=>{ const k=qItemCalc(it), r=pr.rows[i]||{}; return `<tr><td style="${C}">${i+1}</td><td style="${L}">${esc(it.name)}${it.spec?' ('+esc(it.spec)+')':''}${(it.lic_start||it.lic_end)?`<br/><span style="font-size:11px;color:#555;">${esc((it.lic_start||'')+' ~ '+(it.lic_end||''))}</span>`:''}</td><td style="${C}">${esc(r.type||'')}</td><td style="${C}">${esc(r.form||'')}</td><td style="${C}">${num(it.qty)}</td><td style="${N}">${won(it.unit_price)}</td><td style="${N}">${won(k.line)}</td><td style="${N}">${won(it.cost_price)}</td><td style="${N}">${won(k.costT)}</td><td style="${N}">${k.line?pct(k.mrate*100):'-'}</td><td style="${C}">${esc(r.supplier||'')}</td></tr>`; }).join('');
+    const lic=licSummary(q);
+    return `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:14px 0 4px;">
+      <tr><td style="padding:4px 8px;font-weight:bold;">담당자 :</td><td style="padding:4px 8px;">${esc(me.name||state.user||'')}</td><td style="padding:4px 8px;font-weight:bold;">작성일자 :</td><td style="padding:4px 8px;">${esc(todayStr())}</td></tr></table>
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:12px;"><tr><td style="vertical-align:top;padding:0 18px 0 0;">
+      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:12px;">
+        <tr><td style="${H}width:90px;">발주처</td><td style="${C}min-width:150px;">${esc(cust)} 귀중</td><td style="${H}width:90px;">담당자</td><td style="${C}min-width:150px;">${esc(q.ref_contact||'')}${q.ref_contact?' 귀하':''}</td></tr>
+        <tr><td style="${H}">TEL</td><td style="${C}">${esc(q.ref_phone||'')}</td><td style="${H}">E-MAIL</td><td style="${C}">${esc(q.ref_email||'')}</td></tr>
+        <tr><td style="${H}">고객사</td><td style="${C}">${esc(pr.endUser||'')}</td><td style="${H}">라이선스 기간</td><td style="${C}">${esc(lic)}</td></tr>
+        <tr><td style="${H}">특이사항</td><td style="${L}" colspan="3">${esc(pr.special||'').replace(/\n/g,'<br/>')}</td></tr>
+      </table></td><td style="vertical-align:top;">
+      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:12px;">
+        <tr><td style="${H}" colspan="2">세금계산서 정보</td></tr>
+        <tr><td style="${H}width:90px;">발행일자</td><td style="${C}min-width:170px;">${esc(pr.issueDate||'')}</td></tr>
+        <tr><td style="${H}">E-MAIL</td><td style="${C}">${esc(pr.taxEmail||'')}</td></tr>
+        <tr><td style="${H}">결제조건</td><td style="${C}">${esc(pr.payTerms||'')}</td></tr>
+        <tr><td style="${H}">비 고</td><td style="${C}">${esc(pr.note||'')}</td></tr>
+      </table></td></tr></table>
+    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:12px;margin-top:14px;">
+      <tr><td style="${H}" colspan="7">발 주 요 청 내 역</td><td style="${H}" colspan="2">매입 내역</td><td style="${H}">마진</td><td style="${H}" rowspan="2">매입처</td></tr>
+      <tr><td style="${H}">NO</td><td style="${H}min-width:180px;">품 명</td><td style="${H}">구분</td><td style="${H}">형태</td><td style="${H}">수량</td><td style="${H}">단가</td><td style="${H}">금액</td><td style="${H}">단가</td><td style="${H}">금액</td><td style="${H}">(%)</td></tr>
+      ${rows}
+      <tr><td style="${C}font-weight:bold;" colspan="6">공급가액 합계</td><td style="${N}font-weight:bold;">${won(t.subtotal)}</td><td style="${B}"></td><td style="${N}font-weight:bold;">${won(t.cost_total)}</td><td style="${N}font-weight:bold;">${won(t.margin)}</td><td style="${B}"></td></tr>
+      <tr><td style="${C}font-weight:bold;" colspan="6">VAT 합계액</td><td style="${N}">${won(t.tax)}</td><td style="${B}"></td><td style="${N}">${won(costTax)}</td><td style="${N}">${t.subtotal?pct(t.mrate*100):'-'}</td><td style="${B}"></td></tr>
+      <tr><td style="${C}font-weight:bold;" colspan="6">합계 금액</td><td style="${N}font-weight:bold;">${won(t.total)}</td><td style="${B}"></td><td style="${N}font-weight:bold;">${won(t.cost_total+costTax)}</td><td style="${B}"></td><td style="${B}"></td></tr>
+    </table>`;
+  }
+  function poReqHTML(q, pr){ return `<div style="font-family:'Malgun Gothic',sans-serif;font-size:14px;line-height:1.7;color:#222;">${esc(pr.intro).replace(/\n/g,'<br/>')}</div>${poReqTableHTML(q,pr)}`; }
+  function poReqText(q, pr){
+    const t=qCalc(q), its=(q.items||[]).filter(x=>x.type!=='group');
+    return `${pr.intro}\n\n[발주요청]\n발주처: ${custName(q.customer_id)} / 담당: ${q.ref_contact||'-'} ${q.ref_phone||''} ${q.ref_email||''}\n고객사: ${pr.endUser||'-'} / 라이선스 기간: ${licSummary(q)||'-'}\n특이사항: ${pr.special||'-'}\n세금계산서: 발행 ${pr.issueDate||'-'} / ${pr.taxEmail||'-'} / ${pr.payTerms||'-'} / ${pr.note||''}\n\n`+its.map((it,i)=>{ const k=qItemCalc(it), r=pr.rows[i]||{}; return `${i+1}. ${it.name} [${r.type||''}/${r.form||''}] ${num(it.qty)} × ${won(it.unit_price)} = ${won(k.line)} | 매입 ${won(it.cost_price)} = ${won(k.costT)} | 마진 ${pct(k.mrate*100)} | ${r.supplier||''}`; }).join('\n')+`\n\n공급가액 ${won(t.subtotal)} / VAT ${won(t.tax)} / 합계 ${won(t.total)} / 매입 ${won(t.cost_total)} / 마진 ${won(t.margin)} (${pct(t.mrate*100)})`;
+  }
+  function renderPoReq(){
+    const pr=state.poReq, q=state.quotes.find(x=>x.id===pr.qid); if(!q) return '';
+    const reps=state.reps.filter(r=>r.email), myEmail=myRep().email||state.userEmail||'';
+    const its=(q.items||[]).filter(x=>x.type!=='group');
+    const sups=partnersOf('supplier').map(c=>c.name);
+    return `<div class="modal-bg" id="prBg" style="z-index:320;"><div class="modal wide">
+      <div class="modal-head"><h3>${SEND_ICON} 발주요청서 보내기 · ${esc(custName(q.customer_id))}</h3><button class="modal-close" id="prClose">&times;</button></div>
+      <div class="modal-body">
+        <div class="seg" style="margin-bottom:12px;"><button class="seg-btn" id="prToCust">🏢 고객사에게 · 견적서</button><button class="seg-btn on">👥 우리 직원에게 · 발주요청서</button></div>
+        <div class="field"><label>받는 사람 <span class="muted" style="font-weight:400;">(담당자관리에 등록된 직원)</span></label>
+          <div class="recips">${reps.map(r=>`<label class="recip"><input type="checkbox" class="prChk" data-key="rp:${r.id}" ${pr.sel.has('rp:'+r.id)?'checked':''}/> <b>${esc(r.name)}${r.dept?' ('+esc(r.dept)+')':''}</b> <span class="muted">${esc(r.email)}</span></label>`).join('')||'<div class="muted small">이메일이 등록된 직원이 없어요.</div>'}</div>
+          <input id="prExtra" class="cell-in" style="margin-top:6px;" placeholder="다른 주소 직접 입력 (영업그룹 메일 등, 여러 개는 쉼표로)" value="${esc(pr.extra)}"/>
+        </div>
+        ${myEmail?`<label class="chk" style="margin:-4px 0 10px;"><input type="checkbox" id="prCcMe" ${pr.ccMe?'checked':''}/> 나에게도 참조(CC)로 보내기 · ${esc(myEmail)}</label>`:''}
+        <div class="field"><label>제목</label><input id="prSubject" value="${esc(pr.subject)}"/></div>
+        <div class="field"><label>인사말</label><textarea id="prIntro" style="height:110px; line-height:1.6;">${esc(pr.intro)}</textarea></div>
+        <div class="section-title"><span>발주요청 정보</span></div>
+        <div class="grid3">
+          <div class="field"><label>고객사 (최종 사용처)</label><input class="prF" data-f="endUser" value="${esc(pr.endUser)}"/></div>
+          <div class="field" style="grid-column:span 2;"><label>특이사항</label><input class="prF" data-f="special" value="${esc(pr.special)}" placeholder="예) 알약(단독형) 5.1 품목코드 : ALYAC51_L_ENT009"/></div>
+        </div>
+        <div class="grid4" style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;">
+          <div class="field"><label>세금계산서 발행일자</label><input class="prF" data-f="issueDate" value="${esc(pr.issueDate)}" placeholder="예) 2026-11-01 (청구)"/></div>
+          <div class="field"><label>세금계산서 E-MAIL</label><input class="prF" data-f="taxEmail" value="${esc(pr.taxEmail)}"/></div>
+          <div class="field"><label>결제조건</label><input class="prF" data-f="payTerms" value="${esc(pr.payTerms)}"/></div>
+          <div class="field"><label>비고</label><input class="prF" data-f="note" value="${esc(pr.note)}" placeholder="예) 11월 말 입금 예정"/></div>
+        </div>
+        <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th class="tl">품명</th><th style="width:90px;">구분</th><th style="width:90px;">형태</th><th style="min-width:150px;">매입처</th></tr></thead><tbody>
+          ${its.map((it,i)=>`<tr><td class="tl">${esc(it.name)}</td><td><select class="cell-in prR" data-i="${i}" data-f="type">${['신규','갱신','유지보수'].map(o=>`<option ${pr.rows[i].type===o?'selected':''}>${o}</option>`).join('')}</select></td><td><input class="cell-in prR" data-i="${i}" data-f="form" value="${esc(pr.rows[i].form)}"/></td><td><input class="cell-in prR" data-i="${i}" data-f="supplier" list="prSupList" value="${esc(pr.rows[i].supplier)}"/></td></tr>`).join('')}
+        </tbody></table><datalist id="prSupList">${sups.map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
+        <label class="chk" style="margin:10px 0;"><input type="checkbox" id="prPdf" ${pr.attachPdf?'checked':''}/> 견적서 PDF도 첨부</label>
+        <div class="section-title"><span>미리보기</span><button class="btn-sm ghost" id="prRefresh">미리보기 새로고침</button></div>
+        <iframe class="pr-preview" id="prPreview" srcdoc="${esc('<!doctype html><meta charset=utf-8><body style=margin:12px;background:#fff>'+poReqHTML(q,pr))}"></iframe>
+        ${pr.error?`<div class="mail-err"><b>메일을 보내지 못했어요.</b><div>${esc(pr.error)}</div></div>`:''}
+      </div>
+      <div class="modal-actions">
+        <span class="muted small left">매입가·마진이 들어가니 직원에게만 보내세요</span>
+        <button class="btn-sm ghost" id="prCancel">취소</button>
+        <button class="btn-primary" id="prSend" ${pr.sending?'disabled':''}>${pr.sending?'보내는 중...':'보내기'}</button>
+      </div>
+    </div></div>`;
+  }
+  function bindPoReq(){
+    const pr=state.poReq; if(!pr) return; const q=state.quotes.find(x=>x.id===pr.qid); if(!q) return;
+    const $=id=>document.getElementById(id);
+    const close=()=>{ if(pr.sending) return; state.poReq=null; render(); };
+    $('prClose').onclick=close; $('prCancel').onclick=close;
+    $('prToCust').onclick=()=>{ state.poReq=null; openDocMail('quote', q.id); };
+    document.querySelectorAll('.prChk').forEach(c=>c.onchange=()=>{ c.checked?pr.sel.add(c.dataset.key):pr.sel.delete(c.dataset.key); });
+    const pv=()=>{ const el=$('prPreview'); if(el) el.srcdoc='<!doctype html><meta charset=utf-8><body style=margin:12px;background:#fff>'+poReqHTML(q,pr); };
+    $('prExtra').addEventListener('input',e=>{ pr.extra=e.target.value; });
+    $('prSubject').addEventListener('input',e=>{ pr.subject=e.target.value; });
+    $('prIntro').addEventListener('input',e=>{ pr.intro=e.target.value; pv(); });
+    document.querySelectorAll('.prF').forEach(el=>el.addEventListener('input',()=>{ pr[el.dataset.f]=el.value; pv(); }));
+    document.querySelectorAll('.prR').forEach(el=>el.addEventListener(el.tagName==='SELECT'?'change':'input',()=>{ pr.rows[+el.dataset.i][el.dataset.f]=el.value; pv(); }));
+    const cc=$('prCcMe'); if(cc) cc.onchange=()=>{ pr.ccMe=cc.checked; };
+    $('prPdf').onchange=e=>{ pr.attachPdf=e.target.checked; };
+    $('prRefresh').onclick=pv;
+    $('prSend').onclick=async ()=>{
+      const list=state.reps.filter(r=>pr.sel.has('rp:'+r.id) && r.email).map(r=>r.email);
+      String(pr.extra||'').split(/[,;\s]+/).map(x=>x.trim()).filter(x=>/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)).forEach(x=>list.push(x));
+      const to=[...new Set(list)]; if(!to.length) return alert('받는 사람을 한 명 이상 선택하거나 이메일을 입력해주세요.');
+      const myEmail=myRep().email||state.userEmail||'';
+      pr.sending=true; pr.error=''; render();
+      try{
+        const body={ to, cc:(pr.ccMe && myEmail && !to.includes(myEmail))?[myEmail]:[], subject:pr.subject, text:poReqText(q,pr), html:poReqHTML(q,pr), fromName:(myRep().name||state.user||'UNION 사업관리'), replyTo:myEmail };
+        if(pr.attachPdf){ const pdf=await makePdf('quote', q, 'base64'); body.attachments=[{filename:docFileName('quote',q), content:pdf}]; }
+        const { data, error } = await sb.functions.invoke('send-mail', { body });
+        if(error || (data && data.error)) throw (error || new Error(data.error));
+        state.poReq=null; showToast(`발주요청서를 보냈어요 → ${to.join(', ')}`);
+      }catch(e){ pr.sending=false; pr.error=await functionError(e); render(); }
+    };
+  }
   function renderDocMail(){
     const m=state.docMail, rec=docRecord(m.kind,m.id); if(!rec) return '';
     const recips=docRecipients(m.kind,rec), myEmail=myRep().email||state.userEmail||'';
     return `<div class="modal-bg" id="docMailBg" style="z-index:320;"><div class="modal" style="width:600px;">
       <div class="modal-head"><h3>${SEND_ICON} ${m.kind==='quote'?'견적서':'발주서'} 메일 보내기 · ${esc(m.who)}</h3><button class="modal-close" id="dmClose">&times;</button></div>
       <div class="modal-body">
+        ${m.kind==='quote'?`<div class="seg" style="margin-bottom:12px;"><button class="seg-btn on">🏢 고객사에게 · 견적서</button><button class="seg-btn" id="dmToStaff">👥 우리 직원에게 · 발주요청서</button></div>`:''}
         <div class="field"><label>받는 사람</label>
           <div class="recips">${recips.length?recips.map(r=>`<label class="recip"><input type="checkbox" class="dmChk" data-key="${esc(r.key)}" ${m.sel.has(r.key)?'checked':''}/> <b>${esc(r.label)}</b> <span class="muted">${esc(r.email)}</span></label>`).join(''):`<div class="muted small" style="padding:6px 2px;">이메일이 등록된 담당자가 없어요. 아래에 직접 입력하세요.</div>`}</div>
           <input id="dmExtra" class="cell-in" style="margin-top:6px;" placeholder="다른 주소 직접 입력 (여러 개는 쉼표로)" value="${esc(m.extra)}"/>
@@ -2146,6 +2283,7 @@
     const cc=$('dmCcMe'); if(cc) cc.onchange=()=>{ m.ccMe=cc.checked; };
     const fb=$('dmFallback'); if(fb) fb.onclick=async ()=>{ await savePdf(m.kind,rec); const to=docMailTo(m,rec); location.href=`mailto:${to.map(encodeURIComponent).join(',')}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(crlf(m.body+'\n\n(첨부: '+docFileName(m.kind,rec)+')'))}`; };
     $('dmSend').onclick=()=>sendDocMail(m, rec);
+    const ts=$('dmToStaff'); if(ts) ts.onclick=()=>{ state.docMail=null; openPoReq(rec.id); };
   }
   async function functionError(error){
     const name = error && error.name || '';
@@ -3279,7 +3417,7 @@
     document.querySelectorAll('.plusBtn').forEach(b=>b.onclick=e=>{ e.stopPropagation(); showPlusMenu(b); });
     document.querySelectorAll('.wtab').forEach(el=>el.onclick=()=>{ goTab(el.dataset.tab); });
     document.querySelectorAll('.wtab-x').forEach(el=>el.onclick=e=>{ e.stopPropagation(); closeWTab(el.dataset.tab); });
-    bindDocView(); bindDocMail();
+    bindDocView(); bindDocMail(); bindPoReq();
     document.querySelectorAll('.docView').forEach(b=>b.onclick=()=>{ state.docView={kind:b.dataset.kind, id:b.dataset.id}; render(); });
     document.querySelectorAll('.docMail').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openDocMail(b.dataset.kind, b.dataset.id); });
     document.querySelectorAll('.docPdf').forEach(b=>b.onclick=()=>{ const r=docRecord(b.dataset.kind,b.dataset.id); if(r) savePdf(b.dataset.kind,r); });
