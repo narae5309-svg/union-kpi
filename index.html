@@ -1473,6 +1473,8 @@
   };
   const qText = k => { const v=company()[k]; return v==null ? Q_DEF[k] : v; };
   const licText = it => (it.lic_start||it.lic_end) ? `${it.lic_start||''} ~ ${it.lic_end||''}` : '';
+  const josa = (w,a,b) => { const c=String(w||'').trim().slice(-1).charCodeAt(0); if(c>=0xAC00 && c<=0xD7A3) return ((c-0xAC00)%28)?a:b; return /[136780lmnLMN]$/.test(String(w).trim())?a:b; };
+  const endUserNote = n => `* 본 견적은 ${n}${josa(n,'을','를')} 위한 견적입니다.`;
   function quoteDocHTML(q){
     const c=company(), t=qCalc(q);
     const rows=(q.items||[]).map(it=>{
@@ -1522,7 +1524,7 @@
       <div class="q-spacer"></div>
       <table class="q-bottom">
         <colgroup><col style="width:78px"/><col/><col style="width:110px"/><col style="width:150px"/></colgroup>
-        <tr><th rowspan="3" class="q-rem-h">비 &nbsp; 고</th><td rowspan="3" class="q-rem">${esc(q.remarks||'')}</td><th>공 급 가 액</th><td class="r">${won(t.subtotal)}</td></tr>
+        <tr><th rowspan="3" class="q-rem-h">비 &nbsp; 고</th><td rowspan="3" class="q-rem">${q.end_user_name?esc(endUserNote(q.end_user_name))+(q.remarks?'\n':''):''}${esc(q.remarks||'')}</td><th>공 급 가 액</th><td class="r">${won(t.subtotal)}</td></tr>
         <tr><th>부 가 세</th><td class="r">${won(t.tax)}</td></tr>
         <tr class="grand"><th>총 &nbsp;합 &nbsp;계</th><td class="r">${won(t.total)}</td></tr>
       </table>
@@ -1819,6 +1821,7 @@
       </div>
       <div class="grid3">
         <div class="field"><label>앤드유저 (최종 사용처, 다를 때만)</label><input id="f_qenduser" data-bind="end_user_name" value="${esc(d.end_user_name||'')}" placeholder="고객사와 실제 사용처가 다르면 입력"/></div>
+        <div class="field" style="grid-column:span 2;"><label>&nbsp;</label><div class="hint" style="margin-top:8px;">앤드유저를 넣으면 견적서 비고에 "* 본 견적은 ○○을(를) 위한 견적입니다."가 자동으로 들어가요.</div></div>
       </div>
       <div class="grid3">
         <div class="field"><label>참조 (수신 담당자)</label><input id="f_refc" data-bind="ref_contact" value="${esc(d.ref_contact||'')}"/></div>
