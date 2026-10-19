@@ -2144,36 +2144,40 @@
     return keys.length===1 ? keys[0] : keys.join(', ');
   }
   function poReqTableHTML(q, pr){
-    const B='border:1px solid #000;', H=B+'background:#bfbfbf;font-weight:bold;text-align:center;padding:5px 8px;', C=B+'padding:5px 8px;text-align:center;', L=B+'padding:5px 8px;text-align:left;', N=B+'padding:5px 8px;text-align:right;white-space:nowrap;';
+    const W=960;
+    const F="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#111;";
+    const T=`border-collapse:collapse;table-layout:fixed;width:${W}px;${F}`;
+    const B='border:1px solid #444;', P='padding:6px 8px;height:20px;vertical-align:middle;';
+    const H=B+P+'background:#d9d9d9;font-weight:bold;text-align:center;';
+    const SH=B+P+'background:#bfbfbf;font-weight:bold;text-align:center;letter-spacing:2px;';
+    const C=B+P+'text-align:center;', L=B+P+'text-align:left;', N=B+P+'text-align:right;white-space:nowrap;';
     const t=qCalc(q), cust=custName(q.customer_id), me=myRep();
     const its=(q.items||[]).filter(x=>x.type!=='group');
     const costTax=q.tax_applied?Math.round(t.cost_total*0.1):0;
-    const rows=its.map((it,i)=>{ const k=qItemCalc(it), r=pr.rows[i]||{}; return `<tr><td style="${C}">${i+1}</td><td style="${L}">${esc(it.name)}${it.spec?' ('+esc(it.spec)+')':''}${(it.lic_start||it.lic_end)?`<br/><span style="font-size:11px;color:#555;">${esc((it.lic_start||'')+' ~ '+(it.lic_end||''))}</span>`:''}</td><td style="${C}">${esc(r.type||'')}</td><td style="${C}">${esc(r.form||'')}</td><td style="${C}">${num(it.qty)}</td><td style="${N}">${won(it.unit_price)}</td><td style="${N}">${won(k.line)}</td><td style="${N}">${won(it.cost_price)}</td><td style="${N}">${won(k.costT)}</td><td style="${N}">${k.line?pct(k.mrate*100):'-'}</td><td style="${C}">${esc(r.supplier||'')}</td></tr>`; }).join('');
     const lic=licSummary(q);
-    return `<table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:12px;margin:14px 0 4px;">
-      <tr><td style="padding:4px 8px;font-weight:bold;">담당자 :</td><td style="padding:4px 8px;">${esc(me.name||state.user||'')}</td><td style="padding:4px 8px;font-weight:bold;">작성일자 :</td><td style="padding:4px 8px;">${esc(todayStr())}</td></tr></table>
-    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:12px;"><tr><td style="vertical-align:top;padding:0 18px 0 0;">
-      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:12px;">
-        <tr><td style="${H}width:90px;">발주처</td><td style="${C}min-width:150px;">${esc(cust)} 귀중</td><td style="${H}width:90px;">담당자</td><td style="${C}min-width:150px;">${esc(q.ref_contact||'')}${q.ref_contact?' 귀하':''}</td></tr>
-        <tr><td style="${H}">TEL</td><td style="${C}">${esc(q.ref_phone||'')}</td><td style="${H}">E-MAIL</td><td style="${C}">${esc(q.ref_email||'')}</td></tr>
-        <tr><td style="${H}">고객사</td><td style="${C}">${esc(pr.endUser||'')}</td><td style="${H}">라이선스 기간</td><td style="${C}">${esc(lic)}</td></tr>
-        <tr><td style="${H}">특이사항</td><td style="${L}" colspan="3">${esc(pr.special||'').replace(/\n/g,'<br/>')}</td></tr>
-      </table></td><td style="vertical-align:top;">
-      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-size:12px;">
-        <tr><td style="${H}" colspan="2">세금계산서 정보</td></tr>
-        <tr><td style="${H}width:90px;">발행일자</td><td style="${C}min-width:170px;">${esc(pr.issueDate||'')}</td></tr>
-        <tr><td style="${H}">E-MAIL</td><td style="${C}">${esc(pr.taxEmail||'')}</td></tr>
-        <tr><td style="${H}">결제조건</td><td style="${C}">${esc(pr.payTerms||'')}</td></tr>
-        <tr><td style="${H}">비 고</td><td style="${C}">${esc(pr.note||'')}</td></tr>
-      </table></td></tr></table>
-    <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;font-family:'Malgun Gothic',sans-serif;font-size:12px;margin-top:14px;">
-      <tr><td style="${H}" colspan="7">발 주 요 청 내 역</td><td style="${H}" colspan="2">매입 내역</td><td style="${H}">마진</td><td style="${H}" rowspan="2">매입처</td></tr>
-      <tr><td style="${H}">NO</td><td style="${H}min-width:180px;">품 명</td><td style="${H}">구분</td><td style="${H}">형태</td><td style="${H}">수량</td><td style="${H}">단가</td><td style="${H}">금액</td><td style="${H}">단가</td><td style="${H}">금액</td><td style="${H}">(%)</td></tr>
-      ${rows}
-      <tr><td style="${C}font-weight:bold;" colspan="6">공급가액 합계</td><td style="${N}font-weight:bold;">${won(t.subtotal)}</td><td style="${B}"></td><td style="${N}font-weight:bold;">${won(t.cost_total)}</td><td style="${N}font-weight:bold;">${won(t.margin)}</td><td style="${B}"></td></tr>
-      <tr><td style="${C}font-weight:bold;" colspan="6">VAT 합계액</td><td style="${N}">${won(t.tax)}</td><td style="${B}"></td><td style="${N}">${won(costTax)}</td><td style="${N}">${t.subtotal?pct(t.mrate*100):'-'}</td><td style="${B}"></td></tr>
-      <tr><td style="${C}font-weight:bold;" colspan="6">합계 금액</td><td style="${N}font-weight:bold;">${won(t.total)}</td><td style="${B}"></td><td style="${N}font-weight:bold;">${won(t.cost_total+costTax)}</td><td style="${B}"></td><td style="${B}"></td></tr>
+    const info=`<table width="${W}" cellpadding="0" cellspacing="0" style="${T}">
+      <colgroup><col width="120"/><col width="360"/><col width="120"/><col width="360"/></colgroup>
+      <tr><td style="${SH}" colspan="4">발 주 처 정 보</td></tr>
+      <tr><td style="${H}">발주처</td><td style="${C}">${esc(cust)} 귀중</td><td style="${H}">담당자</td><td style="${C}">${esc(q.ref_contact||'')}${q.ref_contact?' 귀하':''}</td></tr>
+      <tr><td style="${H}">TEL</td><td style="${C}">${esc(q.ref_phone||'')}</td><td style="${H}">E-MAIL</td><td style="${C}">${esc(q.ref_email||'')}</td></tr>
+      <tr><td style="${H}">고객사</td><td style="${C}">${esc(pr.endUser||'')}</td><td style="${H}">라이선스 기간</td><td style="${C}">${esc(lic)}</td></tr>
+      <tr><td style="${H}">특이사항</td><td style="${L}" colspan="3">${esc(pr.special||'').replace(/\n/g,'<br/>')}</td></tr>
+      <tr><td style="${SH}" colspan="4">세 금 계 산 서 정 보</td></tr>
+      <tr><td style="${H}">발행일자</td><td style="${C}">${esc(pr.issueDate||'')}</td><td style="${H}">E-MAIL</td><td style="${C}">${esc(pr.taxEmail||'')}</td></tr>
+      <tr><td style="${H}">결제조건</td><td style="${C}">${esc(pr.payTerms||'')}</td><td style="${H}">비 고</td><td style="${C}">${esc(pr.note||'')}</td></tr>
     </table>`;
+    const rows=its.map((it,i)=>{ const k=qItemCalc(it), r=pr.rows[i]||{}; return `<tr><td style="${C}">${i+1}</td><td style="${L}">${esc(it.name)}${it.spec?' ('+esc(it.spec)+')':''}${(it.lic_start||it.lic_end)?`<br/><span style="font-size:11px;color:#666;">${esc((it.lic_start||'')+' ~ '+(it.lic_end||''))}</span>`:''}</td><td style="${C}">${esc(r.type||'')}</td><td style="${C}">${esc(r.form||'')}</td><td style="${C}">${num(it.qty)}</td><td style="${N}">${won(it.unit_price)}</td><td style="${N}">${won(k.line)}</td><td style="${N}">${won(it.cost_price)}</td><td style="${N}">${won(k.costT)}</td><td style="${N}">${k.line?pct(k.mrate*100):'-'}</td><td style="${C}">${esc(r.supplier||'')}</td></tr>`; }).join('');
+    const items=`<table width="${W}" cellpadding="0" cellspacing="0" style="${T}margin-top:16px;">
+      <colgroup><col width="40"/><col width="206"/><col width="56"/><col width="54"/><col width="50"/><col width="86"/><col width="100"/><col width="86"/><col width="100"/><col width="70"/><col width="112"/></colgroup>
+      <tr><td style="${SH}" colspan="7">발 주 요 청 내 역</td><td style="${SH}" colspan="2">매 입 내 역</td><td style="${SH}" rowspan="2">마진<br/>(%)</td><td style="${SH}" rowspan="2">매입처</td></tr>
+      <tr><td style="${H}">NO</td><td style="${H}">품 명</td><td style="${H}">구분</td><td style="${H}">형태</td><td style="${H}">수량</td><td style="${H}">단가</td><td style="${H}">금액</td><td style="${H}">단가</td><td style="${H}">금액</td></tr>
+      ${rows}
+      <tr><td style="${H}" colspan="6">공급가액 합계</td><td style="${N}font-weight:bold;">${won(t.subtotal)}</td><td style="${C}"></td><td style="${N}font-weight:bold;">${won(t.cost_total)}</td><td style="${N}font-weight:bold;">${t.subtotal?pct(t.mrate*100):'-'}</td><td style="${C}"></td></tr>
+      <tr><td style="${H}" colspan="6">VAT 합계액</td><td style="${N}">${won(t.tax)}</td><td style="${C}"></td><td style="${N}">${won(costTax)}</td><td style="${C}"></td><td style="${C}"></td></tr>
+      <tr><td style="${H}" colspan="6">합계 금액</td><td style="${N}font-weight:bold;">${won(t.total)}</td><td style="${C}"></td><td style="${N}font-weight:bold;">${won(t.cost_total+costTax)}</td><td style="${C}"></td><td style="${C}"></td></tr>
+      <tr><td style="${H}" colspan="6">마진 금액</td><td style="${N}font-weight:bold;color:#c0392b;" colspan="3">${won(t.margin)}</td><td style="${N}font-weight:bold;color:#c0392b;">${t.subtotal?pct(t.mrate*100):'-'}</td><td style="${C}"></td></tr>
+    </table>`;
+    return `<table width="${W}" cellpadding="0" cellspacing="0" style="border-collapse:collapse;${F}margin:16px 0 10px;"><tr><td style="padding:2px 0;"><b>담당자 :</b> ${esc(me.name||state.user||'')} &nbsp;&nbsp;&nbsp; <b>작성일자 :</b> ${esc(todayStr())}</td></tr></table>${info}${items}`;
   }
   function poReqHTML(q, pr){ return `<div style="font-family:'Malgun Gothic',sans-serif;font-size:14px;line-height:1.7;color:#222;">${esc(pr.intro).replace(/\n/g,'<br/>')}</div>${poReqTableHTML(q,pr)}`; }
   function poReqText(q, pr){
