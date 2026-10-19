@@ -637,11 +637,19 @@
   async function loadAll(){
     state.loading=true; render();
     const tables = [['reps','reps'],['customers','customers'],['contacts','customer_contacts'],['contracts','contracts'],['items','contract_items'],['tickets','support_tickets'],['quotes','quotes'],['pos','purchase_orders'],['companyRows','company_info']];
-    const res = await Promise.all(tables.map(([,t])=> t==='company_info' ? sb.from(t).select('*') : sb.from(t).select('*').order('created_at',{ascending:false})));
-    state.setupMissing = [];
+    const fetchAll = () => Promise.all(tables.map(([,t])=> t==='company_info' ? sb.from(t).select('*') : sb.from(t).select('*').order('created_at',{ascending:false})));
+    const isAuthErr = r => r.error && /JWT|jwt|token|issued at future|expired/i.test(r.error.message||'');
+    let res = await fetchAll();
+    // 로그인 토큰 시간 차이(JWT issued at future 등)는 잠깐 기다렸다 다시 불러오면 해결됩니다
+    for(let k=0; k<4 && res.some(isAuthErr); k++){
+      await new Promise(r=>setTimeout(r, 1500*(k+1)));
+      if(res.some(r=>isAuthErr(r) && /expired/i.test(r.error.message))){ try{ await sb.auth.refreshSession(); }catch(e){} }
+      res = await fetchAll();
+    }
+    state.setupMissing = []; state.authProblem = '';
     res.forEach((r,i)=>{
       const [key,t]=tables[i];
-      if(r.error){ state[key]=[]; state.setupMissing.push(t+': '+r.error.message); }
+      if(r.error){ state[key]=[]; if(isAuthErr(r)) state.authProblem=r.error.message; else state.setupMissing.push(t+': '+r.error.message); }
       else state[key]=r.data||[];
     });
     state.maint = [];
@@ -908,6 +916,7 @@
       </div>
       <div class="main">
         ${wtabsHTML()}
+        ${state.authProblem?`<div class="setup-banner"><b>로그인 정보를 확인하는 중 문제가 생겼어요.</b> 잠시 뒤 새로고침(F5) 해 주세요. 계속되면 이 컴퓨터의 <b>날짜·시간이 정확한지</b>(Windows 설정 → 시간 → "자동으로 시간 설정" 켜기) 확인하거나, 로그아웃 후 다시 로그인해 주세요.<div class="small muted" style="margin-top:4px;">${esc(state.authProblem)}</div></div>`:''}
         ${state.setupMissing.length?`<div class="setup-banner"><b>데이터베이스 설정이 필요합니다.</b> Supabase → SQL Editor에서 <b>setup.sql</b> 내용을 한 번 실행해 주세요. 실행 전에는 일부 화면이 비어 보이거나 저장되지 않습니다.<div class="small muted" style="margin-top:4px;">${state.setupMissing.map(esc).join('<br/>')}</div></div>`:''}
         ${pages[state.tab]()}
       </div>
