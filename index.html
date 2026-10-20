@@ -2151,7 +2151,7 @@
     const W=960;
     const F="font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;font-size:12px;color:#111;";
     const T=`border-collapse:collapse;table-layout:fixed;width:${W}px;${F}`;
-    const B='border:1px solid #444;', P='padding:6px 8px;height:20px;vertical-align:middle;';
+    const B='border:1px solid #444;', P='padding:2px 6px;line-height:1.35;vertical-align:middle;';
     const H=B+P+'background:#d9d9d9;font-weight:bold;text-align:center;';
     const SH=B+P+'background:#bfbfbf;font-weight:bold;text-align:center;letter-spacing:2px;';
     const C=B+P+'text-align:center;', L=B+P+'text-align:left;', N=B+P+'text-align:right;white-space:nowrap;';
@@ -2159,7 +2159,7 @@
     const its=(q.items||[]).filter(x=>x.type!=='group');
     const costTax=q.tax_applied?Math.round(t.cost_total*0.1):0;
     const lic=licSummary(q);
-    const RH='height:22px;';
+    const RH='height:20px;';
     const left=`<table width="620" cellpadding="0" cellspacing="0" style="border-collapse:collapse;table-layout:fixed;width:620px;${F}">
       <colgroup><col width="100"/><col width="210"/><col width="100"/><col width="210"/></colgroup>
       <tr><td style="${SH}${RH}" colspan="4">발 주 처 정 보</td></tr>
@@ -2177,8 +2177,8 @@
       <tr><td style="${H}${RH}">비 고</td><td style="${C}${RH}">${esc(pr.note||'')}</td></tr>
     </table>`;
     const info=`<table width="${W}" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:${W}px;"><tr><td width="620" style="vertical-align:top;padding:0;">${left}</td><td width="20" style="padding:0;"></td><td width="320" style="vertical-align:top;padding:0;">${right}</td></tr></table>`;
-    const rows=its.map((it,i)=>{ const k=qItemCalc(it), r=pr.rows[i]||{}; return `<tr><td style="${C}">${i+1}</td><td style="${L}">${esc(it.name)}${it.spec?' ('+esc(it.spec)+')':''}${(it.lic_start||it.lic_end)?`<br/><span style="font-size:11px;color:#666;">${esc((it.lic_start||'')+' ~ '+(it.lic_end||''))}</span>`:''}</td><td style="${C}">${esc(r.type||'')}</td><td style="${C}">${esc(r.form||'')}</td><td style="${C}">${num(it.qty)}</td><td style="${N}">${won(it.unit_price)}</td><td style="${N}">${won(k.line)}</td><td style="${N}">${won(it.cost_price)}</td><td style="${N}">${won(k.costT)}</td><td style="${N}">${k.line?pct(k.mrate*100):'-'}</td><td style="${C}">${esc(r.supplier||'')}</td></tr>`; }).join('');
-    const items=`<table width="${W}" cellpadding="0" cellspacing="0" style="${T}margin-top:16px;">
+    const rows=its.map((it,i)=>{ const k=qItemCalc(it), r=pr.rows[i]||{}; return `<tr><td style="${C}">${i+1}</td><td style="${L}">${esc(it.name)}${it.spec?' ('+esc(it.spec)+')':''}${(it.lic_start||it.lic_end)?`<br/><span style="font-size:10.5px;color:#666;">${esc((it.lic_start||'')+' ~ '+(it.lic_end||''))}</span>`:''}</td><td style="${C}">${esc(r.type||'')}</td><td style="${C}">${esc(r.form||'')}</td><td style="${C}">${num(it.qty)}</td><td style="${N}">${won(it.unit_price)}</td><td style="${N}">${won(k.line)}</td><td style="${N}">${won(it.cost_price)}</td><td style="${N}">${won(k.costT)}</td><td style="${N}">${k.line?pct(k.mrate*100):'-'}</td><td style="${C}">${esc(r.supplier||'')}</td></tr>`; }).join('');
+    const items=`<table width="${W}" cellpadding="0" cellspacing="0" style="${T}margin-top:10px;">
       <colgroup><col width="40"/><col width="206"/><col width="56"/><col width="54"/><col width="50"/><col width="86"/><col width="100"/><col width="86"/><col width="100"/><col width="70"/><col width="112"/></colgroup>
       <tr><td style="${SH}" colspan="7">발 주 요 청 내 역</td><td style="${SH}" colspan="2">매 입 내 역</td><td style="${SH}" rowspan="2">마진<br/>(%)</td><td style="${SH}" rowspan="2">매입처</td></tr>
       <tr><td style="${H}">NO</td><td style="${H}">품 명</td><td style="${H}">구분</td><td style="${H}">형태</td><td style="${H}">수량</td><td style="${H}">단가</td><td style="${H}">금액</td><td style="${H}">단가</td><td style="${H}">금액</td></tr>
@@ -2188,7 +2188,7 @@
       <tr><td style="${H}" colspan="6">합계 금액</td><td style="${N}font-weight:bold;">${won(t.total)}</td><td style="${C}"></td><td style="${N}font-weight:bold;">${won(t.cost_total+costTax)}</td><td style="${C}"></td><td style="${C}"></td></tr>
       <tr><td style="${H}" colspan="6">마진 금액</td><td style="${N}font-weight:bold;color:#c0392b;" colspan="3">${won(t.margin)}</td><td style="${N}font-weight:bold;color:#c0392b;">${t.subtotal?pct(t.mrate*100):'-'}</td><td style="${C}"></td></tr>
     </table>`;
-    return `<table width="${W}" cellpadding="0" cellspacing="0" style="border-collapse:collapse;${F}margin:16px 0 10px;"><tr><td style="padding:2px 0;"><b>담당자 :</b> ${esc(me.name||state.user||'')} &nbsp;&nbsp;&nbsp; <b>작성일자 :</b> ${esc(todayStr())}</td></tr></table>${info}${items}`;
+    return `<table width="${W}" cellpadding="0" cellspacing="0" style="border-collapse:collapse;${F}margin:12px 0 6px;"><tr><td style="padding:2px 0;"><b>담당자 :</b> ${esc(me.name||state.user||'')} &nbsp;&nbsp;&nbsp; <b>작성일자 :</b> ${esc(todayStr())}</td></tr></table>${info}${items}`;
   }
   function poReqHTML(q, pr){ return `<div style="font-family:'Malgun Gothic',sans-serif;font-size:14px;line-height:1.7;color:#222;">${esc(pr.intro).replace(/\n/g,'<br/>')}</div>${poReqTableHTML(q,pr)}`; }
   function poReqText(q, pr){
