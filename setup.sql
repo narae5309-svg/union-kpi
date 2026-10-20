@@ -320,6 +320,7 @@ create table if not exists quotes (
 alter table quotes add column if not exists renew_of text;
 alter table quotes add column if not exists renew_end text;
 alter table quotes add column if not exists end_user_name text default '';
+alter table quotes add column if not exists deal_type text default '신규';
 
 create table if not exists purchase_orders (
   id text primary key,
