@@ -2139,7 +2139,7 @@
       ? `안녕하세요, ${cname} ${sender}입니다.\n\n요청하신 ${rec.title?'"'+rec.title+'" ':''}견적서를 첨부와 같이 송부드립니다.\n검토 후 문의 사항 있으시면 편하게 연락 주세요.\n\n감사합니다.\n\n${sender} 드림\n${cname}${rec.sales_phone?'\nTel. '+rec.sales_phone:''}${rec.sales_email?'\n'+rec.sales_email:''}`
       : `안녕하세요, ${cname} ${sender}입니다.\n\n${rec.title?'"'+rec.title+'" ':''}발주서를 첨부와 같이 송부드립니다.\n${rec.delivery_date?'납기일은 '+rec.delivery_date+'입니다. ':''}확인 후 회신 부탁드립니다.\n\n감사합니다.\n\n${sender} 드림\n${cname}${rec.sales_phone?'\nTel. '+rec.sales_phone:''}${rec.sales_email?'\n'+rec.sales_email:''}`;
     const recips = docRecipients(kind, rec);
-    state.docMail = {kind, id, subject, body, extra:'', sel:new Set(recips.filter(r=>r.def).map(r=>r.key)), ccMe:true, sending:false, error:'', who};
+    state.docMail = {kind, id, subject, body, extra:'', sel:new Set(recips.filter(r=>r.def).map(r=>r.key)), ccMe:false, sending:false, error:'', who};
     render();
   }
 
@@ -2156,7 +2156,7 @@
     const myName=me.name||state.user||'';
     const endUser=q.end_user_name||(old?(old.end_user_name||''):'');
     const custLabel=endUser?`${cust}_${endUser}`:cust;
-    state.poReq={qid, rows, extra:'', ccMe:true, sending:false, error:'', attachPdf:false,
+    state.poReq={qid, rows, extra:'', ccMe:false, ccGroup:false, sending:false, error:'', attachPdf:false,
       sel:new Set(state.reps.filter(r=>r.email && r.is_admin && !isMine(r.name)).map(r=>'rp:'+r.id)),
       subject:`[발주요청] ${custLabel} ${q.title||''}`.trim(),
       intro:`안녕하세요.\n${shortCompany()} ${myName}입니다.\n\n${custLabel} ${q.title||''} 건 세금계산서 요청드립니다.\n감사합니다.`,
@@ -2230,7 +2230,7 @@
           <div class="recips">${reps.map(r=>`<label class="recip"><input type="checkbox" class="prChk" data-key="rp:${r.id}" ${pr.sel.has('rp:'+r.id)?'checked':''}/> <b>${esc(r.name)}${r.dept?' ('+esc(r.dept)+')':''}</b> <span class="muted">${esc(r.email)}</span></label>`).join('')||'<div class="muted small">이메일이 등록된 직원이 없어요.</div>'}</div>
           <input id="prExtra" class="cell-in" style="margin-top:6px;" placeholder="다른 주소 직접 입력 (영업그룹 메일 등, 여러 개는 쉼표로)" value="${esc(pr.extra)}"/>
         </div>
-        <label class="chk" style="margin:-4px 0 10px;"><input type="checkbox" id="prCcGroup" ${pr.ccGroup!==false?'checked':''}/> 참조(CC)에 영업팀 그룹메일 넣기 · ${esc(SALES_GROUP_MAIL)}</label>
+        <label class="chk" style="margin:-4px 0 10px;"><input type="checkbox" id="prCcGroup" ${pr.ccGroup?'checked':''}/> 참조(CC)에 영업팀 그룹메일 넣기 · ${esc(SALES_GROUP_MAIL)}</label>
         <div class="field"><label>제목</label><input id="prSubject" value="${esc(pr.subject)}"/></div>
         <div class="field"><label>인사말</label><textarea id="prIntro" style="height:110px; line-height:1.6;">${esc(pr.intro)}</textarea></div>
         <div class="section-title"><span>발주요청 정보</span></div>
@@ -2282,7 +2282,7 @@
       const myEmail=myRep().email||state.userEmail||'';
       pr.sending=true; pr.error=''; render();
       try{
-        const body={ to, cc:(pr.ccGroup!==false && !to.includes(SALES_GROUP_MAIL))?[SALES_GROUP_MAIL]:[], subject:pr.subject, text:poReqText(q,pr), html:poReqHTML(q,pr), fromName:(myRep().name||state.user||'UNION 사업관리'), replyTo:myEmail };
+        const body={ to, cc:(pr.ccGroup && !to.includes(SALES_GROUP_MAIL))?[SALES_GROUP_MAIL]:[], subject:pr.subject, text:poReqText(q,pr), html:poReqHTML(q,pr), fromName:(myRep().name||state.user||'UNION 사업관리'), replyTo:myEmail };
         if(pr.attachPdf){ const pdf=await makePdf('quote', q, 'base64'); body.attachments=[{filename:docFileName('quote',q), content:pdf}]; }
         const { data, error } = await sb.functions.invoke('send-mail', { body });
         if(error || (data && data.error)) throw (error || new Error(data.error));
