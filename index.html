@@ -123,6 +123,9 @@
   td{padding:7px; border-bottom:1px solid var(--grid); vertical-align:middle; text-align:center;}
   th.tl, td.tl{text-align:left;}
   th.num, td.num{text-align:right;}
+  /* 모든 화면 표의 제목줄은 가운데 정렬 (내용 칸 정렬은 그대로) */
+  .main th, .main th.tl, .main th.num, .modal th, .modal th.tl, .modal th.num{text-align:center !important;}
+  .qdoc th.q-left, .doc-totals th{text-align:inherit;}
   tr.detail > td{text-align:left;}
   td .clip{margin:0;}
   tbody tr:hover > td{background:#effaf9;}
