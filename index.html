@@ -476,7 +476,8 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:authStorage } });
   const root = document.getElementById('app');
 
-  const STAGES = ['진행중','계약완료'];
+  const STAGES = ['진행중','계약완료','미계약'];
+  const isLost = c => !!c && c.stage==='미계약';
   const DEAL_TYPES = ['신규','갱신','유지보수','용역'];
   const QUOTE_TYPES = ['신규','갱신','추가'];
   const TK_STATUS = ['접수','처리중','완료'];
@@ -568,6 +569,7 @@
   const itemDone = (i,c) => !!(i.renewed || i.closed || c.renewed || c.alert_dismissed);
   function ctrGroups(c){
     const its=itemsOf(c.id);
+    if(isLost(c)){ const ends=[...new Set([c.expiry_date, ...its.map(i=>itemEnd(i,c))].filter(Boolean))].sort(); return ends.map(e=>({end:e, items:its.filter(i=>itemEnd(i,c)===e), done:true, renewed:false})); }
     if(its.length===0) return c.expiry_date ? [{end:c.expiry_date, items:[], done:!!(c.renewed||c.alert_dismissed), renewed:!!c.renewed}] : [];
     const map={};
     its.forEach(i=>{ const e=itemEnd(i,c); if(!e) return; (map[e]=map[e]||[]).push(i); });
@@ -608,7 +610,7 @@
     const st=periodState(end,renewed,dismissed), d=daysUntil(end);
     const done = st==='renewed' || st==='closed';
     // 완료(종료) = 단계가 계약완료이거나, 갱신·종료 처리된 건
-    if(tab==='완료(종료)') return done || (stage!==undefined && normStage(stage)==='계약완료');
+    if(tab==='완료(종료)') return done || (stage!==undefined && ['계약완료','미계약'].includes(normStage(stage)));
     // 진행중 = 단계가 진행중이고 아직 끝나지 않은 건
     if(tab==='진행중') return stage!==undefined ? (normStage(stage)==='진행중' && !done) : (st==='active' || st==='perm');
     if(tab==='갱신임박(30일)') return st==='active' && d<=30;
@@ -1029,7 +1031,7 @@
     const ym = todayStr().slice(0,7), y = todayStr().slice(0,4);
     let mSale=0,mProfit=0,ySale=0,yProfit=0;
     const myC = c=>!mine || isMine(c.sales_rep);
-    state.contracts.filter(myC).forEach(c=>{ const d=c.contract_date||c.start_date||''; const t=contractTotals(c); if(d.startsWith(ym)){ mSale+=t.sale; mProfit+=t.profit; } if(d.startsWith(y)){ ySale+=t.sale; yProfit+=t.profit; } });
+    state.contracts.filter(myC).filter(c=>!isLost(c)).forEach(c=>{ const d=c.contract_date||c.start_date||''; const t=contractTotals(c); if(d.startsWith(ym)){ mSale+=t.sale; mProfit+=t.profit; } if(d.startsWith(y)){ ySale+=t.sale; yProfit+=t.profit; } });
     state.maint.filter(myC).forEach(m=>{ const d=m.start_date||''; const t=mtTotals(m); if(d.startsWith(ym)){ mSale+=t.sale; mProfit+=t.profit; } if(d.startsWith(y)){ ySale+=t.sale; yProfit+=t.profit; } });
     const openTk = state.tickets.filter(t=>t.status!=='완료' && (!mine || isMine(t.assignee))).sort((a,b)=>cmp(a.received_date,b.received_date));
     const need = lanes.over.length + lanes.w1.length + lanes.m1.length;
@@ -1718,13 +1720,14 @@
   function statData(){
     const r=statRange();
     const repOk = x => r.rep==='전체' || repDisplay(x)===r.rep;
-    const ctrs=state.contracts.filter(c=>inMonths(c.contract_date||c.reg_date, r) && repOk(c.sales_rep));
+    const allCtrs=state.contracts.filter(c=>inMonths(c.contract_date||c.reg_date, r) && repOk(c.sales_rep));
+    const ctrs=allCtrs.filter(c=>!isLost(c));
     const qs=state.quotes.filter(q=>inMonths(q.quote_date, r) && repOk(q.sales_rep));
-    return {r, ctrs, qs};
+    return {r, ctrs, qs, allCtrs};
   }
   function monthsBetween(a,b){ const out=[]; let [y,m]=a.split('-').map(Number); const [ey,em]=b.split('-').map(Number); while(y<ey || (y===ey && m<=em)){ out.push(`${y}-${String(m).padStart(2,'0')}`); m++; if(m>12){m=1;y++;} if(out.length>60) break; } return out; }
   function renderStats(){
-    const {r, ctrs, qs}=statData(); const f=state.f;
+    const {r, ctrs, qs, allCtrs}=statData(); const f=state.f;
     const sum=list=>list.reduce((a,c)=>{ const t=contractTotals(c); a.n++; a.sale+=t.sale; a.purchase+=t.purchase; a.profit+=t.profit; return a; },{n:0,sale:0,purchase:0,profit:0});
     const all=sum(ctrs);
     const qsum=list=>({n:list.length, amt:list.reduce((a,q)=>a+qCalc(q).subtotal,0)});
@@ -1732,7 +1735,7 @@
     const row=(kind,key,val,label,cnt,amt,sub,max)=>`<div class="st-row ${pick.kind===kind&&pick.key===key&&pick.val===val?'on':''}" data-kind="${kind}" data-key="${key}" data-val="${esc(val)}" title="눌러서 아래 목록 보기"><span>${label} <span class="cnt">${cnt}</span><span class="muted small">건</span></span><div class="st-bar"><i style="width:${max?Math.max(2,Math.round(amt/max*100)):0}%"></i></div><span class="amt">₩${won(amt)}${sub?`<small>${sub}</small>`:''}</span></div>`;
     const types=DEAL_TYPES.map(t=>[t, sum(ctrs.filter(c=>(c.deal_type||'신규')===t))]);
     const tMax=Math.max(0,...types.map(([,v])=>v.sale));
-    const stages=STAGES.map(s=>[s, sum(ctrs.filter(c=>normStage(c.stage)===s))]);
+    const stages=STAGES.map(s=>[s, sum(allCtrs.filter(c=>normStage(c.stage)===s))]);
     const sMax=Math.max(0,...stages.map(([,v])=>v.sale));
     const QST=['작성중','발송','계약전환'];
     const qst=QST.map(s=>[s, qsum(qs.filter(q=>(q.status||'작성중')===s))]);
@@ -1748,7 +1751,7 @@
       const list=qs.filter(q=>pick.key==='all' || (q.status||'작성중')===pick.val).sort((a,b)=>cmp(b.quote_date||'',a.quote_date||''));
       detail=`<div class="card-title" style="padding:14px 16px 0;"><span>견적 ${pick.val?`· ${esc(pick.val)}`:''} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>견적번호</th><th>견적일</th><th class="tl">고객사</th><th class="tl">건명</th><th class="num">공급가액</th><th class="num">마진</th><th>영업담당</th><th>상태</th></tr></thead><tbody>${list.map(q=>{ const t=qCalc(q); return `<tr><td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl">${esc(custName(q.customer_id))}</td><td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}">${esc(q.title||'(건명 없음)')}</span></td><td class="num">${won(t.subtotal)}</td><td class="num">${won(t.margin)}</td><td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="empty">해당 견적이 없습니다.</div>'}`;
     } else {
-      const list=ctrs.filter(c=>pick.key==='all' || (pick.key==='deal' ? (c.deal_type||'신규')===pick.val : normStage(c.stage)===pick.val)).sort((a,b)=>cmp(b.contract_date||'',a.contract_date||''));
+      const list=(pick.key==='stage'?allCtrs:ctrs).filter(c=>pick.key==='all' || (pick.key==='deal' ? (c.deal_type||'신규')===pick.val : normStage(c.stage)===pick.val)).sort((a,b)=>cmp(b.contract_date||'',a.contract_date||''));
       const lab = pick.key==='deal'||pick.key==='stage' ? ` · ${esc(pick.val)}` : ' 전체';
       const t=sum(list);
       detail=`<div class="card-title" style="padding:14px 16px 0;"><span>계약${lab} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>분류</th><th>계약일</th><th class="tl">계약명</th><th class="tl">고객사</th><th class="num">계약금액</th><th class="num">매입</th><th class="num">이익</th><th>단계</th><th>영업담당</th></tr></thead><tbody>${list.map(c=>{ const x=contractTotals(c); return `<tr><td>${dealBadge(c.deal_type)}</td><td class="nowrap">${esc(c.contract_date||'-')}</td><td class="tl"><span class="link gotoCtr" data-id="${c.id}">${esc(c.name)}</span></td><td class="tl">${esc(custName(c.customer_id))}</td><td class="num">${won(x.sale)}</td><td class="num">${won(x.purchase)}</td><td class="num" style="color:#d0312d;">${won(x.profit)}</td><td>${stageBadge(c.stage)}</td><td>${esc(repDisplay(c.sales_rep)||'-')}</td></tr>`; }).join('')}<tr class="total"><td colspan="4" style="text-align:right;">합계</td><td class="num">${won(t.sale)}</td><td class="num">${won(t.purchase)}</td><td class="num" style="color:#d0312d;">${won(t.profit)}</td><td colspan="2"></td></tr></tbody></table>`:'<div class="empty">해당 계약이 없습니다.</div>'}`;
@@ -1756,7 +1759,7 @@
     const y=+todayStr().slice(0,4), cm=todayStr().slice(0,7), pm=addMonths(cm+'-01',-1).slice(0,7);
     const quick=[['올해',y+'-01',y+'-12'],['작년',(y-1)+'-01',(y-1)+'-12'],['이번 달',cm,cm],['지난 달',pm,pm],['상반기',y+'-01',y+'-06'],['하반기',y+'-07',y+'-12']];
     return `
-      <div class="page-head"><div><div class="page-title">통계</div><div class="page-sub">기간·담당자별 계약과 견적 현황 · 계약은 계약일, 견적은 견적일 기준 · 항목을 누르면 아래에 목록이 나와요</div></div></div>
+      <div class="page-head"><div><div class="page-title">통계</div><div class="page-sub">기간·담당자별 계약과 견적 현황 · 계약은 계약일, 견적은 견적일 기준 · 미계약 건은 매출에서 빠져요 · 항목을 누르면 아래에 목록이 나와요</div></div></div>
       <div class="st-filter">
         <input type="month" id="stFrom" value="${esc(r.from)}"/><span>~</span><input type="month" id="stTo" value="${esc(r.to)}"/>
         ${quick.map(([l,a,b])=>`<button class="btn-sm ${r.from===a&&r.to===b?'':'ghost'} stQuick" data-a="${a}" data-b="${b}">${l}</button>`).join('')}
@@ -2659,7 +2662,7 @@
   // ================= CONTRACTS =================
   const dealBadge = t => t==='갱신' ? '<span class="badge gold">갱신</span>' : t==='유지보수' ? '<span class="badge purple">유지보수</span>' : t==='용역' ? '<span class="badge teal">용역</span>' : t==='추가' ? '<span class="badge pink">추가</span>' : '<span class="badge blue">신규</span>';
   const normStage = s => STAGES.includes(s) ? s : (['계산서발행','수금완료','청구완료','유지보수'].includes(s) ? '계약완료' : '진행중');
-  const stageBadge = s => { const v=normStage(s); return `<span class="badge ${v==='계약완료'?'green':'blue'}">${esc(v)}</span>`; };
+  const stageBadge = s => { const v=normStage(s); return `<span class="badge ${v==='계약완료'?'green':v==='미계약'?'gray':'blue'}">${esc(v)}</span>`; };
   function supplierDatalist(){ return `<datalist id="supplierList">${sortedSuppliers().map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>`; }
   // key: 'contracts' = 모든 계약, 'maint' = 분류가 유지보수인 계약만
   function renderContracts(key){
