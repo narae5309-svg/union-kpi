@@ -482,7 +482,7 @@
   const TK_STATUS = ['접수','처리중','완료'];
   const METHODS = ['방문','원격','전화'];
   const BILLING = ['연납','분기납','월납','일시납'];
-  const PERIOD_TABS = ['전체','갱신임박(30일)','진행중','미처리','완료(종료)'];
+  const PERIOD_TABS = ['전체','진행중','계약완료','갱신임박(30일)','만료 미처리','갱신·종료'];
   const DEPTS = ['영업팀','기술지원팀','경영지원','기타'];
   const PAGE_SIZE = 50;
   const SEND_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;"><path fill="currentColor" d="M21.6 2.4a1 1 0 0 0-1.06-.22L3.04 9.1a1 1 0 0 0 .02 1.88l6.9 2.4 2.4 6.9a1 1 0 0 0 1.88.02l6.92-17.5a1 1 0 0 0-.56-1.4z"/><path d="M10.2 13.8 20.6 3.4" stroke="#1b6fb0" stroke-width="1.7" stroke-linecap="round" opacity=".45"/></svg>';
@@ -603,18 +603,21 @@
     });
     return out.sort((a,b)=>a.d-b.d);
   }
-  function periodTabMatch(tab, end, renewed, dismissed){
+  function periodTabMatch(tab, end, renewed, dismissed, stage){
     if(tab==='전체') return true;
     const st=periodState(end,renewed,dismissed), d=daysUntil(end);
+    // 진행중·계약완료 = 계약 단계 기준
+    if(tab==='진행중') return stage!==undefined ? normStage(stage)==='진행중' : (st==='active' || st==='perm');
+    if(tab==='계약완료') return stage!==undefined ? normStage(stage)==='계약완료' : false;
+    // 나머지 = 만료일 기준
     if(tab==='갱신임박(30일)') return st==='active' && d<=30;
-    if(tab==='진행중') return st==='active' || st==='perm';
-    if(tab==='미처리') return st==='expired';
-    if(tab==='완료(종료)') return st==='renewed' || st==='closed';
+    if(tab==='만료 미처리' || tab==='미처리') return st==='expired';
+    if(tab==='갱신·종료' || tab==='완료(종료)') return st==='renewed' || st==='closed';
     return true;
   }
   function periodTabsHTML(list, getSt, cur, cls){
-    const cnt = t => list.filter(x=>{ const st=getSt(x); return periodTabMatch(t, st.end, st.renewed, st.dismissed); }).length;
-    return `<div class="tabs">${PERIOD_TABS.map(t=>`<div class="tab-btn ${cls} ${cur===t?'active':''} ${t==='미처리'&&cnt(t)?'warn-tab':''}" data-t="${t}">${t}<span class="cnt">${cnt(t)}</span></div>`).join('')}</div>`;
+    const cnt = t => list.filter(x=>{ const st=getSt(x); return periodTabMatch(t, st.end, st.renewed, st.dismissed, x.stage===undefined?undefined:(x.stage||'')); }).length;
+    return `<div class="tabs">${PERIOD_TABS.map(t=>`<div class="tab-btn ${cls} ${cur===t?'active':''} ${t==='만료 미처리'&&cnt(t)?'warn-tab':''}" data-t="${t}">${t}<span class="cnt">${cnt(t)}</span></div>`).join('')}</div>`;
   }
   const bucketOf = d => d<0?'over':d<=7?'w1':d<=30?'m1':'m2';
   function renewalBadgeCount(){ return renewalList().filter(x=>x.d<=30 && (!state.f.dashMine || isMine(x.rep))).length; }
@@ -2666,7 +2669,7 @@
     const base = isMt ? state.contracts.filter(c=>c.deal_type==='유지보수') : state.contracts;
     let list = base.filter(c=>{
       const st=ctrState(c);
-      if(!periodTabMatch(f[tabKey], st.end, st.renewed, st.dismissed)) return false;
+      if(!periodTabMatch(f[tabKey], st.end, st.renewed, st.dismissed, c.stage||'')) return false;
       if(!st.groups.some(g=>endInRange(key, g.end)) && !(st.groups.length===0 && endInRange(key,''))) return false;
       if(!isMt && f.ctrType!=='전체' && (c.deal_type||'신규')!==f.ctrType) return false;
       if(f[repKey]!=='전체' && repDisplay(c.sales_rep)!==f[repKey]) return false;
