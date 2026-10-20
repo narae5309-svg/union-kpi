@@ -476,8 +476,8 @@
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { auth:{ persistSession:true, autoRefreshToken:true, detectSessionInUrl:true, storage:authStorage } });
   const root = document.getElementById('app');
 
-  const STAGES = ['진행중','계약완료','미계약'];
-  const isLost = c => !!c && c.stage==='미계약';
+  const STAGES = ['진행중','계약완료','실주'];
+  const isLost = c => !!c && (c.stage==='실주' || c.stage==='미계약');
   const DEAL_TYPES = ['신규','갱신','유지보수','용역'];
   const QUOTE_TYPES = ['신규','갱신','추가'];
   const TK_STATUS = ['접수','처리중','완료'];
@@ -610,7 +610,7 @@
     const st=periodState(end,renewed,dismissed), d=daysUntil(end);
     const done = st==='renewed' || st==='closed';
     // 완료(종료) = 단계가 계약완료이거나, 갱신·종료 처리된 건
-    if(tab==='완료(종료)') return done || (stage!==undefined && ['계약완료','미계약'].includes(normStage(stage)));
+    if(tab==='완료(종료)') return done || (stage!==undefined && ['계약완료','실주'].includes(normStage(stage)));
     // 진행중 = 단계가 진행중이고 아직 끝나지 않은 건
     if(tab==='진행중') return stage!==undefined ? (normStage(stage)==='진행중' && !done) : (st==='active' || st==='perm');
     if(tab==='갱신임박(30일)') return st==='active' && d<=30;
@@ -1759,7 +1759,7 @@
     const y=+todayStr().slice(0,4), cm=todayStr().slice(0,7), pm=addMonths(cm+'-01',-1).slice(0,7);
     const quick=[['올해',y+'-01',y+'-12'],['작년',(y-1)+'-01',(y-1)+'-12'],['이번 달',cm,cm],['지난 달',pm,pm],['상반기',y+'-01',y+'-06'],['하반기',y+'-07',y+'-12']];
     return `
-      <div class="page-head"><div><div class="page-title">통계</div><div class="page-sub">기간·담당자별 계약과 견적 현황 · 계약은 계약일, 견적은 견적일 기준 · 미계약 건은 매출에서 빠져요 · 항목을 누르면 아래에 목록이 나와요</div></div></div>
+      <div class="page-head"><div><div class="page-title">통계</div><div class="page-sub">기간·담당자별 계약과 견적 현황 · 계약은 계약일, 견적은 견적일 기준 · 실주 건은 매출에서 빠져요 · 항목을 누르면 아래에 목록이 나와요</div></div></div>
       <div class="st-filter">
         <input type="month" id="stFrom" value="${esc(r.from)}"/><span>~</span><input type="month" id="stTo" value="${esc(r.to)}"/>
         ${quick.map(([l,a,b])=>`<button class="btn-sm ${r.from===a&&r.to===b?'':'ghost'} stQuick" data-a="${a}" data-b="${b}">${l}</button>`).join('')}
@@ -2661,8 +2661,8 @@
 
   // ================= CONTRACTS =================
   const dealBadge = t => t==='갱신' ? '<span class="badge gold">갱신</span>' : t==='유지보수' ? '<span class="badge purple">유지보수</span>' : t==='용역' ? '<span class="badge teal">용역</span>' : t==='추가' ? '<span class="badge pink">추가</span>' : '<span class="badge blue">신규</span>';
-  const normStage = s => STAGES.includes(s) ? s : (['계산서발행','수금완료','청구완료','유지보수'].includes(s) ? '계약완료' : '진행중');
-  const stageBadge = s => { const v=normStage(s); return `<span class="badge ${v==='계약완료'?'green':v==='미계약'?'gray':'blue'}">${esc(v)}</span>`; };
+  const normStage = s => STAGES.includes(s) ? s : s==='미계약' ? '실주' : (['계산서발행','수금완료','청구완료','유지보수'].includes(s) ? '계약완료' : '진행중');
+  const stageBadge = s => { const v=normStage(s); return `<span class="badge ${v==='계약완료'?'green':v==='실주'?'gray':'blue'}">${esc(v)}</span>`; };
   function supplierDatalist(){ return `<datalist id="supplierList">${sortedSuppliers().map(c=>`<option value="${esc(c.name)}">`).join('')}</datalist>`; }
   // key: 'contracts' = 모든 계약, 'maint' = 분류가 유지보수인 계약만
   function renderContracts(key){
