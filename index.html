@@ -1659,9 +1659,9 @@
   function quoteDetail(q){
     const t=qCalc(q), its=q.items||[];
     const row=it=>{
-      if(it.type==='group') return `<tr class="grp"><td class="tl" colspan="12" style="font-weight:700; background:#f5f5ef;">${esc(it.name)}</td></tr>`;
+      if(it.type==='group') return `<tr class="grp"><td class="tl" colspan="13" style="font-weight:700; background:#f5f5ef;">${esc(it.name)}</td></tr>`;
       const k=qItemCalc(it), cost=num(it.cost_price);
-      return `<tr><td class="tl">${esc(it.name)}</td><td class="tl">${esc(it.spec||'')}</td><td class="nowrap">${licText(it)?esc(licText(it)):'-'}</td><td>${num(it.qty)}</td><td class="num">${num(it.list_price)?won(it.list_price):'-'}</td><td>${num(it.list_price)?pct(k.dc*100):'-'}</td><td class="num">${won(it.unit_price)}</td><td class="num cs">${won(k.line)}</td><td class="num">${cost?won(cost):'-'}</td><td class="num cb">${won(k.costT)}</td><td class="num cp" style="font-weight:600;">${won(k.margin)}</td><td>${cost||k.line?pct(k.mrate*100):'-'}</td></tr>`;
+      return `<tr><td class="tl">${esc(it.name)}</td><td class="tl">${esc(it.spec||'')}</td><td class="nowrap">${licText(it)?esc(licText(it)):'-'}</td><td>${num(it.qty)}</td><td class="num">${num(it.list_price)?won(it.list_price):'-'}</td><td>${num(it.list_price)?pct(k.dc*100):'-'}</td><td class="num">${won(it.unit_price)}</td><td class="num cs">${won(k.line)}</td><td class="num">${cost?won(cost):'-'}</td><td>${esc(it.supplier||'-')}</td><td class="num cb">${won(k.costT)}</td><td class="num cp" style="font-weight:600;">${won(k.margin)}</td><td>${cost||k.line?pct(k.mrate*100):'-'}</td></tr>`;
     };
     return `<div class="detail-box">
       <div class="detail-grid">
@@ -1671,9 +1671,9 @@
         <div><span class="muted">견적유효</span> 견적일로부터 ${esc(q.valid_days||'15')}일</div>
         <div><span class="muted">예상납기</span> ${esc(q.delivery||'-')}</div>
       </div>
-      ${its.filter(i=>i.type!=='group').length?`<table><thead><tr><th class="tl">품명</th><th class="tl">규격</th><th>기간</th><th>수량</th><th class="num">소비자가</th><th>DC율</th><th class="num">공급단가</th><th class="num cs">공급가액</th><th class="num">매입단가</th><th class="num cb">매입금액</th><th class="num cp">마진</th><th>마진율</th></tr></thead><tbody>
+      ${its.filter(i=>i.type!=='group').length?`<table><thead><tr><th class="tl">품명</th><th class="tl">규격</th><th>기간</th><th>수량</th><th class="num">소비자가</th><th>DC율</th><th class="num">공급단가</th><th class="num cs">공급가액</th><th class="num">매입단가</th><th>매입처</th><th class="num cb">매입금액</th><th class="num cp">마진</th><th>마진율</th></tr></thead><tbody>
         ${its.map(row).join('')}
-        <tr class="total"><td class="tl" colspan="7">합계${q.tax_applied?` <span class="muted small">(공급가 기준)</span>`:''}</td><td class="num cs">${won(t.subtotal)}</td><td></td><td class="num cb">${won(t.cost_total)}</td><td class="num cp">${won(t.margin)}</td><td>${pct(t.mrate*100)}</td></tr>
+        <tr class="total"><td class="tl" colspan="7">합계${q.tax_applied?` <span class="muted small">(공급가 기준)</span>`:''}</td><td class="num cs">${won(t.subtotal)}</td><td></td><td></td><td class="num cb">${won(t.cost_total)}</td><td class="num cp">${won(t.margin)}</td><td>${pct(t.mrate*100)}</td></tr>
       </tbody></table>`:'<div class="muted">입력한 품목이 없습니다.</div>'}
       ${q.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(q.remarks)}</div></div>`:''}
     </div>`;
@@ -1692,7 +1692,7 @@
     const items = its.length ? its.map(i=>{
       const qty=num(i.qty)||1, m=match(i.product), ie=itemEnd(i,c);
       const st=ie?addDays(ie,1):'', en=ie?addDays(addMonths(st,12),-1):'';
-      return {type:'item', name:m?m.name:i.product, spec:m?(m.spec||''):'', qty, list_price:m?num(m.list_price):0, unit_price:num(i.unit_price)||Math.round(num(i.sale_amount)/qty), cost_price:Math.round(num(i.purchase_amount)/qty), lic_start:st, lic_end:en, src_id:i.id};
+      return {type:'item', name:m?m.name:i.product, spec:m?(m.spec||''):'', qty, list_price:m?num(m.list_price):0, unit_price:num(i.unit_price)||Math.round(num(i.sale_amount)/qty), cost_price:Math.round(num(i.purchase_amount)/qty), lic_start:st, lic_end:en, src_id:i.id, supplier:supplierLabel(i.supplier_id,i.supplier)||'', supplier_id:i.supplier_id||null};
     }) : [{type:'item', name:c.name, spec:'', qty:1, list_price:0, unit_price:contractTotals(c).sale, cost_price:contractTotals(c).purchase, lic_start:c.expiry_date?addDays(c.expiry_date,1):'', lic_end:c.expiry_date?addDays(addMonths(addDays(c.expiry_date,1),12),-1):''}];
     const ct=contact(c.contact_id)||{}, me=myRep(), rep=repByName(repDisplay(c.sales_rep))||{};
     const data={id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:c.name||'', end_user_name:c.end_user_name||'', deal_type:'갱신', quote_date:todayStr(), customer_id:c.customer_id||'', contact_id:c.contact_id||'', ref_contact:ct.name||'', ref_phone:ct.phone||'', ref_email:ct.email||'', valid_days:(srcQ&&srcQ.valid_days)||'15', delivery:(srcQ&&srcQ.delivery)||'주문 후 협의', sales_rep:repDisplay(c.sales_rep)||state.user, sales_phone:rep.phone||me.phone||'', sales_email:rep.email||me.email||state.userEmail||'', items, tax_applied:srcQ?!!srcQ.tax_applied:true, remarks:(srcQ&&srcQ.remarks)||'', status:'작성중', renew_of:c.id, renew_end:end||(groups[0]&&groups[0].end)||'', created_by:state.user};
@@ -1852,9 +1852,9 @@
         <div class="field"><label>담당자 이메일</label><input id="f_qrepe" data-bind="sales_email" value="${esc(d.sales_email||'')}"/></div>
       </div>
       <div class="section-title"><span>품목 <span class="muted" style="font-weight:400;">· 노란 칸(매입단가·마진)은 내부용이라 견적서에 나오지 않아요</span></span><span><button class="btn-sm ghost" id="licAll" title="첫 품목의 기간을 모든 품목에 똑같이 넣어요">기간 전체 적용</button> <button class="btn-sm ghost" id="addQGroup">+ 그룹 제목</button> <button class="btn-sm" id="addQItem">+ 품목 추가</button></span></div>
-      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:170px;">품명</th><th style="min-width:90px;">규격</th><th style="min-width:128px;">기간</th><th style="width:56px;">수량</th><th style="min-width:100px;">소비자가격</th><th class="num" style="width:54px;">DC율</th><th style="min-width:100px;">공급단가</th><th class="num" style="min-width:96px;">공급가액</th><th class="int" style="min-width:96px;">매입단가</th><th class="int num" style="min-width:86px;">마진</th><th class="int num" style="width:56px;">마진율</th><th style="width:34px;"></th></tr></thead><tbody>
+      <div style="overflow-x:auto;"><table class="items-table"><thead><tr><th style="min-width:170px;">품명</th><th style="min-width:90px;">규격</th><th style="min-width:128px;">기간</th><th style="width:56px;">수량</th><th style="min-width:100px;">소비자가격</th><th class="num" style="width:54px;">DC율</th><th style="min-width:100px;">공급단가</th><th class="num" style="min-width:96px;">공급가액</th><th class="int" style="min-width:96px;">매입단가</th><th class="int" style="min-width:130px;">매입처</th><th class="int num" style="min-width:86px;">마진</th><th class="int num" style="width:56px;">마진율</th><th style="width:34px;"></th></tr></thead><tbody>
         ${d.items.map((it,i)=> it.type==='group'
-          ? `<tr class="grp-row"><td colspan="11"><input class="cell-in" id="qi_${i}_name" data-qi="${i}" data-f="name" value="${esc(it.name)}" placeholder="그룹 제목 (예: 보안 솔루션)" style="font-weight:700;"/></td><td><button class="icon-btn danger delQItem" data-i="${i}">&times;</button></td></tr>`
+          ? `<tr class="grp-row"><td colspan="12"><input class="cell-in" id="qi_${i}_name" data-qi="${i}" data-f="name" value="${esc(it.name)}" placeholder="그룹 제목 (예: 보안 솔루션)" style="font-weight:700;"/></td><td><button class="icon-btn danger delQItem" data-i="${i}">&times;</button></td></tr>`
           : (()=>{ const k=qItemCalc(it); return `<tr>
             <td><input class="cell-in" id="qi_${i}_name" data-qi="${i}" data-f="name" value="${esc(it.name)}"/></td>
             <td><input class="cell-in" id="qi_${i}_spec" data-qi="${i}" data-f="spec" value="${esc(it.spec||'')}"/></td>
@@ -1865,6 +1865,7 @@
             <td><input class="cell-in n money" id="qi_${i}_unit" data-qi="${i}" data-f="unit_price" value="${won(it.unit_price)}" inputmode="numeric"/></td>
             <td class="num" id="qi_${i}_line" style="font-weight:600;">${won(k.line)}</td>
             <td class="int"><input class="cell-in n money" id="qi_${i}_cost" data-qi="${i}" data-f="cost_price" value="${won(it.cost_price)}" inputmode="numeric"/></td>
+            <td class="int"><input class="cell-in supIn" id="qi_${i}_sup" data-qsup="${i}" value="${esc(it.supplier||'')}" placeholder="입력하면 검색" autocomplete="off"/><div class="sup-new small" id="qi_${i}_supnew" style="${(it.supplier||'').trim() && !supplierByName(it.supplier)?'':'display:none;'}">새 매입처로 등록돼요</div></td>
             <td class="int num" id="qi_${i}_margin">${won(k.margin)}</td>
             <td class="int num small" id="qi_${i}_mrate">${pct(k.mrate*100)}</td>
             <td><button class="icon-btn danger delQItem" data-i="${i}" ${d.items.filter(x=>x.type!=='group').length<=1&&it.type!=='group'?'disabled':''}>&times;</button></td></tr>`; })()).join('')}
@@ -1898,8 +1899,14 @@
       const it=d.items[+el.dataset.qi], f=el.dataset.f;
       el.addEventListener('input',()=>{ it[f] = ['qty','list_price','unit_price','cost_price'].includes(f) ? num(el.value) : el.value; updateQuoteCalc(d); });
     });
+    document.querySelectorAll('[data-qsup]').forEach(el=>{
+      const it=d.items[+el.dataset.qsup], note=document.getElementById(`qi_${el.dataset.qsup}_supnew`);
+      const set=v=>{ it.supplier=v; const sp=supplierByName(v); it.supplier_id=sp?sp.id:null; if(note) note.style.display=(v.trim() && !sp)?'':'none'; };
+      bindSupplierInput(el, set, note);
+      attachSuggest(el, ()=>sortedSuppliers().map(c=>c.name), set, '일치하는 매입처가 없습니다 · 저장하면 새로 등록됩니다');
+    });
     bindMoneyInputs(document.getElementById('modalBg'));
-    document.getElementById('addQItem').onclick=()=>{ const prev=[...d.items].reverse().find(x=>x.type!=='group'); const n=newQuoteItem(); if(prev){ n.lic_start=prev.lic_start||''; n.lic_end=prev.lic_end||''; } d.items.push(n); render(); };
+    document.getElementById('addQItem').onclick=()=>{ const prev=[...d.items].reverse().find(x=>x.type!=='group'); const n=newQuoteItem(); if(prev){ n.lic_start=prev.lic_start||''; n.lic_end=prev.lic_end||''; n.supplier=prev.supplier||''; n.supplier_id=prev.supplier_id||null; } d.items.push(n); render(); };
     document.getElementById('licAll').onclick=()=>{ const first=d.items.find(x=>x.type!=='group' && (x.lic_start||x.lic_end)); if(!first) return alert('먼저 한 품목에 기간을 넣어주세요.'); d.items.forEach(x=>{ if(x.type!=='group'){ x.lic_start=first.lic_start||''; x.lic_end=first.lic_end||''; } }); render(); };
     document.getElementById('addQGroup').onclick=()=>{ d.items.push(newQuoteItem('group')); render(); };
     document.querySelectorAll('.delQItem').forEach(b=>b.onclick=()=>{ d.items.splice(+b.dataset.i,1); render(); });
@@ -1928,6 +1935,8 @@
     if(!(await ensureCustomer(d))) return;
     if(!(await ensureContact(d,'contact_id'))) return;
     if(d.contact_id==='__new') d.contact_id=null;
+    if(!(await ensureSuppliers(d.items.filter(it=>it.type!=='group').map(it=>it.supplier)))) return;
+    d.items.forEach(it=>{ if(it.type==='group') return; it.supplier=String(it.supplier||'').trim(); const sp=it.supplier?supplierByName(it.supplier):null; it.supplier_id=sp?sp.id:null; });
     if(d.contact_id && !d.ref_contact){ const ct=contact(d.contact_id); if(ct){ d.ref_contact=ct.name; d.ref_phone=d.ref_phone||ct.phone||''; d.ref_email=d.ref_email||ct.email||''; } }
     const row=quoteRow(d);
     const err=await upsertQuotes([row]); if(err) return fail('저장 실패',err);
@@ -2142,7 +2151,7 @@
     const old=q.renew_of?contractById(q.renew_of):null;
     const rows=(q.items||[]).filter(it=>it.type!=='group').map(it=>{
       const si=it.src_id?state.items.find(x=>x.id===it.src_id):null;
-      return {type:q.deal_type||(q.renew_of?'갱신':'신규'), form:'LIC', supplier:si?supplierLabel(si.supplier_id,si.supplier):''};
+      return {type:q.deal_type||(q.renew_of?'갱신':'신규'), form:'LIC', supplier:it.supplier||(si?supplierLabel(si.supplier_id,si.supplier):'')};
     });
     const myName=me.name||state.user||'';
     const endUser=q.end_user_name||(old?(old.end_user_name||''):'');
@@ -2763,7 +2772,7 @@
       if(ends.length){ const cnt={}; ends.forEach(e=>cnt[e]=(cnt[e]||0)+1); data.expiry_date=Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||(a<b?1:-1))[0]; }
       if(starts.length) data.contract_date=starts[0];
       if(old){ data._renewFromId=old.id; data.name=old.name; if(old.billing_cycle) data.billing_cycle=old.billing_cycle; data.alert_days=old.alert_days||30; }
-      items=qits.map(it=>{ const qty=num(it.qty)||1; const si=it.src_id?state.items.find(x=>x.id===it.src_id):null; return {id:uid('it'), contract_id:data.id, product:si?si.product:[it.name,it.spec].filter(Boolean).join(' '), qty, unit_price:num(it.unit_price), sale_amount:qty*num(it.unit_price), supplier:si?supplierLabel(si.supplier_id,si.supplier):'', supplier_id:si?si.supplier_id:null, purchase_amount:Math.round(qty*num(it.cost_price)), end_date:(it.lic_end && it.lic_end!==data.expiry_date)?it.lic_end:'', _srcId:si?si.id:undefined}; });
+      items=qits.map(it=>{ const qty=num(it.qty)||1; const si=it.src_id?state.items.find(x=>x.id===it.src_id):null; return {id:uid('it'), contract_id:data.id, product:si?si.product:[it.name,it.spec].filter(Boolean).join(' '), qty, unit_price:num(it.unit_price), sale_amount:qty*num(it.unit_price), supplier:it.supplier||(si?supplierLabel(si.supplier_id,si.supplier):''), supplier_id:it.supplier_id||(it.supplier?((supplierByName(it.supplier)||{}).id||null):null)||(si?si.supplier_id:null), purchase_amount:Math.round(qty*num(it.cost_price)), end_date:(it.lic_end && it.lic_end!==data.expiry_date)?it.lic_end:'', _srcId:si?si.id:undefined}; });
       title='계약 등록 (견적에서)';
       opts._quoteInfo = old ? `갱신 견적 ${q.quote_no}의 내용으로 "${old.name}" 갱신 계약을 채웠어요. 저장하면 기존 계약의 해당 품목이 "갱신완료"로 바뀌고, 견적은 "계약전환"으로 표시돼요.` : `견적 ${q.quote_no}의 내용으로 채웠어요. 품목별 매입처와 만료일을 확인하고 저장하세요. 저장하면 견적은 "계약전환"으로 표시돼요.`;
     }
@@ -3423,10 +3432,10 @@
     const isQ=state.tab==='quotes', isMt=state.tab==='maint';
     let head, ex, name, cols;
     if(isQ){
-      head=['견적번호','견적일','구분','고객사','건명','앤드유저','참조','영업담당','부가세','상태','비고','품명','규격','수량','소비자가','공급단가','매입단가','시작일','종료일'];
-      ex=[['(예) 비워두면 자동','2026-10-01','신규','(예) 롯데정보통신','AutoCAD LT 공급','롯데마트','김연준','백나래','별도','발송','납품 후 30일 결제','AutoCAD LT','1년','2','700000','640000','621000','2026-10-13','2027-10-12'],
-          ['','2026-10-01','신규','(예) 롯데정보통신','AutoCAD LT 공급','롯데마트','김연준','백나래','별도','발송','','설치 지원','','1','0','100000','0','','']];
-      name='견적_가져오기_양식.xlsx'; cols=[14,12,8,18,22,14,10,10,8,8,18,22,10,6,12,12,12,12,12];
+      head=['견적번호','견적일','구분','고객사','건명','앤드유저','참조','영업담당','부가세','상태','비고','품명','규격','수량','소비자가','공급단가','매입단가','매입처','시작일','종료일'];
+      ex=[['(예) 비워두면 자동','2026-10-01','신규','(예) 롯데정보통신','AutoCAD LT 공급','롯데마트','김연준','백나래','별도','발송','납품 후 30일 결제','AutoCAD LT','1년','2','700000','640000','621000','에쓰씨케이','2026-10-13','2027-10-12'],
+          ['','2026-10-01','신규','(예) 롯데정보통신','AutoCAD LT 공급','롯데마트','김연준','백나래','별도','발송','','설치 지원','','1','0','100000','0','','','']];
+      name='견적_가져오기_양식.xlsx'; cols=[14,12,8,18,22,14,10,10,8,8,18,22,10,6,12,12,12,14,12,12];
     } else {
       head=['계약명','고객사','분류','단계','계약일','만료일','앤드유저','고객담당자','영업담당','결제주기','비고','제품','수량','단가','매출','매입처','매입','품목만료일'];
       const t=isMt?'유지보수':'신규';
@@ -3521,12 +3530,12 @@
       const date=xDate(pick(r,'견적일'))||todayStr();
       const rep=repName(pick(r,'영업담당')), rr=repByName(rep)||{};
       const tax=pick(r,'부가세'); let st=pick(r,'상태')||'작성중'; if(!['작성중','발송','계약전환'].includes(st)) st='작성중';
-      const its=g.items.map(x=>({type:'item', name:pick(x,'품명','제품'), spec:pick(x,'규격'), qty:xNum(pick(x,'수량'))||1, list_price:xNum(pick(x,'소비자가','소비자가격')), unit_price:xNum(pick(x,'공급단가','단가')), cost_price:xNum(pick(x,'매입단가')), lic_start:xDate(pick(x,'시작일')), lic_end:xDate(pick(x,'종료일'))}));
+      const its=g.items.map(x=>({type:'item', name:pick(x,'품명','제품'), spec:pick(x,'규격'), qty:xNum(pick(x,'수량'))||1, list_price:xNum(pick(x,'소비자가','소비자가격')), unit_price:xNum(pick(x,'공급단가','단가')), cost_price:xNum(pick(x,'매입단가')), supplier:(ctx.sup(pick(x,'매입처'))||{}).name||'', supplier_id:(ctx.sup(pick(x,'매입처'))||{}).id||null, lic_start:xDate(pick(x,'시작일')), lic_end:xDate(pick(x,'종료일'))}));
       qs.push({id:uid('q'), quote_no:g.no||docNo('Q',[...state.quotes,...qs],'quote_no',date), title:pick(r,'건명'), quote_date:date, customer_id:cu.id, contact_id:ct?ct.id:null, ref_contact:refName||'', ref_phone:ct?ct.phone||'':'', ref_email:ct?ct.email||'':'', valid_days:'15', delivery:'주문 후 협의', sales_rep:rep, sales_phone:rr.phone||'', sales_email:rr.email||'', end_user_name:pick(r,'앤드유저'), deal_type:(QUOTE_TYPES.includes(pick(r,'구분'))?pick(r,'구분'):'신규'), items:its.length?its:[newQuoteItem()], tax_applied:!/없음|미포함|N/i.test(tax), remarks:pick(r,'비고'), status:st, created_by:state.user});
     }
     if(!qs.length) return alert(`넣을 견적이 없어요.${skipped.length?`\n이미 있는 견적번호 ${skipped.length}건은 건너뛰었어요.`:''}${bad?`\n고객사·건명이 빠진 줄 ${bad}개가 있어요.`:''}\n양식의 열 이름(고객사, 건명, 품명…)을 확인해 주세요.`);
     const n=qs.reduce((a,q)=>a+q.items.length,0);
-    askConfirm(`견적 ${qs.length}건 (품목 ${n}개)을 넣을까요?`+(ctx.newCusts.length?`\n새 고객사 ${ctx.newCusts.length}곳: ${ctx.newCusts.slice(0,5).map(x=>x.name).join(', ')}${ctx.newCusts.length>5?' 외':''}`:'')+(skipped.length?`\n이미 있어서 건너뛸 견적 ${skipped.length}건`:'')+(bad?`\n고객사·건명이 빠진 줄 ${bad}개는 빠집니다`:''), async ()=>{
+    askConfirm(`견적 ${qs.length}건 (품목 ${n}개)을 넣을까요?`+(ctx.newCusts.length?`\n새 고객사 ${ctx.newCusts.length}곳: ${ctx.newCusts.slice(0,5).map(x=>x.name).join(', ')}${ctx.newCusts.length>5?' 외':''}`:'')+(ctx.newSups.length?`\n새 매입처 ${ctx.newSups.length}곳: ${ctx.newSups.slice(0,5).map(x=>x.name).join(', ')}${ctx.newSups.length>5?' 외':''}`:'')+(skipped.length?`\n이미 있어서 건너뛸 견적 ${skipped.length}건`:'')+(bad?`\n고객사·건명이 빠진 줄 ${bad}개는 빠집니다`:''), async ()=>{
       try{
         await ctx.save();
         const rowsQ=qs.map(quoteRow);
