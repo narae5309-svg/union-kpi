@@ -2707,6 +2707,7 @@
         ${isMt?'':selectFilter('fCtrType','분류',DEAL_TYPES,f.ctrType)}
         ${rangeChip(key)}
         ${selectFilter('fCtrRep','영업담당',reps,f[repKey])}
+        ${f[tabKey]==='미처리'?`<button class="btn-sm" id="bulkCloseBtn" title="체크한 계약을 갱신 안 함(종료)으로 처리해서 완료(종료) 탭으로 옮겨요">✔ 선택 종료 처리${state.sel[key].size?` (${state.sel[key].size})`:''}</button>`:''}
         ${bulkDelBtn(key)}
       </div>
       <div class="card flush">
@@ -2753,7 +2754,19 @@
       ${c.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(c.remarks)}</div></div>`:''}
     </div>`;
   }
+  async function bulkCloseContracts(key){
+    const ids=[...state.sel[key]]; if(!ids.length) return alert('종료 처리할 계약을 먼저 체크해 주세요. (맨 위 체크박스로 전체 선택)');
+    const cs=ids.map(contractById).filter(Boolean);
+    askConfirm(`체크한 계약 ${cs.length}건을 "갱신 안 함(종료)"으로 처리할까요?\n갱신 알림에서 빠지고 완료(종료) 탭으로 옮겨져요.\n(나중에 계약을 수정하면 되돌릴 수 있어요)`, async ()=>{
+      const its=[];
+      cs.forEach(c=>{ itemsOf(c.id).forEach(i=>{ if(!itemDone(i,c)){ i.closed=true; its.push(i); } }); c.alert_dismissed=true; });
+      let e = its.length ? await chunkUpsert('contract_items', its.map(itemRow)) : null; if(e) return fail('처리 실패',e);
+      e = await chunkUpsert('contracts', cs.map(ctrRow)); if(e) return fail('처리 실패',e);
+      state.sel[key].clear(); showToast(`${cs.length}건을 종료 처리했어요.`);
+    }, '종료 처리', false);
+  }
   function bindContracts(key){
+    const bc=document.getElementById('bulkCloseBtn'); if(bc) bc.onclick=()=>bulkCloseContracts(key||'contracts');
     key = key || 'contracts'; const isMt = key==='maint';
     document.getElementById('addCtrBtn').onclick=()=>openContractModal(null, isMt?{dealType:'유지보수'}:{});
     document.querySelectorAll('.ctrTab').forEach(el=>el.onclick=()=>{ state.f[isMt?'mtTab':'ctrTab']=el.dataset.t; state.page[key]=1; state.sel[key].clear(); render(); });
@@ -3424,11 +3437,18 @@
 
   // ================= 계약·견적 엑셀 한번에 넣기 =================
   const xNum = v => { const n=Number(String(v==null?'':v).replace(/[^0-9.\-]/g,'')); return isFinite(n)?n:0; };
-  const xStr = v => String(v==null?'':v).trim();
+  const ymdLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const xStr = v => v instanceof Date ? ymdLocal(new Date(v.getTime()+60000)) : String(v==null?'':v).trim();
   const pick = (r, ...keys) => { for(const k of keys){ if(r[k]!==undefined && xStr(r[k])!=='') return xStr(r[k]); } return ''; };
-  const xDate = v => { const s=xStr(v); if(!s) return ''; return normDate(s)||''; };
+  const xDate = v => {
+    if(v instanceof Date) return ymdLocal(new Date(v.getTime()+60000));
+    if(typeof v==='number' && v>20000 && v<80000){ const d=new Date(Math.round((v-25569)*86400000)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`; }
+    const s=xStr(v); if(!s) return '';
+    const us=/^(\d{1,2})\/(\d{1,2})\/(\d{2}|\d{4})$/.exec(s); // 10/1/26 같은 미국식
+    if(us){ const y=us[3].length===2?'20'+us[3]:us[3]; return normDate(y+us[1].padStart(2,'0')+us[2].padStart(2,'0'))||''; }
+    return normDate(s)||''; };
   function readSheetRows(file){
-    return new Promise((res,rej)=>{ const rd=new FileReader(); rd.onload=ev=>{ try{ const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array', cellDates:true}); const ws=wb.Sheets[wb.SheetNames[0]]; res(XLSX.utils.sheet_to_json(ws,{defval:'', raw:false, dateNF:'yyyy-mm-dd'})); }catch(e){ rej(e); } }; rd.onerror=()=>rej(new Error('파일을 읽지 못했습니다')); rd.readAsArrayBuffer(file); });
+    return new Promise((res,rej)=>{ const rd=new FileReader(); rd.onload=ev=>{ try{ const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array', cellDates:true}); const ws=wb.Sheets[wb.SheetNames[0]]; res(XLSX.utils.sheet_to_json(ws,{defval:'', raw:true})); }catch(e){ rej(e); } }; rd.onerror=()=>rej(new Error('파일을 읽지 못했습니다')); rd.readAsArrayBuffer(file); });
   }
   function downloadDealTemplate(){
     const isQ=state.tab==='quotes', isMt=state.tab==='maint';
