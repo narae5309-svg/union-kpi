@@ -1123,7 +1123,6 @@
     const ev=[];
     state.contracts.forEach(c=>{
       if(mine && !isMine(c.sales_rep)) return;
-      if(c.contract_date) ev.push({date:c.contract_date, type:'sign', kind:'ctr', id:c.id, name:c.name, cust:custName(c.customer_id), label:'계약'});
       const isMtC = c.deal_type==='유지보수';
       ctrGroups(c).forEach(g=>{ const sub=groupLabel(c,g); ev.push({date:g.end, end:g.end, type:g.done?'done':(isMtC?'mtend':'end'), kind:'ctr', id:c.id, name:c.name+(sub?' · '+sub:''), cust:custName(c.customer_id), label:g.done?(g.renewed?'갱신완료':'종료'):(isMtC?'유지보수 만료':'만료')}); });
     });
@@ -1161,7 +1160,7 @@
       <div class="card-title"><span>계약 일정 캘린더</span>
         <span class="cal-nav"><button class="btn-sm ghost" id="calPrev">‹</button><b id="calTitle">${y}년 ${mo}월</b><button class="btn-sm ghost" id="calNext">›</button><button class="btn-sm ghost" id="calToday">오늘</button></span>
       </div>
-      <div class="cal-legend"><span><i class="end"></i>제품 만료 ${cnt('end')}</span><span><i class="mtend"></i>유지보수 만료 ${cnt('mtend')}</span><span><i class="sign"></i>계약 ${cnt('sign')}</span><span><i class="done"></i>갱신완료·종료 ${cnt('done')}</span></div>
+      <div class="cal-legend"><span><i class="end"></i>제품 만료 ${cnt('end')}</span><span><i class="mtend"></i>유지보수 만료 ${cnt('mtend')}</span><span><i class="done"></i>갱신완료·종료 ${cnt('done')}</span></div>
       <div class="cal-wrap">
         <div class="cal">
           ${['일','월','화','수','목','금','토'].map((w,i)=>`<div class="cal-head ${i===0?'sun':i===6?'sat':''}">${w}</div>`).join('')}
