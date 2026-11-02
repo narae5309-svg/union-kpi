@@ -493,14 +493,14 @@
   const DEPTS = ['영업팀','기술지원팀','경영지원','기타'];
   const PAGE_SIZE = 50;
   const SEND_ICON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="vertical-align:-2px;"><path fill="currentColor" d="M21.6 2.4a1 1 0 0 0-1.06-.22L3.04 9.1a1 1 0 0 0 .02 1.88l6.9 2.4 2.4 6.9a1 1 0 0 0 1.88.02l6.92-17.5a1 1 0 0 0-.56-1.4z"/><path d="M10.2 13.8 20.6 3.4" stroke="#1b6fb0" stroke-width="1.7" stroke-linecap="round" opacity=".45"/></svg>';
-  const NAV = [['dashboard','대시보드'],['quotes','견적'],{group:'계약', open:false, items:[['contracts','계약관리'],['maint','유지보수']]},['support','기술지원'],{group:'설정', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리'],['company','회사정보']]}];
+  const NAV = [['dashboard','대시보드'],['quotes','견적'],{group:'계약', open:false, items:[['contracts','계약관리'],['maint','유지보수'],['legacy','기존데이터']]},['support','기술지원'],{group:'설정', open:false, items:[['customers','고객관리'],['suppliers','매입처관리'],['reps','담당자관리'],['company','회사정보']]}];
 
   const state = {
     view:'login', user:null, userEmail:null, isAdmin:false, tab:'dashboard', loading:true, setupMissing:[],
     reps:[], customers:[], contacts:[], contracts:[], items:[], maint:[], tickets:[],
-    q:{}, f:{ctrType:'전체', ctrTab:'전체', ctrRep:'전체', mtRep:'전체', endRange:{contracts:{from:'',to:''}, maint:{from:'',to:''}, quotes:{from:'',to:''}}, mtTab:'전체', tkStatus:'미완료', tkAssignee:'전체', dashMine:false},
+    q:{}, f:{ctrType:'전체', ctrTab:'전체', ctrRep:'전체', mtRep:'전체', endRange:{contracts:{from:'',to:''}, maint:{from:'',to:''}, quotes:{from:'',to:''}, legacy:{from:'',to:''}}, lgTab:'전체', lgRep:'전체', mtTab:'전체', tkStatus:'미완료', tkAssignee:'전체', dashMine:false},
     cal:null, calDay:null, share:null, datePop:null, quotes:[], pos:[], company:null, companyDraft:null, docView:null, docMail:null,
-    sort:{}, page:{}, sel:{customers:new Set(), suppliers:new Set(), contracts:new Set(), maint:new Set(), support:new Set(), reps:new Set(), quotes:new Set(), pos:new Set()},
+    sort:{}, page:{}, sel:{customers:new Set(), suppliers:new Set(), contracts:new Set(), maint:new Set(), legacy:new Set(), support:new Set(), reps:new Set(), quotes:new Set(), pos:new Set()},
     expanded:null, modal:null, confirm:null, toast:null, attachView:null, attachTarget:null, excelMenu:false,
   };
 
@@ -541,7 +541,7 @@
   const isMine = v => !!v && (v===state.user || (state.userEmail && String(v).toLowerCase()===state.userEmail.toLowerCase()) || repDisplay(v)===state.user);
   const contact = id => state.contacts.find(c=>c.id===id);
   const contactsOf = cid => state.contacts.filter(c=>c.customer_id===cid);
-  const contractById = id => state.contracts.find(c=>c.id===id);
+  const contractById = id => state.contracts.find(c=>c.id===id) || (state.legacy||[]).find(c=>c.id===id);
   const itemsOf = cid => state.items.filter(i=>i.contract_id===cid).sort((a,b)=>(a.sort||0)-(b.sort||0));
   const sortedCustomers = () => partnersOf('customer').sort((a,b)=>String(a.name).localeCompare(String(b.name),'ko'));
   function repNames(){ const s=new Set(state.reps.map(r=>r.name).filter(Boolean)); if(state.user) s.add(state.user); return [...s].sort((a,b)=>a.localeCompare(b,'ko')); }
@@ -650,7 +650,8 @@
   const dn = v => v ? v : null;
   function custRow(c){ return {id:c.id, code:c.code, name:c.name, kind:c.kind||'customer', tax_email:c.tax_email||'', biz_reg_no:c.biz_reg_no||'', sales_rep:c.sales_rep||state.user, reg_date:dn(c.reg_date)}; }
   function contactRow(x){ return {id:x.id, customer_id:x.customer_id, name:x.name||'', dept:x.dept||'', phone:x.phone||'', email:x.email||''}; }
-  function ctrRow(c){ return {id:c.id, code:c.code, name:c.name, customer_id:c.customer_id||null, contact_id:c.contact_id||null, end_user_name:c.end_user_name||'', deal_type:c.deal_type||'신규', stage:c.stage||STAGES[0], request:c.request||'없음', contract_date:dn(c.contract_date), start_date:dn(c.start_date), expiry_date:dn(c.expiry_date), alert_days:num(c.alert_days)||30, alert_dismissed:!!c.alert_dismissed, renewed:!!c.renewed, amount:num(c.amount), profit_amount:num(c.profit_amount), biz_type:c.biz_type||'', invoice_date:dn(c.invoice_date), billing_cycle:c.deal_type==='유지보수'?(c.billing_cycle||BILLING[0]):null, sales_rep:c.sales_rep||state.user, remarks:c.remarks||'', attachment_url:c.attachment_url||null, attachment_name:c.attachment_name||null, attachment_path:c.attachment_path||null, reg_date:dn(c.reg_date)}; }
+  function ctrRow(c){ const r=ctrRow0(c); if(!state.noLegacyCol) r.is_legacy=!!c.is_legacy; return r; }
+  function ctrRow0(c){ return {id:c.id, code:c.code, name:c.name, customer_id:c.customer_id||null, contact_id:c.contact_id||null, end_user_name:c.end_user_name||'', deal_type:c.deal_type||'신규', stage:c.stage||STAGES[0], request:c.request||'없음', contract_date:dn(c.contract_date), start_date:dn(c.start_date), expiry_date:dn(c.expiry_date), alert_days:num(c.alert_days)||30, alert_dismissed:!!c.alert_dismissed, renewed:!!c.renewed, amount:num(c.amount), profit_amount:num(c.profit_amount), biz_type:c.biz_type||'', invoice_date:dn(c.invoice_date), billing_cycle:c.deal_type==='유지보수'?(c.billing_cycle||BILLING[0]):null, sales_rep:c.sales_rep||state.user, remarks:c.remarks||'', attachment_url:c.attachment_url||null, attachment_name:c.attachment_name||null, attachment_path:c.attachment_path||null, reg_date:dn(c.reg_date)}; }
   function itemRow(i){ return {id:i.id, contract_id:i.contract_id, product:i.product||'', vendor:i.vendor||'', qty:num(i.qty)||1, sale_amount:num(i.sale_amount), supplier_id:i.supplier_id||null, supplier:i.supplier||'', purchase_amount:num(i.purchase_amount), sort:num(i.sort), end_date:dn(i.end_date), renewed:!!i.renewed, closed:!!i.closed, unit_price:num(i.unit_price)}; }
   function mtRow(m){ const t=mtTotals(m); return {id:m.id, name:m.name, contract_id:m.contract_id||null, customer_id:m.customer_id||null, deal_type:m.deal_type||'신규', start_date:dn(m.start_date), end_date:dn(m.end_date), billing_cycle:m.billing_cycle||BILLING[0], amount:num(m.amount), supplier_id:m.supplier_id||null, supplier:m.supplier||'', purchase_amount:t.purchase, profit_amount:t.profit, renewal_type:m.renewal_type||'수동갱신', sales_rep:m.sales_rep||state.user, alert_days:num(m.alert_days)||30, alert_dismissed:!!m.alert_dismissed, renewed:!!m.renewed, remarks:m.remarks||'', attachment_url:m.attachment_url||null, attachment_name:m.attachment_name||null, attachment_path:m.attachment_path||null, reg_date:dn(m.reg_date)}; }
   function tkRow(t){ return {id:t.id, code:t.code, customer_id:t.customer_id||null, contact_id:t.contact_id||null, contract_id:t.contract_id||null, product:t.product||'', request:t.request||'', received_date:dn(t.received_date), assignee:t.assignee||'', status:t.status||'접수', method:t.method||'', action:t.action||'', done_date:dn(t.done_date), created_by:t.created_by||state.user}; }
@@ -676,7 +677,13 @@
       else state[key]=r.data||[];
     });
     state.maint = [];
+    state.legacy = (state.contracts||[]).filter(c=>c.is_legacy);
+    state.contracts = (state.contracts||[]).filter(c=>!c.is_legacy);
     state.company = (state.companyRows||[]).find(r=>r.id==='main') || {};
+    if(!state.setupMissing.some(x=>x.startsWith('contracts'))){
+      const pl = await sb.from('contracts').select('is_legacy').limit(1);
+      state.noLegacyCol = !!pl.error;
+    }
     if(!state.setupMissing.some(x=>x.startsWith('contract_items'))){
       const probe = await sb.from('contract_items').select('end_date,renewed,closed,unit_price').limit(1);
       if(probe.error) state.setupMissing.push('contract_items: 품목 단가·만료일 칸이 없습니다 (setup.sql 다시 실행 필요)');
@@ -741,8 +748,8 @@
   function cmp(a,b){ const an=Number(a), bn=Number(b); if(a!==''&&b!==''&&a!=null&&b!=null&&!isNaN(an)&&!isNaN(bn)) return an-bn; return String(a==null?'':a).localeCompare(String(b==null?'':b),'ko'); }
   function applySort(list, key, getters){ const st=state.sort[key]; if(!st||!getters[st.col]) return list; const g=getters[st.col]; return [...list].sort((a,b)=>{ const r=cmp(g(a),g(b)); return st.dir==='asc'?r:-r; }); }
   function sortTh(label, key, col, style){ const st=state.sort[key]||{}; const on=st.col===col; return `<th style="${style||''}"><span class="sort-th" data-table="${key}" data-col="${col}">${label}<span class="sort-arrow ${on?'on':''}">${on?(st.dir==='asc'?'▲':'▼'):'▵'}</span></span></th>`; }
-  function paginate(list, key){ const total=Math.max(1,Math.ceil(list.length/PAGE_SIZE)); let p=state.page[key]||1; if(p>total) p=total; state.page[key]=p; return {items:list.slice((p-1)*PAGE_SIZE,p*PAGE_SIZE), page:p, total}; }
-  function pager(key, pg, count){ if(pg.total<=1) return ''; const P=pg.page, T=pg.total; const nums=[]; for(let i=1;i<=T;i++){ if(i===1||i===T||Math.abs(i-P)<=2) nums.push(i); else if(nums[nums.length-1]!=='…') nums.push('…'); } return `<div class="pager"><button class="btn-sm ghost pageBtn" data-table="${key}" data-page="${P-1}" ${P<=1?'disabled':''}>이전</button>${nums.map(n=>n==='…'?'<span class="muted">…</span>':`<button class="btn-sm ${n===P?'':'ghost'} pageBtn" data-table="${key}" data-page="${n}" ${n===P?'disabled style="opacity:1;"':''}>${n}</button>`).join('')}<button class="btn-sm ghost pageBtn" data-table="${key}" data-page="${P+1}" ${P>=T?'disabled':''}>다음</button><span class="muted small" style="margin-left:6px;">전체 ${count}건 · 50개씩</span></div>`; }
+  function paginate(list, key, size){ size=size||PAGE_SIZE; const total=Math.max(1,Math.ceil(list.length/size)); let p=state.page[key]||1; if(p>total) p=total; state.page[key]=p; return {items:list.slice((p-1)*size,p*size), page:p, total, size}; }
+  function pager(key, pg, count){ if(pg.total<=1) return ''; const P=pg.page, T=pg.total; const nums=[]; for(let i=1;i<=T;i++){ if(i===1||i===T||Math.abs(i-P)<=2) nums.push(i); else if(nums[nums.length-1]!=='…') nums.push('…'); } return `<div class="pager"><button class="btn-sm ghost pageBtn" data-table="${key}" data-page="${P-1}" ${P<=1?'disabled':''}>이전</button>${nums.map(n=>n==='…'?'<span class="muted">…</span>':`<button class="btn-sm ${n===P?'':'ghost'} pageBtn" data-table="${key}" data-page="${n}" ${n===P?'disabled style="opacity:1;"':''}>${n}</button>`).join('')}<button class="btn-sm ghost pageBtn" data-table="${key}" data-page="${P+1}" ${P>=T?'disabled':''}>다음</button><span class="muted small" style="margin-left:6px;">전체 ${count}건 · ${pg.size||50}개씩</span></div>`; }
   function checkAllTh(key){ return `<th style="width:30px;"><input type="checkbox" class="checkAll" data-table="${key}"/></th>`; }
   function checkTd(key,id){ return `<td><input type="checkbox" class="rowCheck" data-table="${key}" data-id="${id}" ${state.sel[key].has(id)?'checked':''}/></td>`; }
   function bulkDelBtn(key){ const n=state.sel[key].size; return `<button class="icon-btn danger bulkDel" data-table="${key}" title="선택 삭제">&minus;${n?`<span class="cnt-dot">${n}</span>`:''}</button>`; }
@@ -967,7 +974,7 @@
     const renewN = renewalBadgeCount(), tkN = openTicketsCount(false);
     const p = notifyPerm();
     const notifyLabel = p==='granted'?'🔔 갱신 알림 켜짐':p==='denied'?'🔕 알림 차단됨':'🔔 갱신 알림 켜기';
-    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), support:renderSupport, reps:renderReps, quotes:renderQuotes, pos:renderPOs, company:renderCompany, stats:renderStats};
+    const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), legacy:()=>renderContracts('legacy'), support:renderSupport, reps:renderReps, quotes:renderQuotes, pos:renderPOs, company:renderCompany, stats:renderStats};
     return `<div class="shell">
       <div class="sidebar">
         <div class="brand"><h2>UNION</h2><div class="who">${esc(state.user)} 님${state.isAdmin?' · 관리자':''}</div></div>
@@ -996,6 +1003,7 @@
       <div class="main">
         ${wtabsHTML()}
         ${state.authProblem?`<div class="setup-banner"><b>로그인 정보를 확인하는 중 문제가 생겼어요.</b> 잠시 뒤 새로고침(F5) 해 주세요. 계속되면 이 컴퓨터의 <b>날짜·시간이 정확한지</b>(Windows 설정 → 시간 → "자동으로 시간 설정" 켜기) 확인하거나, 로그아웃 후 다시 로그인해 주세요.<div class="small muted" style="margin-top:4px;">${esc(state.authProblem)}</div></div>`:''}
+        ${state.noLegacyCol && state.tab==='legacy'?`<div class="setup-banner"><b>기존데이터를 쓰려면 setup.sql을 한 번 더 실행해 주세요.</b> Supabase → SQL Editor에서 실행하면 "기존데이터" 표시 칸이 생겨요.</div>`:''}
         ${state.setupMissing.length?`<div class="setup-banner"><b>데이터베이스 설정이 필요합니다.</b> Supabase → SQL Editor에서 <b>setup.sql</b> 내용을 한 번 실행해 주세요. 실행 전에는 일부 화면이 비어 보이거나 저장되지 않습니다.<div class="small muted" style="margin-top:4px;">${state.setupMissing.map(esc).join('<br/>')}</div></div>`:''}
         ${pages[state.tab]()}
       </div>
@@ -1011,9 +1019,9 @@
     ${state.toast?`<div class="toast">${esc(state.toast)}</div>`:''}
     <input type="file" id="attachFileInput" style="display:none;" accept=".pdf,.doc,.docx,.hwp,.hwpx,.xlsx,.png,.jpg,.jpeg"/>
     <input type="file" id="importFileInput" style="display:none;" accept=".xlsx,.xls,.csv"/>
-    ${['customers','suppliers','contracts','maint','support','quotes','pos'].includes(state.tab)?`<div class="excel-wrap">
+    ${['customers','suppliers','contracts','maint','support','quotes','pos','legacy'].includes(state.tab)?`<div class="excel-wrap">
       ${state.excelMenu?`<div class="excel-menu" id="excelMenu">
-        ${['customers','suppliers','contracts','maint','quotes'].includes(state.tab)?`<button data-x="import">📥 ${({customers:'고객사',suppliers:'매입처',contracts:'계약',maint:'유지보수',quotes:'견적'})[state.tab]} 한번에 넣기</button><button data-x="template">📄 넣기 양식 받기</button>`:''}
+        ${['customers','suppliers','contracts','maint','quotes','legacy'].includes(state.tab)?`<button data-x="import">📥 ${({customers:'고객사',suppliers:'매입처',contracts:'계약',maint:'유지보수',quotes:'견적',legacy:'기존데이터'})[state.tab]} 한번에 넣기</button><button data-x="template">📄 넣기 양식 받기</button>`:''}
         <button data-x="export">📤 엑셀로 내보내기</button>
       </div>`:''}
       <button class="excel-fab" id="excelFab" title="엑셀">XLS</button>
@@ -1754,12 +1762,13 @@
     let detail='';
     if(pick.kind==='quote'){
       const list=qs.filter(q=>pick.key==='all' || (q.status||'작성중')===pick.val).sort((a,b)=>cmp(b.quote_date||'',a.quote_date||''));
-      detail=`<div class="card-title" style="padding:14px 16px 0;"><span>견적 ${pick.val?`· ${esc(pick.val)}`:''} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>견적번호</th><th>견적일</th><th class="tl">고객사</th><th class="tl">건명</th><th class="num">공급가액</th><th class="num">마진</th><th>영업담당</th><th>상태</th></tr></thead><tbody>${list.map(q=>{ const t=qCalc(q); return `<tr><td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl">${esc(custName(q.customer_id))}</td><td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}">${esc(q.title||'(건명 없음)')}</span></td><td class="num">${won(t.subtotal)}</td><td class="num">${won(t.margin)}</td><td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td></tr>`; }).join('')}</tbody></table>`:'<div class="empty">해당 견적이 없습니다.</div>'}`;
+      const spg=paginate(list,'stats',30);
+      detail=`<div class="card-title" style="padding:14px 16px 0;"><span>견적 ${pick.val?`· ${esc(pick.val)}`:''} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>견적번호</th><th>견적일</th><th class="tl">고객사</th><th class="tl">건명</th><th class="num">공급가액</th><th class="num">마진</th><th>영업담당</th><th>상태</th></tr></thead><tbody>${spg.items.map(q=>{ const t=qCalc(q); return `<tr><td class="nowrap">${esc(q.quote_no)}</td><td class="nowrap">${esc(q.quote_date||'-')}</td><td class="tl">${esc(custName(q.customer_id))}</td><td class="tl"><span class="link docView" data-kind="quote" data-id="${q.id}">${esc(q.title||'(건명 없음)')}</span></td><td class="num">${won(t.subtotal)}</td><td class="num">${won(t.margin)}</td><td>${esc(repDisplay(q.sales_rep)||'-')}</td><td>${docStatusBadge(q.status)}</td></tr>`; }).join('')}</tbody></table>${pager('stats',spg,list.length)}`:'<div class="empty">해당 견적이 없습니다.</div>'}`;
     } else {
       const list=(pick.key==='stage'?allCtrs:ctrs).filter(c=>pick.key==='all' || (pick.key==='deal' ? (c.deal_type||'신규')===pick.val : normStage(c.stage)===pick.val)).sort((a,b)=>cmp(b.contract_date||'',a.contract_date||''));
       const lab = pick.key==='deal'||pick.key==='stage' ? ` · ${esc(pick.val)}` : ' 전체';
-      const t=sum(list);
-      detail=`<div class="card-title" style="padding:14px 16px 0;"><span>계약${lab} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>분류</th><th>계약일</th><th class="tl">계약명</th><th class="tl">고객사</th><th class="num">계약금액</th><th class="num">매입</th><th class="num">이익</th><th>단계</th><th>영업담당</th></tr></thead><tbody>${list.map(c=>{ const x=contractTotals(c); return `<tr><td>${dealBadge(c.deal_type)}</td><td class="nowrap">${esc(c.contract_date||'-')}</td><td class="tl"><span class="link gotoCtr" data-id="${c.id}">${esc(c.name)}</span></td><td class="tl">${esc(custName(c.customer_id))}</td><td class="num">${won(x.sale)}</td><td class="num">${won(x.purchase)}</td><td class="num" style="color:#d0312d;">${won(x.profit)}</td><td>${stageBadge(c.stage)}</td><td>${esc(repDisplay(c.sales_rep)||'-')}</td></tr>`; }).join('')}<tr class="total"><td colspan="4" style="text-align:right;">합계</td><td class="num">${won(t.sale)}</td><td class="num">${won(t.purchase)}</td><td class="num" style="color:#d0312d;">${won(t.profit)}</td><td colspan="2"></td></tr></tbody></table>`:'<div class="empty">해당 계약이 없습니다.</div>'}`;
+      const t=sum(list); const spg=paginate(list,'stats',30);
+      detail=`<div class="card-title" style="padding:14px 16px 0;"><span>계약${lab} ${list.length}건</span></div>${list.length?`<table style="margin-top:8px;"><thead><tr><th>분류</th><th>계약일</th><th class="tl">계약명</th><th class="tl">고객사</th><th class="num">계약금액</th><th class="num">매입</th><th class="num">이익</th><th>단계</th><th>영업담당</th></tr></thead><tbody>${spg.items.map(c=>{ const x=contractTotals(c); return `<tr><td>${dealBadge(c.deal_type)}</td><td class="nowrap">${esc(c.contract_date||'-')}</td><td class="tl"><span class="link gotoCtr" data-id="${c.id}">${esc(c.name)}</span></td><td class="tl">${esc(custName(c.customer_id))}</td><td class="num">${won(x.sale)}</td><td class="num">${won(x.purchase)}</td><td class="num" style="color:#d0312d;">${won(x.profit)}</td><td>${stageBadge(c.stage)}</td><td>${esc(repDisplay(c.sales_rep)||'-')}</td></tr>`; }).join('')}<tr class="total"><td colspan="4" style="text-align:right;">합계</td><td class="num">${won(t.sale)}</td><td class="num">${won(t.purchase)}</td><td class="num" style="color:#d0312d;">${won(t.profit)}</td><td colspan="2"></td></tr></tbody></table>${pager('stats',spg,list.length)}`:'<div class="empty">해당 계약이 없습니다.</div>'}`;
     }
     const y=+todayStr().slice(0,4), cm=todayStr().slice(0,7), pm=addMonths(cm+'-01',-1).slice(0,7);
     const quick=[['올해',y+'-01',y+'-12'],['작년',(y-1)+'-01',(y-1)+'-12'],['이번 달',cm,cm],['지난 달',pm,pm],['상반기',y+'-01',y+'-06'],['하반기',y+'-07',y+'-12']];
@@ -1797,12 +1806,12 @@
   }
   function bindStats(){
     const f=state.f, $=id=>document.getElementById(id);
-    const set=(a,b)=>{ if(a&&b&&b<a) return alert('끝 월이 시작 월보다 빠릅니다.'); f.stFrom=a; f.stTo=b; render(); };
+    const set=(a,b)=>{ if(a&&b&&b<a) return alert('끝 월이 시작 월보다 빠릅니다.'); f.stFrom=a; f.stTo=b; state.page.stats=1; render(); };
     $('stFrom').onchange=e=>set(e.target.value, f.stTo); $('stTo').onchange=e=>set(f.stFrom, e.target.value);
     document.querySelectorAll('.stQuick').forEach(b=>b.onclick=()=>set(b.dataset.a,b.dataset.b));
     $('stRep').onchange=e=>{ f.stRep=e.target.value; render(); };
     document.querySelectorAll('.stRepPick').forEach(b=>b.onclick=()=>{ f.stRep=b.dataset.rep; render(); });
-    document.querySelectorAll('.st-row, .stK').forEach(el=>el.onclick=()=>{ f.stPick={kind:el.dataset.kind, key:el.dataset.key, val:el.dataset.val||''}; render(); });
+    document.querySelectorAll('.st-row, .stK').forEach(el=>el.onclick=()=>{ f.stPick={kind:el.dataset.kind, key:el.dataset.key, val:el.dataset.val||''}; state.page.stats=1; render(); });
     document.querySelectorAll('.gotoCtr').forEach(b=>b.onclick=()=>{ state.f.ctrTab='전체'; state.q.contracts=''; goTab('contracts'); state.expanded=b.dataset.id; render(); });
   }
   function bindQuotes(){
@@ -2681,9 +2690,9 @@
   // key: 'contracts' = 모든 계약, 'maint' = 분류가 유지보수인 계약만
   function renderContracts(key){
     key = key || 'contracts';
-    const isMt = key==='maint', f=state.f;
-    const tabKey = isMt?'mtTab':'ctrTab', repKey = isMt?'mtRep':'ctrRep';
-    const base = isMt ? state.contracts.filter(c=>c.deal_type==='유지보수') : state.contracts;
+    const isMt = key==='maint', isLg = key==='legacy', f=state.f;
+    const tabKey = isMt?'mtTab':isLg?'lgTab':'ctrTab', repKey = isMt?'mtRep':isLg?'lgRep':'ctrRep';
+    const base = isMt ? state.contracts.filter(c=>c.deal_type==='유지보수') : isLg ? (state.legacy||[]) : state.contracts;
     let list = base.filter(c=>{
       const st=ctrState(c);
       if(!periodTabMatch(f[tabKey], st.end, st.renewed, st.dismissed, c.stage||'')) return false;
@@ -2698,16 +2707,17 @@
     const pg = paginate(list,key);
     const reps=[...new Set(base.map(c=>repDisplay(c.sales_rep)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
     return `
-      <div class="page-head"><div><div class="page-title">${isMt?'유지보수':'계약관리'}</div><div class="page-sub">${isMt?'분류가 "유지보수"인 계약만 모아 봅니다 · 등록·수정은 계약과 같은 방식':'모든 계약 · 분류(신규/갱신/유지보수), 품목별 매출·매입, 만료일'}</div></div></div>
+      <div class="page-head"><div><div class="page-title">${isMt?'유지보수':isLg?'기존데이터':'계약관리'}</div><div class="page-sub">${isMt?'분류가 "유지보수"인 계약만 모아 봅니다 · 등록·수정은 계약과 같은 방식':isLg?'예전 계약을 엑셀로 한번에 넣어두는 곳 · 알림·대시보드·통계에 잡히지 않아요 · 확인 후 "견적으로" 또는 "계약으로" 보내세요':'모든 계약 · 분류(신규/갱신/유지보수/용역), 품목별 매출·매입, 만료일'}</div></div></div>
       ${periodTabsHTML(base,ctrState,f[tabKey],'ctrTab')}
       <div class="toolbar">
-        <button class="btn-primary" id="addCtrBtn">+ ${isMt?'유지보수 계약 추가':'계약 추가'}</button>
+        <button class="btn-primary" id="addCtrBtn">+ ${isMt?'유지보수 계약 추가':isLg?'기존데이터 추가':'계약 추가'}</button>
+        ${isLg?`<button class="btn-sm" id="lgBulkToCtr" title="체크한 건을 계약관리로 옮겨요 (알림이 켜져요)">➜ 선택 계약으로 보내기${state.sel[key].size?` (${state.sel[key].size})`:''}</button>`:''}
         <span class="spacer"></span>
         ${searchInput(key,'계약명·고객사·제품·매입처 검색')}
         ${isMt?'':selectFilter('fCtrType','분류',DEAL_TYPES,f.ctrType)}
         ${rangeChip(key)}
         ${selectFilter('fCtrRep','영업담당',reps,f[repKey])}
-        ${f[tabKey]==='미처리'?`<button class="btn-sm" id="bulkCloseBtn" title="체크한 계약을 갱신 안 함(종료)으로 처리해서 완료(종료) 탭으로 옮겨요">✔ 선택 종료 처리${state.sel[key].size?` (${state.sel[key].size})`:''}</button>`:''}
+        ${f[tabKey]==='미처리'&&!isLg?`<button class="btn-sm" id="bulkCloseBtn" title="체크한 계약을 갱신 안 함(종료)으로 처리해서 완료(종료) 탭으로 옮겨요">✔ 선택 종료 처리${state.sel[key].size?` (${state.sel[key].size})`:''}</button>`:''}
         ${bulkDelBtn(key)}
       </div>
       <div class="card flush">
@@ -2728,7 +2738,7 @@
             <td class="nowrap">${cs.end?esc(cs.end):''}<div>${ddayBadge(cs.end,cs.renewed,cs.dismissed,c.alert_days)}${cs.extra?` <span class="badge gray" title="${esc(cs.groups.filter(g=>!g.done).slice(1).map(g=>g.end).join(', '))}">외 ${cs.extra}개 일정</span>`:''}</div></td>
             <td class="nowrap">${esc(repDisplay(c.sales_rep)||'-')}</td>
             <td style="text-align:center;">${c.attachment_url?`<button class="icon-btn attachView" data-kind="ctr" data-id="${c.id}" title="${esc(c.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="ctr" data-id="${c.id}" title="계약서 첨부">&#128206;</button>`}</td>
-            <td class="nowrap">${canRenew?`<button class="icon-btn plusBtn" data-id="${c.id}" data-end="${cs.end||''}" title="견적 · 갱신">+</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
+            <td class="nowrap">${isLg?`<button class="btn-sm ghost lgQuote" data-id="${c.id}" data-end="${cs.end||''}" title="이 건으로 견적서 만들기">견적으로</button> <button class="btn-sm lgToCtr" data-id="${c.id}" title="계약관리로 옮기기">계약으로</button> `:canRenew?`<button class="icon-btn plusBtn" data-id="${c.id}" data-end="${cs.end||''}" title="견적 · 갱신">+</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
           if(open) html += `<tr class="detail"><td colspan="${isMt?12:11}">${contractDetail(c)}</td></tr>`;
           return html;
         }).join('')}
@@ -2754,6 +2764,16 @@
       ${c.remarks?`<div><span class="muted">비고</span><div style="white-space:pre-wrap;">${esc(c.remarks)}</div></div>`:''}
     </div>`;
   }
+  function legacyToContracts(ids){
+    if(state.noLegacyCol) return alert('먼저 setup.sql을 한 번 더 실행해 주세요.');
+    const cs=ids.map(id=>(state.legacy||[]).find(c=>c.id===id)).filter(Boolean); if(!cs.length) return;
+    askConfirm(`${cs.length===1?`"${cs[0].name}"을(를)`:`${cs.length}건을`} 계약관리로 보낼까요?\n계약관리에 들어가면 만료 알림·대시보드·통계에 잡혀요.`, async ()=>{
+      cs.forEach(c=>c.is_legacy=false);
+      const e=await chunkUpsert('contracts', cs.map(ctrRow)); if(e){ cs.forEach(c=>c.is_legacy=true); return fail('보내기 실패',e); }
+      state.legacy=state.legacy.filter(c=>!cs.includes(c)); state.contracts.unshift(...cs); state.sel.legacy.clear();
+      showToast(`${cs.length}건을 계약관리로 보냈어요.`);
+    }, '계약으로 보내기', false);
+  }
   async function bulkCloseContracts(key){
     const ids=[...state.sel[key]]; if(!ids.length) return alert('종료 처리할 계약을 먼저 체크해 주세요. (맨 위 체크박스로 전체 선택)');
     const cs=ids.map(contractById).filter(Boolean);
@@ -2767,10 +2787,13 @@
   }
   function bindContracts(key){
     const bc=document.getElementById('bulkCloseBtn'); if(bc) bc.onclick=()=>bulkCloseContracts(key||'contracts');
-    key = key || 'contracts'; const isMt = key==='maint';
-    document.getElementById('addCtrBtn').onclick=()=>openContractModal(null, isMt?{dealType:'유지보수'}:{});
-    document.querySelectorAll('.ctrTab').forEach(el=>el.onclick=()=>{ state.f[isMt?'mtTab':'ctrTab']=el.dataset.t; state.page[key]=1; state.sel[key].clear(); render(); });
-    [['fCtrType','ctrType'],['fCtrRep',isMt?'mtRep':'ctrRep']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ state.f[k]=el.value; state.page[key]=1; state.sel[key].clear(); render(); }; });
+    key = key || 'contracts'; const isMt = key==='maint', isLg = key==='legacy';
+    document.getElementById('addCtrBtn').onclick=()=>{ if(isLg && state.noLegacyCol) return alert('먼저 setup.sql을 한 번 더 실행해 주세요.'); openContractModal(null, isMt?{dealType:'유지보수'}:isLg?{legacy:true}:{}); };
+    document.querySelectorAll('.ctrTab').forEach(el=>el.onclick=()=>{ state.f[isMt?'mtTab':isLg?'lgTab':'ctrTab']=el.dataset.t; state.page[key]=1; state.sel[key].clear(); render(); });
+    document.querySelectorAll('.lgQuote').forEach(b=>b.onclick=()=>openRenewalQuote(b.dataset.id, b.dataset.end));
+    document.querySelectorAll('.lgToCtr').forEach(b=>b.onclick=()=>legacyToContracts([b.dataset.id]));
+    const lb=document.getElementById('lgBulkToCtr'); if(lb) lb.onclick=()=>{ const ids=[...state.sel.legacy]; if(!ids.length) return alert('계약으로 보낼 건을 먼저 체크해 주세요.'); legacyToContracts(ids); };
+    [['fCtrType','ctrType'],['fCtrRep',isMt?'mtRep':isLg?'lgRep':'ctrRep']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ state.f[k]=el.value; state.page[key]=1; state.sel[key].clear(); render(); }; });
     document.querySelectorAll('.editCtr').forEach(b=>b.onclick=()=>openContractModal(contractById(b.dataset.id)));
     document.querySelectorAll('.renewBtn').forEach(b=>b.onclick=()=>startRenewal(b.dataset.kind,b.dataset.id,b.dataset.end));
   }
@@ -2797,7 +2820,7 @@
       const target=(opts.end ? open.filter(g=>g.end===opts.end) : open);
       const src=target.flatMap(g=>g.items);
       const basePer=periodRenewal(o.contract_date||o.start_date, (target[0]&&target[0].end)||o.expiry_date);
-      data={...o, id:uid('cr'), code:nextCode('CR',state.contracts), deal_type:o.deal_type==='유지보수'?'유지보수':'갱신', stage:STAGES[0], contract_date:basePer.start, start_date:basePer.start, expiry_date:basePer.end, sales_rep:repDisplay(o.sales_rep), renewed:false, alert_dismissed:false, invoice_date:'', remarks:'', attachment_url:null, attachment_name:null, attachment_path:null, reg_date:todayStr(), _renewFromId:o.id};
+      data={...o, id:uid('cr'), code:nextCode('CR',state.contracts), deal_type:o.deal_type==='유지보수'?'유지보수':'갱신', stage:STAGES[0], contract_date:basePer.start, start_date:basePer.start, expiry_date:basePer.end, sales_rep:repDisplay(o.sales_rep), renewed:false, alert_dismissed:false, invoice_date:'', remarks:'', attachment_url:null, attachment_name:null, attachment_path:null, reg_date:todayStr(), is_legacy:false, _renewFromId:o.id};
       if(src.length){
         items=src.map(i=>{ const ie=itemEnd(i,o); const per = i.end_date ? periodRenewal(addMonths(addDays(ie,1),-12), ie) : periodRenewal(o.contract_date||o.start_date, ie); return {...i, id:uid('it'), contract_id:data.id, supplier:supplierLabel(i.supplier_id,i.supplier), end_date:per.end, renewed:false, closed:false, _srcId:i.id}; });
         const starts=src.map(i=>addDays(itemEnd(i,o),1)).sort(), ends=items.map(i=>i.end_date).sort();
@@ -2808,7 +2831,7 @@
       opts._srcNames = src.map(i=>i.product);
       opts._leftNames = itemsOf(o.id).filter(i=>!itemDone(i,o) && !src.includes(i)).map(i=>i.product);
     } else {
-      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:'', customer_id:'', contact_id:'', end_user_name:'', deal_type:opts.dealType||'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:state.user, remarks:'', reg_date:todayStr()};
+      data={id:uid('cr'), code:nextCode('CR',state.contracts), name:'', customer_id:'', contact_id:'', end_user_name:'', deal_type:opts.dealType||'신규', billing_cycle:BILLING[0], stage:STAGES[0], contract_date:todayStr(), expiry_date:addDays(addMonths(todayStr(),12),-1), alert_days:30, sales_rep:state.user, remarks:'', reg_date:todayStr(), is_legacy:!!opts.legacy};
       items=[]; title='계약 추가';
     }
     if(items.length===0) items.push({id:uid('it'), contract_id:data.id, product:'', qty:1, unit_price:0, sale_amount:0, supplier:'', supplier_id:null, purchase_amount:0});
@@ -2961,7 +2984,8 @@
     } }
     if(d._fromQuoteId){ const q=state.quotes.find(x=>x.id===d._fromQuoteId); if(q){ q.status='계약전환'; q.contract_id=d.id; const e3=await upsertQuotes([quoteRow(q)]); if(e3) fail('견적 상태 변경 실패',e3); } }
     const clean={...d}; ['_items','_removedItems','_renewFromId','_newCustomerName','_nc','_fromQuoteId'].forEach(k=>delete clean[k]);
-    const i=state.contracts.findIndex(c=>c.id===d.id); if(i>-1) state.contracts[i]=clean; else state.contracts.unshift(clean);
+    const arr = clean.is_legacy ? (state.legacy=state.legacy||[]) : state.contracts;
+    const i=arr.findIndex(c=>c.id===d.id); if(i>-1) arr[i]=clean; else arr.unshift(clean);
     state.items = state.items.filter(x=>x.contract_id!==d.id).concat(items);
     state.modal=null; showToast(d._renewFromId?'갱신 계약이 등록되었습니다.':'저장되었습니다.');
   }
@@ -3328,20 +3352,20 @@
   }
 
   // ================= delete =================
-  const TABLES = {customers:['customers','customers','고객사'], suppliers:['customers','customers','매입처'], contracts:['contracts','contracts','계약'], maint:['contracts','contracts','유지보수 계약'], support:['support_tickets','tickets','기술지원'], reps:['reps','reps','담당자'], quotes:['quotes','quotes','견적서'], pos:['purchase_orders','pos','발주서']};
+  const TABLES = {legacy:['contracts','legacy','기존데이터'], customers:['customers','customers','고객사'], suppliers:['customers','customers','매입처'], contracts:['contracts','contracts','계약'], maint:['contracts','contracts','유지보수 계약'], support:['support_tickets','tickets','기술지원'], reps:['reps','reps','담당자'], quotes:['quotes','quotes','견적서'], pos:['purchase_orders','pos','발주서']};
   function deleteRecords(key, ids, after){
     const [table, field, label] = TABLES[key];
     if(key==='customers'){
-      const used = ids.filter(id=>state.contracts.some(c=>c.customer_id===id) || state.maint.some(m=>mtCustomerId(m)===id) || state.tickets.some(t=>t.customer_id===id));
+      const used = ids.filter(id=>state.contracts.some(c=>c.customer_id===id) || (state.legacy||[]).some(c=>c.customer_id===id) || state.maint.some(m=>mtCustomerId(m)===id) || state.tickets.some(t=>t.customer_id===id));
       if(used.length) return alert(`계약·유지보수·기술지원 기록이 있는 고객사 ${used.length}곳은 삭제할 수 없습니다.\n관련 기록을 먼저 정리해주세요.`);
     }
     if(key==='suppliers'){
       const used = ids.filter(id=>{ const c=customer(id); return c && partnerStats(c).its.length + partnerStats(c).mts.length > 0; });
       if(used.length) return alert(`계약 품목이나 유지보수에 쓰인 매입처 ${used.length}곳은 삭제할 수 없습니다.`);
     }
-    askConfirm(`${label} ${ids.length}건을 삭제할까요?${key==='contracts'||key==='maint'?'\n품목 정보도 함께 삭제됩니다.':''}`, async ()=>{
+    askConfirm(`${label} ${ids.length}건을 삭제할까요?${key==='contracts'||key==='maint'||key==='legacy'?'\n품목 정보도 함께 삭제됩니다.':''}`, async ()=>{
       let err=await dbDelete(table, ids); if(err) return fail('삭제 실패',err);
-      if(key==='contracts'||key==='maint'){ const itIds=state.items.filter(i=>ids.includes(i.contract_id)).map(i=>i.id); await dbDelete('contract_items',itIds); state.items=state.items.filter(i=>!ids.includes(i.contract_id)); }
+      if(key==='contracts'||key==='maint'||key==='legacy'){ const itIds=state.items.filter(i=>ids.includes(i.contract_id)).map(i=>i.id); await dbDelete('contract_items',itIds); state.items=state.items.filter(i=>!ids.includes(i.contract_id)); }
       if(key==='customers'||key==='suppliers'){ const cIds=state.contacts.filter(x=>ids.includes(x.customer_id)).map(x=>x.id); await dbDelete('customer_contacts',cIds); state.contacts=state.contacts.filter(x=>!ids.includes(x.customer_id)); }
       state[field]=state[field].filter(x=>!ids.includes(x.id));
       ids.forEach(id=>state.sel[key].delete(id));
@@ -3391,7 +3415,7 @@
   function exportExcel(){
     let rows=[], name='';
     if(state.tab==='customers'||state.tab==='suppliers'){ const kind=state.tab==='suppliers'?'supplier':'customer'; name=kind==='supplier'?'매입처':'고객사'; partnersOf(kind).forEach(c=>{ const cs=contactsOf(c.id); (cs.length?cs:[{}]).forEach(x=>rows.push({'업체명':c.name,'사업자번호':c.biz_reg_no||'','세금계산서메일':c.tax_email||'','담당자명':x.name||'','부서':x.dept||'','연락처':x.phone||'','이메일':x.email||''})); }); }
-    if(state.tab==='contracts'||state.tab==='maint'){ name=state.tab==='maint'?'유지보수관리':'계약관리'; state.contracts.filter(c=>state.tab!=='maint'||c.deal_type==='유지보수').forEach(c=>{ const its=itemsOf(c.id); const ct=contact(c.contact_id); (its.length?its:[{}]).forEach(i=>rows.push({'계약코드':c.code,'구분':c.deal_type||'신규','계약명':c.name,'고객사':custName(c.customer_id),'고객담당자':ct?ct.name:'','앤드유저':c.end_user_name||'','제품':i.product||'','수량':i.qty||'','단가':num(i.unit_price)||'','매출':num(i.sale_amount),'매입처':supplierLabel(i.supplier_id,i.supplier),'매입':num(i.purchase_amount),'이익':num(i.sale_amount)-num(i.purchase_amount),'단계':normStage(c.stage),'결제주기':c.billing_cycle||'','계약일':c.contract_date||'','만료일':(i.id?itemEnd(i,c):c.expiry_date)||'','품목상태':i.renewed?'갱신완료':i.closed?'종료':'','영업담당':repDisplay(c.sales_rep),'갱신완료':c.renewed?'Y':''})); }); }
+    if(state.tab==='contracts'||state.tab==='maint'||state.tab==='legacy'){ name=state.tab==='maint'?'유지보수관리':state.tab==='legacy'?'기존데이터':'계약관리'; (state.tab==='legacy'?(state.legacy||[]):state.contracts).filter(c=>state.tab!=='maint'||c.deal_type==='유지보수').forEach(c=>{ const its=itemsOf(c.id); const ct=contact(c.contact_id); (its.length?its:[{}]).forEach(i=>rows.push({'계약코드':c.code,'구분':c.deal_type||'신규','계약명':c.name,'고객사':custName(c.customer_id),'고객담당자':ct?ct.name:'','앤드유저':c.end_user_name||'','제품':i.product||'','수량':i.qty||'','단가':num(i.unit_price)||'','매출':num(i.sale_amount),'매입처':supplierLabel(i.supplier_id,i.supplier),'매입':num(i.purchase_amount),'이익':num(i.sale_amount)-num(i.purchase_amount),'단계':normStage(c.stage),'결제주기':c.billing_cycle||'','계약일':c.contract_date||'','만료일':(i.id?itemEnd(i,c):c.expiry_date)||'','품목상태':i.renewed?'갱신완료':i.closed?'종료':'','영업담당':repDisplay(c.sales_rep),'갱신완료':c.renewed?'Y':''})); }); }
     if(false){ state.maint.forEach(m=>{ const t=mtTotals(m); rows.push({'구분':m.deal_type||'신규','유지보수명':m.name,'고객사':custName(mtCustomerId(m)),'결제주기':m.billing_cycle||'','시작일':m.start_date||'','만료일':m.end_date||'','매출':t.sale,'매입처':supplierLabel(m.supplier_id,m.supplier),'매입':t.purchase,'이익':t.profit,'담당':repDisplay(m.sales_rep),'갱신완료':m.renewed?'Y':''}); }); }
     if(state.tab==='support'){ name='기술지원'; state.tickets.forEach(t=>{ const ct=contact(t.contact_id); rows.push({'번호':t.code,'접수일':t.received_date||'','고객사':custName(t.customer_id),'고객담당자':ct?ct.name:'','제품':t.product||'','요청내용':t.request||'','엔지니어':repDisplay(t.assignee),'방식':t.method||'','지원내용':t.action||'','상태':t.status||'','완료일':t.done_date||''}); }); }
     if(state.tab==='quotes'){ name='견적'; state.quotes.forEach(q=>rows.push({'견적번호':q.quote_no,'견적일':q.quote_date||'','구분':q.deal_type||(q.renew_of?'갱신':'신규'),'고객사':custName(q.customer_id),'앤드유저':q.end_user_name||'','건명':q.title||'','공급가액':num(q.subtotal),'부가세':num(q.tax),'합계':num(q.total),'매입':num(q.cost_total),'마진':qCalc(q).margin,'마진율(%)':Math.round(qCalc(q).mrate*1000)/10,'영업담당':repDisplay(q.sales_rep),'상태':q.status||'','발송일':q.sent_at?String(q.sent_at).slice(0,10):'','받는사람':q.sent_to||''})); }
@@ -3493,7 +3517,9 @@
   async function chunkUpsert(table, rows){ for(let i=0;i<rows.length;i+=300){ const e=await dbUpsert(table, rows.slice(i,i+300)); if(e) return e; } return null; }
   async function importContracts(file){
     let rows; try{ rows=await readSheetRows(file); }catch(e){ return alert('엑셀 파일을 읽지 못했습니다: '+e.message); }
-    const isMt=state.tab==='maint', ctx=importCtx(), groups=new Map(); let bad=0;
+    const isMt=state.tab==='maint', isLg=state.tab==='legacy', ctx=importCtx(), groups=new Map(); let bad=0;
+    if(isLg && state.noLegacyCol) return alert('기존데이터를 쓰려면 먼저 setup.sql을 한 번 더 실행해 주세요.');
+    const allC=[...state.contracts, ...(state.legacy||[])];
     rows.forEach(r=>{
       const name=pick(r,'계약명'), cname=pick(r,'고객사'), prod=pick(r,'제품','제품명','품명');
       if(name.startsWith('(예)')||cname.startsWith('(예)')) return;
@@ -3506,20 +3532,20 @@
     const ctrs=[], items=[], skipped=[];
     for(const g of groups.values()){
       const r=g.r;
-      if((g.code && state.contracts.some(c=>c.code===g.code)) || state.contracts.some(c=>c.name===g.name && custName(c.customer_id)===g.cname)){ skipped.push(g.name); continue; }
+      if((g.code && allC.some(c=>c.code===g.code)) || allC.some(c=>c.name===g.name && custName(c.customer_id)===g.cname)){ skipped.push(g.name); continue; }
       const cu=ctx.cust(g.cname), ct=ctx.contact(cu, pick(r,'고객담당자','담당자'));
       let deal=pick(r,'분류','구분')||(isMt?'유지보수':'신규'); if(!DEAL_TYPES.includes(deal)) deal=isMt?'유지보수':'신규';
       const its=g.items.map((x,i)=>{ const qty=xNum(pick(x,'수량'))||1; let unit=xNum(pick(x,'단가')); let sale=xNum(pick(x,'매출','매출금액','금액')); if(!sale) sale=qty*unit; if(!unit && sale) unit=Math.round(sale/qty); const sp=ctx.sup(pick(x,'매입처')); return {id:uid('it'), product:pick(x,'제품','제품명','품명'), qty, unit_price:unit, sale_amount:sale, supplier:sp?sp.name:'', supplier_id:sp?sp.id:null, purchase_amount:xNum(pick(x,'매입','매입금액')), end_date:xDate(pick(x,'품목만료일')), sort:i, renewed:false, closed:false}; });
       let exp=xDate(pick(r,'만료일','만료일(기본)'));
       if(!exp){ const ends=its.map(i=>i.end_date).filter(Boolean).sort(); exp=ends[ends.length-1]||''; }
       its.forEach(i=>{ if(i.end_date===exp) i.end_date=''; });
-      const c={id:uid('cr'), code:nextCode('CR',[...state.contracts,...ctrs]), name:g.name, customer_id:cu.id, contact_id:ct?ct.id:null, end_user_name:pick(r,'앤드유저'), deal_type:deal, billing_cycle:pick(r,'결제주기')||BILLING[0], stage:normStage(pick(r,'단계')||STAGES[0]), contract_date:xDate(pick(r,'계약일'))||todayStr(), expiry_date:exp, alert_days:30, sales_rep:repName(pick(r,'영업담당','담당')), remarks:pick(r,'비고'), reg_date:todayStr(), renewed:false, alert_dismissed:false};
+      const c={id:uid('cr'), code:nextCode('CR',[...allC,...ctrs]), name:g.name, is_legacy:isLg, customer_id:cu.id, contact_id:ct?ct.id:null, end_user_name:pick(r,'앤드유저'), deal_type:deal, billing_cycle:pick(r,'결제주기')||BILLING[0], stage:normStage(pick(r,'단계')||STAGES[0]), contract_date:xDate(pick(r,'계약일'))||todayStr(), expiry_date:exp, alert_days:30, sales_rep:repName(pick(r,'영업담당','담당')), remarks:pick(r,'비고'), reg_date:todayStr(), renewed:false, alert_dismissed:false};
       its.forEach(i=>i.contract_id=c.id);
       ctrs.push(c); items.push(...its);
     }
     if(!ctrs.length) return alert(`넣을 계약이 없어요.${skipped.length?`\n이미 있는 계약 ${skipped.length}건은 건너뛰었어요.`:''}${bad?`\n계약명·고객사가 빠진 줄 ${bad}개가 있어요.`:''}\n양식의 열 이름(계약명, 고객사, 제품…)을 확인해 주세요.`);
     const sum=ctrs.reduce((a,c)=>a+items.filter(i=>i.contract_id===c.id).reduce((b,i)=>b+i.sale_amount,0),0);
-    askConfirm(`${isMt?'유지보수':'계약'} ${ctrs.length}건 (품목 ${items.length}개, 매출 합계 ₩${won(sum)})을 넣을까요?`+
+    askConfirm(`${isMt?'유지보수':isLg?'기존데이터':'계약'} ${ctrs.length}건 (품목 ${items.length}개, 매출 합계 ₩${won(sum)})을 넣을까요?`+
       (ctx.newCusts.length?`\n새 고객사 ${ctx.newCusts.length}곳: ${ctx.newCusts.slice(0,5).map(x=>x.name).join(', ')}${ctx.newCusts.length>5?' 외':''}`:'')+
       (ctx.newSups.length?`\n새 매입처 ${ctx.newSups.length}곳: ${ctx.newSups.slice(0,5).map(x=>x.name).join(', ')}${ctx.newSups.length>5?' 외':''}`:'')+
       (skipped.length?`\n이미 있어서 건너뛸 계약 ${skipped.length}건`:'')+(bad?`\n계약명·고객사가 빠진 줄 ${bad}개는 빠집니다`:''), async ()=>{
@@ -3527,7 +3553,7 @@
         await ctx.save();
         let e=await chunkUpsert('contracts', ctrs.map(ctrRow)); if(e) throw e;
         e=await chunkUpsert('contract_items', items.map(itemRow)); if(e) throw e;
-        state.contracts.unshift(...ctrs); state.items.push(...items);
+        (isLg?state.legacy:state.contracts).unshift(...ctrs); state.items.push(...items);
         showToast(`${ctrs.length}건을 넣었어요.`);
       }catch(e){ fail('가져오기 실패',e); }
     }, '넣기', false);
@@ -3599,12 +3625,12 @@
     document.querySelectorAll('.shareBtn').forEach(b=>b.onclick=e=>{ e.stopPropagation(); openShare(b.dataset.kind,b.dataset.id); });
     // excel
     const fab=document.getElementById('excelFab'); if(fab) fab.onclick=e=>{ e.stopPropagation(); state.excelMenu=!state.excelMenu; render(); };
-    document.querySelectorAll('#excelMenu [data-x]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); state.excelMenu=false; const x=b.dataset.x; render(); if(x==='export') exportExcel(); if(x==='template') (['contracts','maint','quotes'].includes(state.tab)?downloadDealTemplate():downloadPartnerTemplate()); if(x==='import') document.getElementById('importFileInput').click(); });
-    const imp=document.getElementById('importFileInput'); imp.onchange=()=>{ const f=imp.files[0]; imp.value=''; if(!f) return; if(state.tab==='quotes') importQuotes(f); else if(state.tab==='contracts'||state.tab==='maint') importContracts(f); else importPartners(f, state.tab==='suppliers'?'supplier':'customer'); };
+    document.querySelectorAll('#excelMenu [data-x]').forEach(b=>b.onclick=e=>{ e.stopPropagation(); state.excelMenu=false; const x=b.dataset.x; render(); if(x==='export') exportExcel(); if(x==='template') (['contracts','maint','quotes','legacy'].includes(state.tab)?downloadDealTemplate():downloadPartnerTemplate()); if(x==='import') document.getElementById('importFileInput').click(); });
+    const imp=document.getElementById('importFileInput'); imp.onchange=()=>{ const f=imp.files[0]; imp.value=''; if(!f) return; if(state.tab==='quotes') importQuotes(f); else if(state.tab==='contracts'||state.tab==='maint'||state.tab==='legacy') importContracts(f); else importPartners(f, state.tab==='suppliers'?'supplier':'customer'); };
     if(state.excelMenu) setTimeout(()=>document.addEventListener('click', function h(e){ if(!e.target.closest('.excel-wrap')){ state.excelMenu=false; render(); } }, {once:true}),0);
     // confirm
     if(state.confirm){ document.getElementById('cfNo').onclick=()=>{ state.confirm=null; render(); }; document.getElementById('cfYes').onclick=()=>{ const fn=state.confirm.onYes; state.confirm=null; render(); fn&&fn(); }; }
-    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), support:bindSupport, reps:bindReps, quotes:bindQuotes, pos:bindPOs, company:bindCompany, stats:bindStats})[state.tab]();
+    ({dashboard:bindDashboard, customers:()=>bindPartners('customer'), suppliers:()=>bindPartners('supplier'), contracts:()=>bindContracts('contracts'), maint:()=>bindContracts('maint'), legacy:()=>bindContracts('legacy'), support:bindSupport, reps:bindReps, quotes:bindQuotes, pos:bindPOs, company:bindCompany, stats:bindStats})[state.tab]();
     bindAttachments();
     bindModal();
     bindShare();

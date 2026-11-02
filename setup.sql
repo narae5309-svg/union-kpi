@@ -357,4 +357,5 @@ begin
 end $$;
 
 -- 7) 사이트가 새 표를 바로 인식하도록 새로고침
+alter table contracts add column if not exists is_legacy boolean default false;
 notify pgrst, 'reload schema';
