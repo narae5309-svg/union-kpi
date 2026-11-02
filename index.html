@@ -1690,10 +1690,11 @@
   }
   // ---- 만료 다가오는 계약 → 갱신 견적 ----
   const renewQuoteOf = (cid,end) => state.quotes.find(q=>q.renew_of===cid && (!end || !q.renew_end || q.renew_end===end) && q.status!=='계약전환');
-  function openRenewalQuote(cid, end){
+  function openRenewalQuote(cid, end, opts){
+    opts=opts||{};
     const c=contractById(cid); if(!c) return;
     const ex=renewQuoteOf(cid,end);
-    if(ex && confirm(`이미 만든 갱신 견적(${ex.quote_no} · ${ex.status||'작성중'})이 있어요.\n그 견적을 열까요?\n\n[취소]를 누르면 새로 만듭니다.`)){ state.tab='quotes'; state.expanded=ex.id; state.docView={kind:'quote', id:ex.id}; render(); return; }
+    if(ex && confirm(`이미 만든 갱신 견적(${ex.quote_no} · ${ex.status||'작성중'})이 있어요.\n그 견적을 열까요?\n\n[취소]를 누르면 새로 만듭니다.`)){ if(!opts.stay){ state.tab='quotes'; state.expanded=ex.id; } state.docView={kind:'quote', id:ex.id}; render(); return; }
     const groups=ctrGroups(c).filter(g=>!g.done && (!end || g.end===end));
     const its=groups.flatMap(g=>g.items);
     const srcQ=state.quotes.filter(q=>q.contract_id===c.id || q.renew_of===c.id).sort((a,b)=>cmp(b.quote_date||'',a.quote_date||''))[0];
@@ -1706,8 +1707,8 @@
     }) : [{type:'item', name:c.name, spec:'', qty:1, list_price:0, unit_price:contractTotals(c).sale, cost_price:contractTotals(c).purchase, lic_start:c.expiry_date?addDays(c.expiry_date,1):'', lic_end:c.expiry_date?addDays(addMonths(addDays(c.expiry_date,1),12),-1):''}];
     const ct=contact(c.contact_id)||{}, me=myRep(), rep=repByName(repDisplay(c.sales_rep))||{};
     const data={id:uid('q'), quote_no:docNo('Q',state.quotes,'quote_no',todayStr()), title:c.name||'', end_user_name:c.end_user_name||'', deal_type:'갱신', quote_date:todayStr(), customer_id:c.customer_id||'', contact_id:c.contact_id||'', ref_contact:ct.name||'', ref_phone:ct.phone||'', ref_email:ct.email||'', valid_days:(srcQ&&srcQ.valid_days)||'15', delivery:(srcQ&&srcQ.delivery)||'주문 후 협의', sales_rep:repDisplay(c.sales_rep)||state.user, sales_phone:rep.phone||me.phone||'', sales_email:rep.email||me.email||state.userEmail||'', items, tax_applied:srcQ?!!srcQ.tax_applied:true, remarks:(srcQ&&srcQ.remarks)||'', status:'작성중', renew_of:c.id, renew_end:end||(groups[0]&&groups[0].end)||'', created_by:state.user};
-    state.tab='quotes';
-    state.modal={type:'quote', isNew:true, data, title:'갱신 견적 작성', wide:true, info:`"${c.name}"의 다음 기간 견적이에요. 지금 계약의 품목·단가·매입가${srcQ?`와 지난 견적(${srcQ.quote_no})의 소비자가·비고`:''}를 복사했고, 기간은 만료일 다음 날부터 1년으로 넣었어요. 금액을 확인하고 저장하세요. 수주되면 "계약 등록"을 누르면 기존 계약이 갱신완료로 바뀌어요.`};
+    if(!opts.stay) state.tab='quotes';
+    state.modal={type:'quote', isNew:true, data, title:'갱신 견적 작성', wide:true, stay:!!opts.stay, info:`"${c.name}"의 다음 기간 견적이에요. 지금 계약의 품목·단가·매입가${srcQ?`와 지난 견적(${srcQ.quote_no})의 소비자가·비고`:''}를 복사했고, 기간은 만료일 다음 날부터 1년으로 넣었어요. 금액을 확인하고 저장하세요. 수주되면 "계약 등록"을 누르면 기존 계약이 갱신완료로 바뀌어요.`};
     render();
   }
   function showPlusMenu(btn){
@@ -1952,6 +1953,7 @@
     const row=quoteRow(d);
     const err=await upsertQuotes([row]); if(err) return fail('저장 실패',err);
     const clean={...row}; const i=state.quotes.findIndex(x=>x.id===d.id); if(i>-1) state.quotes[i]=clean; else state.quotes.unshift(clean);
+    if(m.stay){ state.modal=null; showToast(`견적 ${d.quote_no}을(를) 만들었어요. 견적 메뉴에서 확인·발송할 수 있어요.`); return; }
     state.modal=null; state.docView={kind:'quote', id:d.id}; showToast('저장되었습니다. PDF로 저장하거나 메일로 보낼 수 있어요.');
   }
 
@@ -2708,7 +2710,7 @@
     const reps=[...new Set(base.map(c=>repDisplay(c.sales_rep)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ko'));
     return `
       <div class="page-head"><div><div class="page-title">${isMt?'유지보수':isLg?'기존데이터':'계약관리'}</div><div class="page-sub">${isMt?'분류가 "유지보수"인 계약만 모아 봅니다 · 등록·수정은 계약과 같은 방식':isLg?'예전 계약을 엑셀로 한번에 넣어두는 곳 · 알림·대시보드·통계에 잡히지 않아요 · 확인 후 "견적으로" 또는 "계약으로" 보내세요':'모든 계약 · 분류(신규/갱신/유지보수/용역), 품목별 매출·매입, 만료일'}</div></div></div>
-      ${periodTabsHTML(base,ctrState,f[tabKey],'ctrTab')}
+      ${isLg?'':periodTabsHTML(base,ctrState,f[tabKey],'ctrTab')}
       <div class="toolbar">
         <button class="btn-primary" id="addCtrBtn">+ ${isMt?'유지보수 계약 추가':isLg?'기존데이터 추가':'계약 추가'}</button>
         ${isLg?`<button class="btn-sm" id="lgBulkToCtr" title="체크한 건을 계약관리로 옮겨요 (알림이 켜져요)">➜ 선택 계약으로 보내기${state.sel[key].size?` (${state.sel[key].size})`:''}</button>`:''}
@@ -2727,7 +2729,7 @@
           const t=contractTotals(c), its=itemsOf(c.id), open=state.expanded===c.id;
           const prod = its.length ? esc(its[0].product||'-')+(its.length>1?` <span class="muted small">외 ${its.length-1}</span>`:'') : '<span class="muted">-</span>';
           const cs = ctrState(c), canRenew = cs.groups.some(g=>!g.done);
-          let html = `<tr class="${rowClassFor(cs.end,cs.renewed,cs.dismissed)}">${checkTd(key,c.id)}
+          let html = `<tr class="${isLg?'':rowClassFor(cs.end,cs.renewed,cs.dismissed)}">${checkTd(key,c.id)}
             <td>${dealBadge(c.deal_type)}</td>
             <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span><div class="muted small">${esc(c.code||'')}</div></td>
             <td class="tl">${esc(custName(c.customer_id))}${c.end_user_name?`<div class="muted small">↳ ${esc(c.end_user_name)}</div>`:''}</td>
@@ -2735,7 +2737,7 @@
             ${isMt?`<td class="small">${esc(c.billing_cycle||'-')}</td>`:''}
             <td class="num" style="font-weight:600;">${won(t.sale)}</td>
             <td>${stageBadge(c.stage)}</td>
-            <td class="nowrap">${cs.end?esc(cs.end):''}<div>${ddayBadge(cs.end,cs.renewed,cs.dismissed,c.alert_days)}${cs.extra?` <span class="badge gray" title="${esc(cs.groups.filter(g=>!g.done).slice(1).map(g=>g.end).join(', '))}">외 ${cs.extra}개 일정</span>`:''}</div></td>
+            <td class="nowrap">${cs.end?esc(cs.end):''}<div>${isLg?'':ddayBadge(cs.end,cs.renewed,cs.dismissed,c.alert_days)}${!isLg&&cs.extra?` <span class="badge gray" title="${esc(cs.groups.filter(g=>!g.done).slice(1).map(g=>g.end).join(', '))}">외 ${cs.extra}개 일정</span>`:''}</div></td>
             <td class="nowrap">${esc(repDisplay(c.sales_rep)||'-')}</td>
             <td style="text-align:center;">${c.attachment_url?`<button class="icon-btn attachView" data-kind="ctr" data-id="${c.id}" title="${esc(c.attachment_name)}">&#128269;</button>`:`<button class="icon-btn attachAdd" data-kind="ctr" data-id="${c.id}" title="계약서 첨부">&#128206;</button>`}</td>
             <td class="nowrap">${isLg?`<button class="btn-sm ghost lgQuote" data-id="${c.id}" data-end="${cs.end||''}" title="이 건으로 견적서 만들기">견적으로</button> <button class="btn-sm lgToCtr" data-id="${c.id}" title="계약관리로 옮기기">계약으로</button> `:canRenew?`<button class="icon-btn plusBtn" data-id="${c.id}" data-end="${cs.end||''}" title="견적 · 갱신">+</button> `:''}<button class="icon-btn shareBtn" data-kind="ctr" data-id="${c.id}" title="보내기 (카톡·메일)">${SEND_ICON}</button> <button class="icon-btn editCtr" data-id="${c.id}" title="수정">&#9998;</button></td></tr>`;
@@ -2756,7 +2758,7 @@
         <div><span class="muted">세금계산서 메일</span> ${esc((customer(c.customer_id)||{}).tax_email||'-')}</div>
       </div>
       ${its.length?`<table><thead><tr><th class="tl">제품</th><th class="num">수량</th><th class="num">단가</th><th class="num cs">매출</th><th>매입처</th><th class="num cb">매입</th><th class="num cp">이익</th><th class="num">마진</th><th>만료일</th></tr></thead><tbody>
-        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(num(i.unit_price)||(num(i.qty)?num(i.sale_amount)/num(i.qty):0))}</td><td class="num cs">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num cb">${won(i.purchase_amount)}</td><td class="num cp">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td></tr>`; }).join('')}
+        ${its.map(i=>{ const p=num(i.sale_amount)-num(i.purchase_amount); const ie=itemEnd(i,c); return `<tr><td class="tl">${esc(i.product)}</td><td class="num">${num(i.qty)}</td><td class="num">${won(num(i.unit_price)||(num(i.qty)?num(i.sale_amount)/num(i.qty):0))}</td><td class="num cs">${won(i.sale_amount)}</td><td>${esc(supplierLabel(i.supplier_id,i.supplier)||'-')}</td><td class="num cb">${won(i.purchase_amount)}</td><td class="num cp">${won(p)}</td><td class="num">${pct(num(i.sale_amount)?p/num(i.sale_amount)*100:0)}</td><td class="nowrap">${ie?esc(ie):'영구'} ${c.is_legacy?'':ddayBadge(ie, i.renewed||c.renewed, i.closed||c.alert_dismissed, c.alert_days)}</td></tr>`; }).join('')}
         <tr class="total"><td colspan="3" class="tl">합계</td><td class="num cs">${won(t.sale)}</td><td></td><td class="num cb">${won(t.purchase)}</td><td class="num cp">${won(t.profit)}</td><td class="num">${pct(t.margin)}</td><td></td></tr>
       </tbody></table>`:'<div class="muted">등록된 품목이 없습니다.</div>'}
       ${(()=>{ const sups={}; its.forEach(i=>{ const k=i.supplier_id||('n:'+(i.supplier||'')); if(i.supplier_id||i.supplier){ sups[k]=supplierLabel(i.supplier_id,i.supplier); } }); const keys=Object.keys(sups); const pos=state.pos.filter(p=>p.contract_id===c.id);
@@ -2790,7 +2792,7 @@
     key = key || 'contracts'; const isMt = key==='maint', isLg = key==='legacy';
     document.getElementById('addCtrBtn').onclick=()=>{ if(isLg && state.noLegacyCol) return alert('먼저 setup.sql을 한 번 더 실행해 주세요.'); openContractModal(null, isMt?{dealType:'유지보수'}:isLg?{legacy:true}:{}); };
     document.querySelectorAll('.ctrTab').forEach(el=>el.onclick=()=>{ state.f[isMt?'mtTab':isLg?'lgTab':'ctrTab']=el.dataset.t; state.page[key]=1; state.sel[key].clear(); render(); });
-    document.querySelectorAll('.lgQuote').forEach(b=>b.onclick=()=>openRenewalQuote(b.dataset.id, b.dataset.end));
+    document.querySelectorAll('.lgQuote').forEach(b=>b.onclick=()=>openRenewalQuote(b.dataset.id, b.dataset.end, {stay:true}));
     document.querySelectorAll('.lgToCtr').forEach(b=>b.onclick=()=>legacyToContracts([b.dataset.id]));
     const lb=document.getElementById('lgBulkToCtr'); if(lb) lb.onclick=()=>{ const ids=[...state.sel.legacy]; if(!ids.length) return alert('계약으로 보낼 건을 먼저 체크해 주세요.'); legacyToContracts(ids); };
     [['fCtrType','ctrType'],['fCtrRep',isMt?'mtRep':isLg?'lgRep':'ctrRep']].forEach(([id,k])=>{ const el=document.getElementById(id); if(el) el.onchange=()=>{ state.f[k]=el.value; state.page[key]=1; state.sel[key].clear(); render(); }; });
