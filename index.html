@@ -96,6 +96,18 @@
   .logout-link:hover{color:#fff;}
 
   .main{flex:1; padding:24px 30px 80px; min-width:0;}
+  .brand-row{display:flex; align-items:center; justify-content:space-between;}
+  .nav-pin{border:none; background:none; cursor:pointer; font-size:14px; opacity:.45; filter:grayscale(1); padding:2px 4px; border-radius:6px;}
+  .nav-pin:hover{opacity:.9; background:#243342;}
+  .nav-pin.on{opacity:1; filter:none; transform:rotate(-30deg);}
+  .nav-unpinned .sidebar{position:fixed; left:0; top:0; z-index:500; transform:translateX(-100%); transition:transform .18s ease; box-shadow:4px 0 18px rgba(0,0,0,.25);}
+  .nav-unpinned.nav-float-open .sidebar{transform:none;}
+  .nav-unpinned .main{padding-left:64px;}
+  .nav-toggle{position:fixed; left:12px; top:14px; z-index:450; width:38px; height:38px; border-radius:10px; border:1px solid var(--grid-strong); background:#1b2733; color:#fff; font-size:18px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15);}
+  .nav-toggle:hover{background:#243342;}
+  .nav-scrim{position:fixed; inset:0; z-index:490; background:rgba(0,0,0,.18);}
+  .wtabs-closeall{margin-left:auto; align-self:center; border:1px solid var(--grid-strong); background:#fff; color:var(--ink-soft); border-radius:6px; font-size:12px; padding:3px 9px; cursor:pointer; margin-bottom:4px;}
+  .wtabs-closeall:hover{color:var(--warn); border-color:var(--warn);}
   .page-head{display:flex; justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:18px; flex-wrap:wrap;}
   .page-title{font-size:19px; font-weight:700;}
   .page-sub{color:var(--ink-soft); font-size:12px; margin-top:3px;}
@@ -451,6 +463,7 @@
     .stats-nav{margin:0; border-top:none; padding:6px 10px !important; border-bottom:none;}
     .nav-footer{display:flex; gap:8px; align-items:center; font-size:12px;}
     .wtabs{display:none;}
+    .nav-unpinned .sidebar{position:static; transform:none; box-shadow:none;} .nav-unpinned .main{padding-left:16px;} .nav-toggle, .nav-scrim, .nav-pin{display:none;}
     .notify-btn{margin:0;} .nav-footer{border:none; margin:0; padding:0;}
     .main{padding:16px 16px 80px;}
     .kpis, .board{grid-template-columns:minmax(0,1fr);}
@@ -761,7 +774,10 @@
   const TAB_LABELS = (()=>{ const o={stats:'통계'}; NAV.forEach(n=>{ if(n.group) n.items.forEach(([k,l])=>o[k]=l); else o[n[0]]=n[1]; }); return o; })();
   function loadWTabs(){ try{ const v=JSON.parse(sessionStorage.getItem('clm_tabs')||'[]'); return Array.isArray(v)?v.filter(k=>TAB_LABELS[k] && k!=='dashboard'):[]; }catch(e){ return []; } }
   function saveWTabs(){ try{ sessionStorage.setItem('clm_tabs', JSON.stringify(state.openTabs)); }catch(e){} }
+  function navPinned(){ try{ return localStorage.getItem('clm_nav_pinned')!=='0'; }catch(e){ return true; } }
+  function setNavPinned(v){ try{ localStorage.setItem('clm_nav_pinned', v?'1':'0'); }catch(e){} }
   function goTab(k){
+    if(!navPinned()) state.navOpenFloat=false;
     state.tabMem=state.tabMem||{};
     state.tabMem[state.tab]={expanded:state.expanded, y:window.scrollY};
     const mem=state.tabMem[k]||{};
@@ -774,7 +790,7 @@
   }
   function wtabsHTML(){
     if(state.tab==='dashboard' || !state.openTabs.length) return '';
-    return `<div class="wtabs">${state.openTabs.map(k=>`<div class="wtab ${state.tab===k?'active':''}" data-tab="${k}"><span>${esc(TAB_LABELS[k])}</span><button class="wtab-x" data-tab="${k}" title="탭 닫기">&times;</button></div>`).join('')}</div>`;
+    return `<div class="wtabs">${state.openTabs.map(k=>`<div class="wtab ${state.tab===k?'active':''}" data-tab="${k}"><span>${esc(TAB_LABELS[k])}</span><button class="wtab-x" data-tab="${k}" title="탭 닫기">&times;</button></div>`).join('')}<button class="wtabs-closeall" id="wtabsCloseAll" title="열린 탭 모두 닫기">전체 닫기 &times;</button></div>`;
   }
   function render(){
     if(!state.openTabs) state.openTabs=loadWTabs();
@@ -975,9 +991,12 @@
     const p = notifyPerm();
     const notifyLabel = p==='granted'?'🔔 갱신 알림 켜짐':p==='denied'?'🔕 알림 차단됨':'🔔 갱신 알림 켜기';
     const pages = {dashboard:renderDashboard, customers:()=>renderPartners('customer'), suppliers:()=>renderPartners('supplier'), contracts:renderContracts, maint:()=>renderContracts('maint'), legacy:()=>renderContracts('legacy'), support:renderSupport, reps:renderReps, quotes:renderQuotes, pos:renderPOs, company:renderCompany, stats:renderStats};
-    return `<div class="shell">
+    const pinned = navPinned();
+    return `<div class="shell ${pinned?'':'nav-unpinned'} ${state.navOpenFloat?'nav-float-open':''}">
+      ${pinned?'':`<button class="nav-toggle" id="navToggle" title="메뉴 열기">☰</button>`}
+      ${!pinned && state.navOpenFloat?'<div class="nav-scrim" id="navScrim"></div>':''}
       <div class="sidebar">
-        <div class="brand"><h2>UNION</h2><div class="who">${esc(state.user)} 님${state.isAdmin?' · 관리자':''}</div></div>
+        <div class="brand"><div class="brand-row"><h2>UNION</h2><button class="nav-pin ${pinned?'on':''}" id="navPin" title="${pinned?'메뉴 고정 해제 (접기)':'메뉴 고정'}">📌</button></div><div class="who">${esc(state.user)} 님${state.isAdmin?' · 관리자':''}</div></div>
         <div class="nav">${NAV.map(n=>{
           const item = ([k,l], sub) => {
             let badge='';
@@ -2731,7 +2750,7 @@
           const cs = ctrState(c), canRenew = cs.groups.some(g=>!g.done);
           let html = `<tr class="${isLg?'':rowClassFor(cs.end,cs.renewed,cs.dismissed)}">${checkTd(key,c.id)}
             <td>${dealBadge(c.deal_type)}</td>
-            <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span><div class="muted small">${esc(c.code||'')}</div></td>
+            <td class="tl"><span class="link toggleRow" data-id="${c.id}" style="font-weight:600;">${esc(c.name)}</span></td>
             <td class="tl">${esc(custName(c.customer_id))}${c.end_user_name?`<div class="muted small">↳ ${esc(c.end_user_name)}</div>`:''}</td>
             <td class="tl">${prod}</td>
             ${isMt?`<td class="small">${esc(c.billing_cycle||'-')}</td>`:''}
@@ -3598,6 +3617,10 @@
   // ================= shell binding =================
   function bindShell(){
     document.querySelectorAll('.nav-item').forEach(el=>el.onclick=()=>goTab(el.dataset.tab));
+    const pin=document.getElementById('navPin'); if(pin) pin.onclick=e=>{ e.stopPropagation(); const v=!navPinned(); setNavPinned(v); state.navOpenFloat=false; render(); };
+    const nt=document.getElementById('navToggle'); if(nt) nt.onclick=()=>{ state.navOpenFloat=true; render(); };
+    const sc=document.getElementById('navScrim'); if(sc) sc.onclick=()=>{ state.navOpenFloat=false; render(); };
+    const ca=document.getElementById('wtabsCloseAll'); if(ca) ca.onclick=()=>{ state.openTabs=[]; saveWTabs(); goTab('dashboard'); };
     document.querySelectorAll('.nav-group').forEach(el=>el.onclick=()=>{ const g=el.dataset.group; const open=el.classList.contains('open'); state.navOpen=state.navOpen||{}; state.navOpen[g]=!open; if(open && NAV.find(n=>n.group===g).items.some(([k])=>k===state.tab)){ state.tab='dashboard'; } render(); });
     document.querySelectorAll('[data-goto]').forEach(el=>el.onclick=()=>{ state.tab=el.dataset.goto; render(); });
     document.getElementById('pwBtn').onclick=()=>{ state.modal={type:'pw', isNew:true, data:{}, title:'비밀번호 변경'}; render(); setTimeout(()=>{ const e=document.getElementById('pw1'); if(e) e.focus(); },0); };
